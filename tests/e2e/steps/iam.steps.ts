@@ -8,6 +8,7 @@ import {
   escribirPin,
   ingresarComoAdulto,
   prepararFamilia,
+  URL_AREA_ESTUDIANTE,
 } from '../support/iam';
 import { Cuando, Dado, Entonces } from './fixtures';
 
@@ -159,14 +160,24 @@ Cuando('escribo {int} veces el PIN equivocado {string}', async ({ page }, veces:
 });
 
 Cuando('intento abrir el panel familiar', async ({ page }) => {
-  await expect(page).toHaveURL(/\/estudiante$/);
+  await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
   await page.goto('/familia');
 });
 
 Entonces(
   /^(?:llego a|vuelvo a) mi área de lectura con el saludo "(.+)"$/,
   async ({ page }, saludo: string) => {
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
+    await expect(page.getByText(/Tu mapa de aventuras/)).toBeVisible();
     await expect(page.getByRole('heading', { name: saludo })).toBeVisible();
   },
 );
+
+Cuando('nadie toca la tablet durante {int} minutos', async ({ page }, minutos: number) => {
+  await page.clock.fastForward(`${String(minutos).padStart(2, '0')}:10`);
+});
+
+Entonces('vuelvo a la pantalla de ingreso con el aviso {string}', async ({ page }, aviso: string) => {
+  await expect(page).toHaveURL(/\/ingresar\/estudiante\?motivo=inactividad$/);
+  await expect(page.getByText(aviso)).toBeVisible();
+});

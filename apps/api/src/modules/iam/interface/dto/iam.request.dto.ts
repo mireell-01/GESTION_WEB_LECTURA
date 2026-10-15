@@ -131,14 +131,20 @@ export class VincularDispositivoRequestDto {
   nombre!: string;
 }
 
-export class IngresoEstudianteDispositivoRequestDto {
-  @IsString()
-  @MinLength(20)
-  tokenDispositivo!: string;
-
+/** RF-007: ingreso del estudiante con UN contexto (código de aula o dispositivo familiar). */
+export class IngresoEstudianteRequestDto {
   @IsString()
   perfilId!: string;
 
   @Matches(/^\d{4}$/, { message: 'El PIN tiene 4 números' })
   pin!: string;
+
+  @IsOptional()
+  @Matches(/^[A-Za-z0-9]{6}$/, { message: 'El código de aula tiene 6 letras y números' })
+  codigoAula?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(20)
+  tokenDispositivo?: string;
 }

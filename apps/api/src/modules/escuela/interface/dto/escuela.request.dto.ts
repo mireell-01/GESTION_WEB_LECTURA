@@ -7,7 +7,6 @@ import {
   IsIn,
   IsInt,
   IsString,
-  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -67,15 +66,4 @@ export class TarjetasRequestDto {
   @ArrayMaxSize(45)
   @IsString({ each: true })
   estudianteIds!: string[];
-}
-
-export class IngresoAulaRequestDto {
-  @Matches(/^[A-Za-z0-9]{6}$/, { message: 'El código de aula tiene 6 letras y números' })
-  codigoAula!: string;
-
-  @IsString()
-  perfilId!: string;
-
-  @Matches(/^\d{4}$/, { message: 'El PIN tiene 4 números' })
-  pin!: string;
 }

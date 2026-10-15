@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { ConsoleLogger, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -13,10 +13,15 @@ export interface AppDePrueba {
   cerrar: () => Promise<void>;
 }
 
-/** Arranca la API completa (todos los módulos) con la misma configuración que producción. */
-export async function crearApp(): Promise<AppDePrueba> {
+/**
+ * Arranca la API completa (todos los módulos) con la misma configuración que producción.
+ * `conLogs`: usa el logger real de NestJS (el de pruebas solo imprime errores), para verificar RNF-031.
+ */
+export async function crearApp(opciones: { conLogs?: boolean } = {}): Promise<AppDePrueba> {
   const modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  const app = configurarApp(modulo.createNestApplication());
+  const app = configurarApp(
+    modulo.createNestApplication(opciones.conLogs ? { logger: new ConsoleLogger() } : undefined),
+  );
   await app.init();
   const prisma = app.get(PrismaService);
   return {

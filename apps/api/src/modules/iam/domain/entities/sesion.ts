@@ -79,13 +79,13 @@ export class Sesion {
     return this.props;
   }
 
-  /** ¿Sigue viva? No está revocada ni expiró por inactividad. */
+  /** ¿Sigue viva? No está revocada, no expiró por inactividad ni superó su duración máxima. */
   estaViva(ahora: Date): boolean {
     if (this.props.revocadaEn) return false;
-    const limite = PoliticaSesion.expiracionPorInactividad(
-      this.props.ultimaActividadEn,
-      this.props.rol === 'ESTUDIANTE',
-    );
+    const esEstudiante = this.props.rol === 'ESTUDIANTE';
+    const absoluta = PoliticaSesion.expiracionAbsoluta(this.props.creadaEn, esEstudiante);
+    if (absoluta && ahora.getTime() > absoluta.getTime()) return false;
+    const limite = PoliticaSesion.expiracionPorInactividad(this.props.ultimaActividadEn, esEstudiante);
     return ahora.getTime() <= limite.getTime();
   }
 

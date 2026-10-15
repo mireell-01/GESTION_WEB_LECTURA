@@ -5,6 +5,12 @@ import { CorreoService } from '../../application/ports/correo.service';
 
 type Mensaje = Parameters<CorreoService['enviar']>[0];
 
+/** ana.rios@colegio.pe → a***@colegio.pe */
+function enmascarar(email: string): string {
+  const [local = '', dominio = ''] = email.split('@');
+  return `${local.charAt(0)}***@${dominio}`;
+}
+
 function textoPlano(m: Mensaje): string {
   return m.enlace ? `${m.texto}\n\n${m.enlace}\n\n— Equipo LectoAventura` : `${m.texto}\n\n— Equipo LectoAventura`;
 }
@@ -50,7 +56,8 @@ export class ConsolaCorreoService implements CorreoService {
   async enviar(mensaje: Mensaje): Promise<void> {
     this.bandeja.unshift({ ...mensaje, enviadoEn: new Date().toISOString() });
     this.bandeja.splice(50);
-    this.logger.log(`→ ${mensaje.para} · ${mensaje.asunto}${mensaje.enlace ? ` · ${mensaje.enlace}` : ''}`);
+    // RNF-031: el enlace lleva un token de un solo uso; nunca se escribe en el log.
+    this.logger.log(`Correo retenido en la bandeja de desarrollo: «${mensaje.asunto}» para ${enmascarar(mensaje.para)}`);
   }
 
   correos(): CorreoDesarrollo[] {

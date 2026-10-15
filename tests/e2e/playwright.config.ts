@@ -42,7 +42,7 @@ export default defineConfig({
         : 'npm run dev:api',
       cwd: '../..',
       // Responde 401 sin sesión: Playwright lo acepta como "servidor listo".
-      url: 'http://localhost:3001/api/iam/yo',
+      url: 'http://localhost:3001/api/v1/auth/yo',
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },

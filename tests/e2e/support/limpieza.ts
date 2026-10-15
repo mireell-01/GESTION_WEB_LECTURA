@@ -19,8 +19,12 @@ export default async function limpieza(): Promise<void> {
     const cuentas = await prisma.cuenta.findMany({ where: { email: { endsWith: `@${DOMINIO_E2E}` } }, select: { id: true } });
     const idsCuentas = cuentas.map((c) => c.id);
     const perfiles = await prisma.perfilEstudiante.findMany({ where: { cuentaResponsableId: { in: idsCuentas } }, select: { id: true } });
-    const sujetos = [...idsCuentas, ...perfiles.map((p) => p.id)];
+    const idsPerfiles = perfiles.map((p) => p.id);
+    const sujetos = [...idsCuentas, ...idsPerfiles];
+    const sesiones = await prisma.sesion.findMany({ where: { sujetoId: { in: sujetos } }, select: { id: true } });
+    await prisma.refreshTokenUsado.deleteMany({ where: { sesionId: { in: sesiones.map((s) => s.id) } } });
     await prisma.sesion.deleteMany({ where: { sujetoId: { in: sujetos } } });
+    await prisma.exportacion.deleteMany({ where: { perfilId: { in: idsPerfiles } } });
     await prisma.aula.deleteMany({ where: { docenteId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });
   } finally {

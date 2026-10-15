@@ -1,9 +1,11 @@
 /**
- * Cliente HTTP único entre la web y la API (mismo origen, /api se reenvía a NestJS).
- * El access token vive solo en memoria; el refresh token en cookie httpOnly que la página no ve.
+ * Cliente HTTP único entre la web y la API `/api/v1` (mismo origen: Next.js reenvía /api a NestJS).
+ * El access token vive solo en memoria; el refresh token en una cookie httpOnly que la página no ve.
  * Ante un 401 intenta renovar la sesión una vez y repite la petición.
  */
+export const BASE_API = '/api/v1';
 
+/** Error de la API en formato RFC 9457 (Problem Details), con sus miembros de extensión. */
 export class ErrorApi extends Error {
   constructor(
     readonly estado: number,
@@ -37,7 +39,7 @@ export function alTerminarSesion(oyente: () => void): () => void {
 
 /** Pide un access token nuevo con la cookie de refresh. Varias llamadas simultáneas comparten una. */
 export function renovarSesion(): Promise<RespuestaSesion | null> {
-  renovacionEnCurso ??= fetch('/api/iam/sesiones/renovar', { method: 'POST', credentials: 'same-origin' })
+  renovacionEnCurso ??= fetch(`${BASE_API}/auth/refresh`, { method: 'POST', credentials: 'same-origin' })
     .then(async (res) => {
       if (!res.ok) return null;
       const datos = (await res.json()) as RespuestaSesion;
@@ -59,7 +61,7 @@ interface Opciones {
 
 export async function api<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
   const ejecutar = () =>
-    fetch(`/api${ruta}`, {
+    fetch(`${BASE_API}${ruta}`, {
       method: opciones.metodo ?? 'GET',
       credentials: 'same-origin',
       headers: {
@@ -79,12 +81,12 @@ export async function api<T>(ruta: string, opciones: Opciones = {}): Promise<T> 
   }
 
   if (!res.ok) {
-    const cuerpo = (await res.json().catch(() => ({}))) as { mensaje?: string; detalle?: Record<string, unknown> };
+    const problema = (await res.json().catch(() => ({}))) as { detail?: string } & Record<string, unknown>;
     if (res.status === 401 && accessToken) {
       accessToken = null;
       oyentesSesionTerminada.forEach((o) => o());
     }
-    throw new ErrorApi(res.status, cuerpo.mensaje ?? 'No pudimos completar la acción. Inténtalo de nuevo.', cuerpo.detalle);
+    throw new ErrorApi(res.status, problema.detail ?? 'No pudimos completar la acción. Inténtalo de nuevo.', problema);
   }
 
   if (res.status === 204) return undefined as T;

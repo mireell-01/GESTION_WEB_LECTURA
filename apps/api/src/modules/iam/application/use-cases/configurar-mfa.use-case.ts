@@ -44,6 +44,7 @@ export class ConfigurarMfaUseCase {
       throw new SesionInvalidaError();
     }
     const refreshToken = this.tokens.generarTokenOpaco();
+    await this.sesiones.registrarRefreshUsado(sesion.hashRefreshToken, sesion.id, ahora);
     sesion.marcarMfaVerificado();
     sesion.rotarRefreshToken(this.tokens.huella(refreshToken), ahora);
     await this.sesiones.guardar(sesion);

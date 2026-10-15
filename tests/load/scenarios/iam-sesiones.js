@@ -4,15 +4,15 @@ import { check, fail } from 'k6';
 /**
  * Nivel 3 — Rendimiento de IAM (k6).
  *   RNF-008: pico de ingreso al inicio de la jornada escolar → 300 inicios de sesión/min con error < 0,5 %.
- *   RNF-001: endpoints de lectura (GET /iam/yo) con p95 < 300 ms y p99 < 800 ms.
+ *   RNF-001: endpoints de lectura (GET /auth/yo) con p95 < 300 ms y p99 < 800 ms.
  * Cada iteración simula un dispositivo distinto (X-Forwarded-For) para no mezclarse con el
  * límite de 10 ingresos/min por IP (RNF-019), como ocurriría con las tablets de un colegio.
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa, sin SMTP).
  * Ejecutar:   k6 run tests/load/scenarios/iam-sesiones.js
- *             k6 run -e API_URL=http://localhost:3001/api tests/load/scenarios/iam-sesiones.js
+ *             k6 run -e API_URL=http://localhost:3001/api/v1 tests/load/scenarios/iam-sesiones.js
  */
-const BASE = __ENV.API_URL || 'http://localhost:3001/api';
+const BASE = __ENV.API_URL || 'http://localhost:3001/api/v1';
 const CONTRASENA = 'Carga-Lectora-2026-k6';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -52,22 +52,22 @@ function ipDispositivo() {
 export function setup() {
   const email = `carga.${Date.now()}@e2e.lectoaventura.test`;
   const cabeceras = { headers: { ...JSON_HEADERS, 'X-Forwarded-For': ipDispositivo() } };
-  const registro = http.post(`${BASE}/iam/cuentas`, JSON.stringify({ nombre: 'Docente Carga', email, contrasena: CONTRASENA, rol: 'DOCENTE' }), cabeceras);
+  const registro = http.post(`${BASE}/auth/registro`, JSON.stringify({ nombre: 'Docente Carga', email, contrasena: CONTRASENA, rol: 'DOCENTE' }), cabeceras);
   if (registro.status !== 201) fail(`No se pudo registrar la cuenta de carga: ${registro.status} ${registro.body}`);
 
-  const correo = http.get(`${BASE}/iam/dev/correos`).json().find((c) => c.para === email);
+  const correo = http.get(`${BASE}/dev/correos`).json().find((c) => c.para === email);
   const codigo = correo.enlace.split('codigo=')[1];
-  const verificacion = http.post(`${BASE}/iam/correo/verificar`, JSON.stringify({ codigo }), cabeceras);
+  const verificacion = http.post(`${BASE}/auth/verificar-correo`, JSON.stringify({ codigo }), cabeceras);
   if (verificacion.status !== 200) fail('No se pudo verificar la cuenta de carga');
 
-  const sesion = http.post(`${BASE}/iam/sesiones`, JSON.stringify({ email, contrasena: CONTRASENA }), cabeceras).json();
+  const sesion = http.post(`${BASE}/auth/login`, JSON.stringify({ email, contrasena: CONTRASENA }), cabeceras).json();
   return { email, accessToken: sesion.accessToken };
 }
 
 export function ingresar(datos) {
-  const res = http.post(`${BASE}/iam/sesiones`, JSON.stringify({ email: datos.email, contrasena: CONTRASENA }), {
+  const res = http.post(`${BASE}/auth/login`, JSON.stringify({ email: datos.email, contrasena: CONTRASENA }), {
     headers: { ...JSON_HEADERS, 'X-Forwarded-For': ipDispositivo() },
-    tags: { nombre: 'POST /iam/sesiones' },
+    tags: { nombre: 'POST /auth/login' },
   });
   check(res, {
     'ingreso 200': (r) => r.status === 200,
@@ -77,9 +77,9 @@ export function ingresar(datos) {
 }
 
 export function consultarPerfil(datos) {
-  const res = http.get(`${BASE}/iam/yo`, {
+  const res = http.get(`${BASE}/auth/yo`, {
     headers: { Authorization: `Bearer ${datos.accessToken}` },
-    tags: { nombre: 'GET /iam/yo' },
+    tags: { nombre: 'GET /auth/yo' },
   });
   check(res, { 'perfil 200': (r) => r.status === 200 });
 }

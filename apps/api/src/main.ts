@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
   const puerto = Number(process.env['PORT'] ?? 3001);
   await app.listen(puerto);
 
-  console.log(`🛰️  API Lectoaventura escuchando en http://localhost:${puerto}/api`);
+  console.log(`🛰️  API Lectoaventura escuchando en http://localhost:${puerto}/api/v1`);
 }
 
 void bootstrap();

@@ -100,6 +100,29 @@ model Sesion {
   @@index([sujetoId])
 }
 
+/// Huellas de refresh tokens ya rotados: si alguien reutiliza uno, se revoca la sesión (ADR-005).
+model RefreshTokenUsado {
+  hash     String   @id
+  sesionId String
+  usadoEn  DateTime @default(now())
+
+  @@index([sesionId])
+}
+
+/// Exportación de datos del estudiante (RF-012): JSON + PDF, descargables por enlace firmado 72 h.
+model Exportacion {
+  id            String   @id
+  perfilId      String
+  solicitadaPor String
+  creadaEn      DateTime
+  expiraEn      DateTime
+  archivoJson   Bytes
+  archivoPdf    Bytes
+
+  @@index([perfilId])
+  @@index([expiraEn])
+}
+
 /// Dispositivo de la familia vinculado por 30 días para el ingreso de los niños (RN-04).
 model DispositivoFamiliar {
   id         String    @id @default(cuid())

@@ -35,7 +35,7 @@ function FormularioConsentimiento({ onListo }: { onListo: () => void }) {
     setEnviando(true);
     setError(null);
     try {
-      await api('/iam/consentimientos', { metodo: 'POST', cuerpo: { otorganteNombre: nombre, aceptaPolitica: acepta } });
+      await api('/consentimientos', { metodo: 'POST', cuerpo: { otorganteNombre: nombre, aceptaPolitica: acepta } });
       onListo();
     } catch (err) {
       setError(mensajeDeError(err));
@@ -79,7 +79,7 @@ function VincularDispositivo() {
     setOcupado(true);
     setError(null);
     try {
-      const r = await api<{ tokenDispositivo: string }>('/iam/dispositivos', {
+      const r = await api<{ tokenDispositivo: string }>('/familia/dispositivos', {
         metodo: 'POST',
         cuerpo: { nombre: navigator.userAgent.includes('Mobile') ? 'Celular o tablet' : 'Computadora' },
       });
@@ -120,8 +120,8 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
   const cargar = useCallback(async () => {
     try {
       const [c, p] = await Promise.all([
-        api<EstadoConsentimiento>('/iam/consentimientos/vigente'),
-        api<PerfilEstudiante[]>('/iam/perfiles-estudiante'),
+        api<EstadoConsentimiento>('/consentimientos/vigente'),
+        api<PerfilEstudiante[]>('/familia/estudiantes'),
       ]);
       setConsentimiento(c);
       setPerfiles(p);
@@ -135,7 +135,7 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
   }, [cargar]);
 
   const crear = async (datos: DatosPerfilNuevo) => {
-    await api('/iam/perfiles-estudiante', { metodo: 'POST', cuerpo: datos });
+    await api('/estudiantes', { metodo: 'POST', cuerpo: datos });
     setCreando(false);
     await cargar();
   };

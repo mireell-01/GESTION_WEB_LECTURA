@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-import { cuentaVerificada, escribirPin, ingresarComoAdulto, ipSimulada, prepararFamilia } from '../../support/iam';
+import {
+  cuentaVerificada,
+  escribirPin,
+  esperarAreaEstudiante,
+  ingresarComoAdulto,
+  ipSimulada,
+  prepararFamilia,
+  URL_AREA_ESTUDIANTE,
+} from '../../support/iam';
 
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
@@ -18,6 +26,7 @@ test.describe('IAM — seguridad de acceso', () => {
     await expect(page).toHaveURL(/\/ingresar\?volver=%2Ffamilia/);
     await page.goto('/estudiante');
     await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
+    await expect(page.getByRole('heading', { name: /Entra a tu aula/ })).toBeVisible();
   });
 
   test('sin dispositivo vinculado no se muestran avatares, solo el código de aula (RN-04)', async ({ page }) => {
@@ -39,9 +48,9 @@ test.describe('IAM — seguridad de acceso', () => {
     await expect(page.getByRole('alert').filter({ hasText: /Te quedan 4 intentos/ })).toBeVisible();
 
     await escribirPin(page, '3691');
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await esperarAreaEstudiante(page, 'Lucía');
     await page.goto('/familia');
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
   });
 
   test('la sesión sobrevive a recargar y "Salir" la cierra de verdad (RF-003, RF-010)', async ({ page, request }) => {

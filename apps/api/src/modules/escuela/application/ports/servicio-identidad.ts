@@ -1,4 +1,3 @@
-import type { SesionEmitida } from '../../../iam/public-api';
 import type { RangoEdad } from '../../../shared-kernel/public-api';
 
 export interface EstudianteIdentidad {
@@ -32,6 +31,5 @@ export interface ServicioIdentidad {
   }): Promise<EstudianteIdentidad>;
   estudiantes(ids: string[]): Promise<EstudianteIdentidad[]>;
   restablecerPin(params: { responsableId: string; perfilId: string; pinNuevo: string }): Promise<void>;
-  autenticarEnAula(params: { perfilId: string; pin: string; aulaId: string }): Promise<SesionEmitida>;
   avatares(): readonly string[];
 }

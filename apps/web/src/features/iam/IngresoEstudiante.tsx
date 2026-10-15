@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 import { Alerta, Avatar, Boton, BotonAvatar, Campo, Cargando, TecladoPin, Tarjeta } from '@lectoaventura/ui';
@@ -23,6 +23,7 @@ type Contexto = { tipo: 'DISPOSITIVO'; token: string } | { tipo: 'AULA'; codigo:
  */
 export function IngresoEstudiante() {
   const router = useRouter();
+  const porInactividad = useSearchParams().get('motivo') === 'inactividad';
   const { iniciar } = useSesion();
   const [contexto, setContexto] = useState<Contexto | null>(null);
   const [perfiles, setPerfiles] = useState<PerfilIngreso[] | null>(null);
@@ -39,7 +40,7 @@ export function IngresoEstudiante() {
       setCargando(false);
       return;
     }
-    api<PerfilIngreso[]>('/iam/dispositivo/perfiles', { cabeceras: { 'x-dispositivo': token } })
+    api<PerfilIngreso[]>('/acceso-estudiante/contexto-dispositivo', { cabeceras: { 'x-dispositivo': token } })
       .then((lista) => {
         setContexto({ tipo: 'DISPOSITIVO', token });
         setPerfiles(lista);
@@ -54,7 +55,7 @@ export function IngresoEstudiante() {
     setEnviando(true);
     const codigo = codigoAula.trim().toUpperCase();
     try {
-      const datos = await api<{ aula: { nombre: string }; estudiantes: PerfilIngreso[] }>(`/escuela/ingreso/${codigo}`);
+      const datos = await api<{ aula: { nombre: string }; estudiantes: PerfilIngreso[] }>(`/acceso-estudiante/contexto/${codigo}`);
       setContexto({ tipo: 'AULA', codigo, nombreAula: datos.aula.nombre });
       setPerfiles(datos.estudiantes);
     } catch (err) {
@@ -70,16 +71,14 @@ export function IngresoEstudiante() {
       setError(null);
       setEnviando(true);
       try {
-        const sesion =
-          contexto.tipo === 'DISPOSITIVO'
-            ? await api<RespuestaSesion>('/iam/sesiones/estudiante', {
-                metodo: 'POST',
-                cuerpo: { tokenDispositivo: contexto.token, perfilId: elegido.id, pin },
-              })
-            : await api<RespuestaSesion>('/escuela/ingreso', {
-                metodo: 'POST',
-                cuerpo: { codigoAula: contexto.codigo, perfilId: elegido.id, pin },
-              });
+        const sesion = await api<RespuestaSesion>('/acceso-estudiante/login', {
+          metodo: 'POST',
+          cuerpo: {
+            perfilId: elegido.id,
+            pin,
+            ...(contexto.tipo === 'DISPOSITIVO' ? { tokenDispositivo: contexto.token } : { codigoAula: contexto.codigo }),
+          },
+        });
         router.replace(await iniciar(sesion));
       } catch (err) {
         if (err instanceof ErrorApi && err.estado === 423) {
@@ -104,6 +103,11 @@ export function IngresoEstudiante() {
   };
 
   if (cargando) return <Cargando />;
+
+  // RF-010: avisa por qué volvió a la pantalla de ingreso.
+  const avisoInactividad = porInactividad ? (
+    <Alerta tipo="info">Cerramos tu sesión porque no hubo actividad por un rato. ¡Vuelve a entrar!</Alerta>
+  ) : null;
 
   // Paso 3: PIN
   if (elegido) {
@@ -140,6 +144,7 @@ export function IngresoEstudiante() {
           ) : null
         }
       >
+        {avisoInactividad}
         {perfiles.length === 0 ? (
           <Alerta tipo="aviso">Todavía no hay perfiles aquí. Pide a un adulto que cree el tuyo.</Alerta>
         ) : (
@@ -164,6 +169,7 @@ export function IngresoEstudiante() {
   return (
     <Tarjeta titulo="🏫 Entra a tu aula">
       <form onSubmit={buscarAula} className="pila-sm">
+        {avisoInactividad}
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
         <Campo
           etiqueta="Código de tu aula"

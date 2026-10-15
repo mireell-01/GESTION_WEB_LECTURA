@@ -1,4 +1,4 @@
-import { AVATARES, IamFacade, SesionEmitida } from '../../../iam/public-api';
+import { AVATARES, IamFacade } from '../../../iam/public-api';
 import { EstudianteIdentidad, ServicioIdentidad } from '../../application/ports/servicio-identidad';
 
 /** Adaptador: implementa el puerto anticorrupción de Escuela sobre la fachada pública de IAM. */
@@ -27,10 +27,6 @@ export class ServicioIdentidadIam implements ServicioIdentidad {
 
   async restablecerPin(params: { responsableId: string; perfilId: string; pinNuevo: string }): Promise<void> {
     await this.iam.restablecerPin(params);
-  }
-
-  autenticarEnAula(params: { perfilId: string; pin: string; aulaId: string }): Promise<SesionEmitida> {
-    return this.iam.autenticarEstudianteEnAula(params);
   }
 
   avatares(): readonly string[] {

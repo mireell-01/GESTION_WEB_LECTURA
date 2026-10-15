@@ -14,7 +14,7 @@ export const options = {
   },
 };
 
-const BASE = __ENV.API_URL ?? 'http://localhost:3001/api';
+const BASE = __ENV.API_URL ?? 'http://localhost:3001/api/v1';
 
 export default function () {
   const res = http.post(`${BASE}/lectura/demo`, JSON.stringify({ item: 'demo' }), {

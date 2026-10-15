@@ -23,7 +23,7 @@ export function ConfigurarMfa({ onListo }: { onListo?: () => void }) {
     setOcupado(true);
     setError(null);
     try {
-      setDatos(await api('/iam/mfa/iniciar', { metodo: 'POST' }));
+      setDatos(await api('/auth/mfa/configurar', { metodo: 'POST' }));
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -36,7 +36,7 @@ export function ConfigurarMfa({ onListo }: { onListo?: () => void }) {
     setOcupado(true);
     setError(null);
     try {
-      const sesion = await api<RespuestaSesion>('/iam/mfa/confirmar', { metodo: 'POST', cuerpo: { codigo } });
+      const sesion = await api<RespuestaSesion>('/auth/mfa/verificar', { metodo: 'POST', cuerpo: { codigo } });
       await iniciar(sesion);
       setListo(true);
       onListo?.();

@@ -2,18 +2,18 @@
 # Plan Maestro de Pruebas — Módulo 1: IAM (Identidad, Consentimiento y Acceso)
 
 > **Proyecto:** LectoAventura · **Módulo:** `apps/api/src/modules/iam` + pantallas web de acceso y panel familiar
-> **Requisitos cubiertos:** RF-001 a RF-013, RN-01 a RN-04, RN-17, RNF-001, RNF-008, RNF-017, RNF-019, RNF-022
-> **Fecha de ejecución:** 15/10/2026 · **Resultado global:** ✅ 164 pruebas automatizadas en verde en los 4 niveles
+> **Requisitos cubiertos:** RF-001 a RF-013, RF-071, RN-01 a RN-04, RN-17, RNF-001, RNF-008, RNF-017, RNF-019, RNF-020, RNF-022, RNF-031, ADR-005, convenciones del API (SRS §7) y caso UAT-05 del SRS
+> **Fecha de ejecución:** 16/10/2026 · **Resultado global:** ✅ 200 pruebas automatizadas en verde en los 4 niveles
 
 | Nivel | Pruebas | Resultado | Tiempo |
 | :--- | ---: | :--- | ---: |
-| 1 · Unitarias (Vitest) | 111 | ✅ 111/111 · cobertura 92,2 % líneas / 93,9 % ramas | 5 s |
-| 2 · Integración (Supertest + PostgreSQL real) | 27 | ✅ 27/27 | 16 s |
-| 3 · Sistema E2E (Playwright, escritorio + tablet) | 16 | ✅ 16/16 | 1,8 min |
-| 3 · Carga (RNF-008 / RNF-001) | 2 escenarios | ✅ 0 % errores · p95 108 ms (ingreso) · p95 23 ms (lectura) | 1 min |
-| 4 · Aceptación (Gherkin en español) | 10 escenarios | ✅ 10/10 · informe para el Product Owner | 1,2 min |
+| 1 · Unitarias (Vitest) | 136 | ✅ 136/136 · cobertura 93,1 % líneas / 92,5 % ramas | 16 s |
+| 2 · Integración (Supertest + PostgreSQL real) | 33 | ✅ 33/33 | 28 s |
+| 3 · Sistema E2E (Playwright, escritorio + tablet) | 20 | ✅ 20/20 | 2,8 min |
+| 3 · Carga (RNF-008 / RNF-001) | 2 escenarios | ✅ 0 % errores · p95 277 ms (ingreso) · p95 62 ms (lectura) | 1 min |
+| 4 · Aceptación (Gherkin en español) | 11 escenarios | ✅ 11/11 · informe para el Product Owner | 2,9 min |
 
-**Defectos encontrados por las pruebas y corregidos:** 7 (detalle en §1.3).
+**Defectos encontrados por las pruebas y corregidos:** 9 · **Brechas con el SRS detectadas en la auditoría y cerradas:** 6 (detalle en §1.3).
 
 ---
 
@@ -34,16 +34,19 @@
 ## 1.2 Mapa de dependencias del módulo
 
 ```
-interface (IamController, guards, cookies, DTO class-validator)
-   │  usa CasosUsoIam (token CASOS_USO_IAM)
+interface (Auth, Estudiantes, AccesoEstudiante, Exportaciones controllers · guards · cookies · DTO)
+   │  usa CasosUsoIam (token CASOS_USO_IAM)        rutas del contrato SRS §7: /api/v1/...
    ▼
-application (21 casos de uso, EmisorSesiones, IamFacade) ──► puertos (interfaces)
+application (22 casos de uso, EmisorSesiones, IamFacade) ──► puertos (interfaces)
    ▼                                                          ▲
 domain (Cuenta, PerfilEstudiante, Sesion, Consentimiento,     │ implementan
-        DispositivoFamiliar, VO Pin/Email/AnioMesNacimiento)  │
+        DispositivoFamiliar, Exportacion, VO Pin/Email/...)   │
                                                               │
-infrastructure (Prisma*Repository, Argon2HashService, JwtTokenService,
-                OtplibTotpService, Smtp/ConsolaCorreoService, ListaContrasenasFiltradas)
+infrastructure (Prisma*Repository, Argon2HashService, JwtTokenService, OtplibTotpService,
+                HmacFirmador, PdfLibGenerador, Smtp/ConsolaCorreoService, ListaContrasenasFiltradas)
+
+shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox · FiltroErrores RFC 9457
+               · X-Request-Id · LimiteTasaGuard · redactar() para logs sin secretos
 ```
 
 | Dependencia | Tipo | Nivel 1 (unitarias) | Nivel 2 (integración) |
@@ -52,10 +55,12 @@ infrastructure (Prisma*Repository, Argon2HashService, JwtTokenService,
 | `HashService` (argon2) | Interna/CPU | Doble `HashFalso` (rápido, determinista) + prueba propia del adaptador real | **Real** |
 | `TokenService` (JWT + tokens opacos) | Interna/cripto | Doble `TokensFalsos` + prueba propia con `jsonwebtoken` real | **Real** |
 | `TotpService` (otplib) | Externa (librería) | Doble `TotpFalso` + prueba con `authenticator.generate` real | **Real** |
-| `CorreoService` | Externa (SMTP) | Espía `CorreoEspia` | Bandeja de desarrollo (`/api/iam/dev/correos`) |
+| `CorreoService` | Externa (SMTP) | Espía `CorreoEspia` | Bandeja de desarrollo (`/api/v1/dev/correos`) |
 | `BusEventos` + Outbox | Interna | Espía `BusEspia` | **Real**: tabla `OutboxEvento` |
 | `RecolectorDatosEstudiante` (RF-012) | Interna (otros módulos) | Doble con datos fijos | **Real** (aporta Escuela) |
-| Reloj (`() => Date`) | Inyectado | `Reloj` controlable (`avanzarMin`) | Reloj real |
+| `ResolutorContextoAula` (RF-007) | Interna (Escuela) | `ContextoAulaFalso` | **Real**: aulas y matrículas de Escuela |
+| `AlmacenExportaciones`, `GeneradorPdfExportacion`, `FirmadorEnlaces` (RF-012) | Interna | En memoria + `PdfFalso` + HMAC real | **Real**: tabla `Exportacion`, pdf-lib, HMAC |
+| Reloj (`() => Date`) | Inyectado | `Reloj` controlable (`avanzarMin`) | Reloj real · en E2E, `page.clock` de Playwright |
 
 ## 1.3 Deuda técnica, problemas de testabilidad y defectos encontrados
 
@@ -69,7 +74,20 @@ infrastructure (Prisma*Repository, Argon2HashService, JwtTokenService,
 | D-4 | "Salir" llevaba al adulto a la pantalla de ingreso en lugar de la portada (condición de carrera del guard de rutas) | 3 · `seguridad.spec.ts` | `salir(destino)` recarga la app (además limpia la memoria en tablets compartidas, riesgo R-02) |
 | D-5 | Código muerto `PoliticaMfa` | 1 · cobertura (0 %) | Eliminado |
 | D-6 | El lint de arquitectura del proyecto no funcionaba (regla `boundaries/dependencies` inexistente): la regla de dependencias del SRS no se verificaba | Configuración de CI | Reescrito con `boundaries/element-types`; verificado con violaciones intencionales |
-| D-7 | Carácter invisible (BOM) dentro de una expresión regular en Escuela | Lint | Reemplazado por `﻿` |
+| D-7 | Caracteres invisibles (BOM, espacio no separable) escritos literalmente dentro de expresiones regulares | Lint | Reemplazados por su secuencia de escape Unicode |
+| D-8 | **Matricular estudiantes respondía 500 siempre**: `Matricula.crear` copiaba el parámetro `ahora` a las propiedades y Prisma lo rechazaba | 2 · `iam-http.int-spec.ts` (ingreso con código de aula) | Propiedades construidas campo por campo |
+| D-9 | Pruebas E2E con aserción débil: `/\/estudiante$/` también acepta `/ingresar/estudiante`, así que daban por bueno el ingreso del niño sin verificarlo | 3 · prueba de inactividad con `page.clock` | `esperarAreaEstudiante()`: URL exacta + contenido propio del área |
+
+**Brechas con el SRS detectadas en la auditoría del módulo y cerradas (todas con pruebas):**
+
+| # | Requisito | Qué faltaba | Implementación | Pruebas |
+| :--- | :--- | :--- | :--- | :--- |
+| B-1 | ADR-005 | Detección de reutilización del refresh token, `SameSite=Strict`, máximo de 8 h para el token del estudiante | Tabla `RefreshTokenUsado`; reutilizar un token rotado revoca la sesión y publica `iam.ReutilizacionRefreshDetectada` | U + I |
+| B-2 | RF-010 / R-02 | La pantalla no se cerraba sola por inactividad | `useCierrePorInactividad` (10 min niño, 30 min adulto) + aviso al volver al ingreso | S + UAT con reloj simulado |
+| B-3 | RF-012 | Solo JSON inmediato | JSON + PDF (pdf-lib) con enlaces firmados HMAC de 72 h; firma alterada → 403, vencido → 404 | U + I + S |
+| B-4 | RNF-031 | El log de correos imprimía el enlace con el token | Log sin enlace ni correo completo; `redactar()` en el filtro de errores y el bus | U + I (captura de toda la salida) |
+| B-5 | SRS §7 | Rutas `/api/iam/...`, errores propios, sin `X-Request-Id` | Rutas `/api/v1/auth`, `/estudiantes`, `/familia`, `/acceso-estudiante`; Problem Details RFC 9457; `X-Request-Id` | I + S + UAT |
+| B-6 | RF-011 | El docente no tenía opción de MFA en su pantalla | Tarjeta "Seguridad de tu cuenta" en `/docente` | Revisión manual |
 
 **Refactor de testabilidad aplicado:** la configuración global de la API (prefijo, CORS, validación, filtro de errores, proxy de confianza) estaba solo en `main.ts`; se extrajo a `configurarApp()` (`apps/api/src/configurar-app.ts`) para que las pruebas de integración usen exactamente la misma configuración que producción.
 
@@ -79,7 +97,9 @@ infrastructure (Prisma*Repository, Argon2HashService, JwtTokenService,
 | :--- | :--- | :--- |
 | El evento del outbox se escribe después del agregado, no en la misma transacción | Inconsistencia si el proceso cae entre ambos | Unit of Work con `prisma.$transaction` en los casos de uso |
 | Límite de tasa en memoria | Con varias instancias (RNF-013) cada una cuenta por separado | Mover el contador a Redis (ADR-004) |
-| RF-012 parcial | Se entrega JSON inmediato; falta PDF y enlace firmado de 72 h | Exportación asíncrona con worker (ADR-009) |
+| Exportación síncrona | El PDF se genera dentro de la petición (rápido hoy; podría crecer con el progreso de otros módulos) | Moverla a un worker BullMQ (ADR-009); el SRS admite ≤ 24 h |
+| Un solo esquema de base de datos | ADR-004 pide un esquema por módulo (`iam`, `escuela`…) | `previewFeatures = ["multiSchema"]` de Prisma cuando haya más módulos |
+| Sin creación de cuentas de backoffice | RF-011 solo se prueba en Nivel 1 porque crear editores/administradores es RF-076 | Se cubrirá con el módulo de Administración |
 | El registro responde 409 si el correo ya existe | Permite saber si un correo está registrado (el SRS solo exige anti-enumeración en la recuperación) | Responder 201 genérico y avisar por correo |
 | `packages/contracts` no refleja los endpoints reales | La web declara sus tipos a mano (contradice DRY del SRS) | Generar `openapi.yaml` desde los DTO de NestJS |
 | Sin Docker en el equipo local | Testcontainers solo corre en CI | Local usa la base efímera `lectoaventura_test` (recreada en cada ejecución) |
@@ -117,17 +137,19 @@ G.W_PROYECTO/
 │       │   ├── aplicacion/
 │       │   │   ├── autenticacion.spec.ts # Login adulto/estudiante, sesiones, MFA
 │       │   │   └── cuentas-y-perfiles.spec.ts
-│       │   ├── infraestructura/seguridad.spec.ts   # JWT, argon2, TOTP, contraseñas
+│       │   ├── infraestructura/
+│       │   │   ├── seguridad.spec.ts               # JWT, argon2, TOTP, contraseñas
+│       │   │   └── exportacion-y-logs.spec.ts      # HMAC, PDF, redacción RNF-031, RFC 9457
 │       │   └── interface/{guards,limite-tasa}.spec.ts
 │       └── integration/
 │           ├── setup/{global-setup,entorno,app}.ts # Testcontainers o lectoaventura_test
-│           └── iam/{iam-http,repositorios,limite-tasa}.int-spec.ts
+│           └── iam/{iam-http,repositorios,limite-tasa,logs-sin-secretos}.int-spec.ts
 ├── tests/
 │   ├── e2e/
 │   │   ├── playwright.config.ts          # Nivel 3 (escritorio + tablet)
 │   │   ├── playwright.uat.config.ts      # Nivel 4 (playwright-bdd)
 │   │   ├── support/{iam,limpieza}.ts     # Helpers y limpieza de datos e2e
-│   │   ├── specs/{smoke.spec.ts, iam/{flujo-familia,seguridad}.spec.ts}
+│   │   ├── specs/{smoke.spec.ts, iam/{flujo-familia,seguridad,ingreso-aula-e-inactividad}.spec.ts}
 │   │   ├── features/iam/*.feature        # Gherkin en español
 │   │   └── steps/{fixtures,iam.steps}.ts # Step definitions
 │   └── load/scenarios/iam-sesiones.js    # k6
@@ -141,9 +163,9 @@ G.W_PROYECTO/
 
 ## 4.1 Qué se evalúa
 - **Value objects:** `Pin` (formato, triviales 0000–9999/1234/4321, año de nacimiento), `AnioMesNacimiento` (edad 5–13 con borde por mes, rangos R1/R2/R3), `Email` (normalización), `Contrasena` (≥ 10), `Rol` (MFA obligatorio), `CodigoUnUso` (un solo canje, vencimiento al milisegundo).
-- **Invariantes de entidades:** bloqueo de `PerfilEstudiante` tras 5 PIN (15 min, RN-03), anonimización (RF-013), inactividad de `Sesion` (10/30 min, RF-010), MFA en dos pasos de `Cuenta` (RF-011), consentimiento institucional con aula (RN-01).
-- **Casos de uso** con dobles: registro, verificación, recuperación, ingreso adulto/estudiante, renovación con rotación, validación de acceso, MFA, consentimiento, perfiles (límite 6, alias repetido), PIN, exportación, eliminación, dispositivos.
-- **Adaptadores críticos:** JWT (firma, alteración, `alg: none`, vencimiento 15 min), argon2 (parámetros RNF-017), TOTP, lista de contraseñas; **guards** de roles/MFA y límite de tasa.
+- **Invariantes de entidades:** bloqueo de `PerfilEstudiante` tras 5 PIN (15 min, RN-03), anonimización (RF-013), inactividad de `Sesion` (10/30 min, RF-010) y **máximo de 8 h del estudiante** (ADR-005), MFA en dos pasos de `Cuenta` (RF-011), consentimiento institucional con aula (RN-01).
+- **Casos de uso** con dobles: registro, verificación, recuperación, ingreso adulto, **ingreso del estudiante con contexto de aula o de dispositivo**, renovación con rotación y **detección de reutilización**, validación de acceso, MFA, consentimiento, perfiles (límite 6, alias repetido), PIN, **exportación JSON + PDF con enlaces firmados de 72 h**, eliminación, dispositivos (vencen a los 30 días).
+- **Adaptadores críticos:** JWT (firma, alteración, `alg: none`, vencimiento 15 min), argon2 (parámetros RNF-017), TOTP, lista de contraseñas, **firmador HMAC, PDF real con pdf-lib, redacción de secretos (RNF-031) y Problem Details (RFC 9457)**; **guards** de roles/MFA y límite de tasa con varias reglas.
 
 ## 4.2 Aplicativos y librerías
 Vitest 3.2 · `@vitest/coverage-v8` · `unplugin-swc` (decoradores de NestJS con metadatos) · dobles propios en `test/unit/iam/dobles.ts` (sin librería de mocks: los puertos son interfaces pequeñas).
@@ -288,6 +310,16 @@ describe('Sesion — inactividad (RF-010)', () => {
     expect(s.estaViva(masMin(17))).toBe(true);
   });
 
+  it('ADR-005: la sesión del estudiante muere a las 8 h aunque tenga actividad; la del adulto no', () => {
+    const estudiante = abrir('ESTUDIANTE');
+    const adulto = abrir('DOCENTE');
+    estudiante.registrarActividad(masMin(8 * 60 - 1));
+    adulto.registrarActividad(masMin(8 * 60 - 1));
+    expect(estudiante.estaViva(masMin(8 * 60))).toBe(true);
+    expect(estudiante.estaViva(masMin(8 * 60 + 0.01))).toBe(false);
+    expect(adulto.estaViva(masMin(8 * 60 + 0.01))).toBe(true);
+  });
+
   it('una sesión revocada nunca está viva', () => {
     const s = abrir('FAMILIAR');
     s.revocar(T0);
@@ -381,7 +413,7 @@ import {
 /** Nivel 1 — RNF-019: limitación de tasa (login adulto 10/min por IP; PIN 30/min por código de aula). */
 function peticion(regla: ReglaLimiteTasa | undefined, req: { ip?: string; body?: unknown }) {
   const cabeceras: Record<string, string> = {};
-  const reflector = { get: (clave: string) => (clave === LIMITE_TASA ? regla : undefined) } as unknown as Reflector;
+  const reflector = { get: (clave: string) => (clave === LIMITE_TASA && regla ? [regla] : undefined) } as unknown as Reflector;
   const ctx = {
     getHandler: () => () => undefined,
     switchToHttp: () => ({ getRequest: () => req, getResponse: () => ({ setHeader: (k: string, v: string) => (cabeceras[k] = v) }) }),
@@ -447,6 +479,20 @@ describe('LimiteTasaGuard (RNF-019)', () => {
     expect(guard.canActivate(peticion(AULA, { ip: '10.9.9.9', body: { codigoAula: 'XYZ789' } }).ctx)).toBe(true);
   });
 
+  it('con dos reglas (IP y código de aula), la de aula no aplica si el cuerpo no trae código', () => {
+    const IP: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-ip', maximoPorMinuto: 30, por: 'ip' };
+    const reflector = { get: () => [IP, AULA] } as unknown as Reflector;
+    const guard = new LimiteTasaGuard(reflector);
+    const ctx = (ip: string, body: unknown) => peticion(AULA, { ip, body }).ctx;
+
+    // 30 ingresos desde la tablet de casa (sin código de aula) agotan solo la cuota de esa IP.
+    for (let i = 0; i < 30; i++) expect(guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toBe(true);
+    expect(() => guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toThrow(ErrorDeNegocio);
+    // Un intento bloqueado no consume la cuota del aula: otra IP con código sigue pudiendo entrar.
+    expect(() => guard.canActivate(ctx('10.1.1.1', { codigoAula: 'ABC234' }))).toThrow(ErrorDeNegocio);
+    expect(guard.canActivate(ctx('10.2.2.2', { codigoAula: 'ABC234' }))).toBe(true);
+  });
+
   it('LIMITE_TASA_FACTOR multiplica el máximo en entornos de prueba de carga', () => {
     process.env['LIMITE_TASA_FACTOR'] = '3';
     const { reflector, ctx } = peticion(LOGIN, { ip: '10.0.0.1' });
@@ -462,9 +508,12 @@ describe('LimiteTasaGuard (RNF-019)', () => {
 # 5. NIVEL 2: PRUEBAS DE INTEGRACIÓN (INTEGRATION TESTING)
 
 ## 5.1 Qué se evalúa
-- Controller + `ValidationPipe` + guards globales + casos de uso + repositorios Prisma + PostgreSQL real.
-- Lo que queda **guardado**: contraseña y PIN en Argon2id, enlaces solo como huella SHA-256, rotación de la huella del refresh token, `bloqueadoHasta`, eventos del outbox con `publicadoEn`.
-- Cookies (`HttpOnly`, `SameSite=Lax`, `Path=/api/iam/sesiones`; cookie de sesión para estudiantes), RBAC entre módulos (familiar/estudiante → `/api/escuela/aulas` = 403), RN-17 (404 a otra familia), límite de tasa con proxy de confianza.
+- Controllers + `ValidationPipe` + guards globales + casos de uso + repositorios Prisma + PostgreSQL real, con las **rutas del contrato** (`/api/v1/...`), errores **Problem Details** y cabecera **`X-Request-Id`**.
+- Lo que queda **guardado**: contraseña y PIN en Argon2id con los parámetros del RNF-017, enlaces solo como huella SHA-256, rotación de la huella del refresh token y su registro como usada, `bloqueadoHasta`, eventos del outbox con `publicadoEn`.
+- Cookies (`HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`; cookie de sesión para estudiantes), **reutilización de un refresh token → sesión revocada**, RBAC entre módulos (familiar/estudiante → `/api/v1/aulas` = 403), RN-17 (404 a otra familia), límite de tasa con proxy de confianza.
+- **Exportación**: descarga real de JSON y PDF por enlace firmado sin sesión; firma o formato alterados → 403.
+- **Ingreso con código de aula de punta a punta** con Escuela: el docente crea el aula y matricula; el niño ve solo su aula, entra con el PIN de su tarjeta; un ajeno es rechazado; un aula archivada ya no sirve.
+- **RNF-031 verificado**: se captura toda la salida de logs de un recorrido completo y se comprueba que no aparece ninguna contraseña, PIN, token, código, firma ni hash.
 - Adaptadores Prisma: upsert sin duplicar, unicidad de correo, filtros, revocación masiva.
 
 ## 5.2 Aplicativos y librerías
@@ -547,7 +596,90 @@ declare module 'vitest' {
 }
 ```
 
-Prueba de integración del límite de tasa (`apps/api/test/integration/iam/limite-tasa.int-spec.ts`; el recorrido HTTP completo está en `iam-http.int-spec.ts`):
+Prueba automatizada de logs sin secretos, RNF-031 (`apps/api/test/integration/iam/logs-sin-secretos.int-spec.ts`; el recorrido HTTP completo está en `iam-http.int-spec.ts`):
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { AppDePrueba, cookieRefresh, crearApp, vaciarBase } from '../setup/app';
+
+/**
+ * Nivel 2 — RNF-031: "0 ocurrencias de PIN, contraseña, token o texto libre de estudiantes en logs,
+ * verificado por prueba automatizada". Se captura TODO lo que la API escribe en stdout/stderr
+ * durante un recorrido completo de IAM y se buscan los secretos usados.
+ */
+const API = '/api/v1';
+const CONTRASENA = 'Clave-Secreta-Unica-7319';
+const PIN = '4826';
+
+let t: AppDePrueba;
+let salida = '';
+const originales = { out: process.stdout.write.bind(process.stdout), err: process.stderr.write.bind(process.stderr) };
+
+beforeAll(async () => {
+  t = await crearApp({ conLogs: true });
+  await vaciarBase(t.prisma);
+  const capturar = (original: typeof process.stdout.write) =>
+    ((fragmento: string | Uint8Array, ...resto: unknown[]) => {
+      salida += typeof fragmento === 'string' ? fragmento : Buffer.from(fragmento).toString('utf8');
+      return (original as (...a: unknown[]) => boolean)(fragmento, ...resto);
+    }) as typeof process.stdout.write;
+  process.stdout.write = capturar(originales.out);
+  process.stderr.write = capturar(originales.err);
+});
+
+afterAll(async () => {
+  process.stdout.write = originales.out;
+  process.stderr.write = originales.err;
+  await t?.cerrar();
+});
+
+describe('Logs sin secretos (RNF-031)', () => {
+  it('un recorrido completo de IAM no deja contraseñas, PIN, tokens ni códigos en los logs', async () => {
+    const secretos: string[] = [CONTRASENA, PIN];
+    const email = 'secretos@lectoaventura.test';
+
+    await t.http().post(`${API}/auth/registro`).send({ nombre: 'Rosa Prueba', email, contrasena: CONTRASENA, rol: 'FAMILIAR' }).expect(201);
+    const [correo] = (await t.http().get(`${API}/dev/correos`)).body as { enlace: string }[];
+    const codigo = new URL(correo?.enlace as string).searchParams.get('codigo') as string;
+    secretos.push(codigo);
+    await t.http().post(`${API}/auth/verificar-correo`).send({ codigo }).expect(200);
+
+    // Errores a propósito: contraseña equivocada y JSON inválido.
+    await t.http().post(`${API}/auth/login`).send({ email, contrasena: `${CONTRASENA}-mal` }).expect(401);
+    await t.http().post(`${API}/auth/login`).set('Content-Type', 'application/json').send('{"email": roto').expect(400);
+
+    const login = await t.http().post(`${API}/auth/login`).send({ email, contrasena: CONTRASENA }).expect(200);
+    const token = login.body.accessToken as string;
+    const refresh = (cookieRefresh(login) as string).split(';')[0]?.split('=')[1] as string;
+    secretos.push(token, refresh);
+    const auth = { Authorization: `Bearer ${token}` };
+
+    await t.http().post(`${API}/consentimientos`).set(auth).send({ otorganteNombre: 'Rosa Prueba', aceptaPolitica: true }).expect(201);
+    const perfil = await t.http().post(`${API}/estudiantes`).set(auth).send({ alias: 'Mia', anioNacimiento: 2018, mesNacimiento: 2, avatar: 'abeja', pin: PIN }).expect(201);
+    const { tokenDispositivo } = (await t.http().post(`${API}/familia/dispositivos`).set(auth).send({ nombre: 'Tablet' }).expect(201)).body;
+    secretos.push(tokenDispositivo);
+    await t.http().post(`${API}/acceso-estudiante/login`).send({ tokenDispositivo, perfilId: perfil.body.id, pin: '1357' }).expect(401);
+    await t.http().post(`${API}/acceso-estudiante/login`).send({ tokenDispositivo, perfilId: perfil.body.id, pin: PIN }).expect(200);
+
+    const exportacion = (await t.http().post(`${API}/estudiantes/${perfil.body.id}/exportaciones`).set(auth).expect(201)).body;
+    secretos.push(new URL(exportacion.enlaces.pdf, 'http://x').searchParams.get('firma') as string);
+    await t.http().get(exportacion.enlaces.json).expect(200);
+    await t.http().post(`${API}/auth/recuperar`).send({ email }).expect(202);
+
+    const cuenta = await t.prisma.cuenta.findUniqueOrThrow({ where: { email } });
+    const fila = await t.prisma.perfilEstudiante.findUniqueOrThrow({ where: { id: perfil.body.id } });
+    secretos.push(cuenta.hashContrasena, fila.hashPin);
+
+    expect(salida.length).toBeGreaterThan(0);
+    for (const secreto of secretos) {
+      expect(salida.includes(secreto), `Un secreto apareció en los logs: ${secreto.slice(0, 6)}…`).toBe(false);
+    }
+  });
+});
+```
+
+Prueba de integración del límite de tasa (`apps/api/test/integration/iam/limite-tasa.int-spec.ts`):
 
 ```ts
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -557,6 +689,7 @@ import { AppDePrueba, crearApp, vaciarBase } from '../setup/app';
 /**
  * Nivel 2 — RNF-019 integrado: guard global + proxy de confianza (X-Forwarded-For desde loopback).
  */
+const API = '/api/v1';
 let t: AppDePrueba;
 
 beforeAll(async () => {
@@ -571,13 +704,13 @@ afterAll(async () => {
 });
 
 const intento = (ip: string) =>
-  t.http().post('/api/iam/sesiones').set('X-Forwarded-For', ip).send({ email: 'nadie@lectoaventura.test', contrasena: 'cualquier-cosa' });
+  t.http().post(`${API}/auth/login`).set('X-Forwarded-For', ip).send({ email: 'nadie@lectoaventura.test', contrasena: 'cualquier-cosa' });
 
-describe('Límite de tasa del ingreso adulto (RNF-019: 10/min por IP)', () => {
-  it('los 10 primeros intentos fallan por credenciales (401) y el 11.º responde 429 con Retry-After', async () => {
+describe('Límite de tasa (RNF-019)', () => {
+  it('ingreso adulto: los 10 primeros intentos son 401 y el 11.º responde 429 con Retry-After', async () => {
     for (let i = 0; i < 10; i++) await intento('203.0.113.7').expect(401);
     const bloqueado = await intento('203.0.113.7').expect(429);
-    expect(bloqueado.body).toMatchObject({ tipo: 'LIMITE' });
+    expect(bloqueado.body).toMatchObject({ status: 429, type: 'https://lectoaventura.pe/problemas/limite' });
     expect(Number(bloqueado.headers['retry-after'])).toBeGreaterThan(0);
   });
 
@@ -585,10 +718,11 @@ describe('Límite de tasa del ingreso adulto (RNF-019: 10/min por IP)', () => {
     await intento('198.51.100.20').expect(401);
   });
 
-  it('el límite por código de aula aplica al ingreso de estudiantes en el aula', async () => {
-    const ingreso = () => t.http().post('/api/escuela/ingreso').send({ codigoAula: 'ZZZZZZ', perfilId: 'x', pin: '2580' });
-    for (let i = 0; i < 30; i++) await ingreso().expect(404);
-    await ingreso().expect(429);
+  it('ingreso del estudiante: 30 intentos por minuto por código de aula, aunque cambie la IP', async () => {
+    const ingreso = (i: number) =>
+      t.http().post(`${API}/acceso-estudiante/login`).set('X-Forwarded-For', `10.0.0.${i}`).send({ codigoAula: 'ZZZZZZ', perfilId: 'x', pin: '2580' });
+    for (let i = 1; i <= 30; i++) await ingreso(i).expect(404);
+    await ingreso(99).expect(429);
   });
 });
 ```
@@ -598,7 +732,9 @@ describe('Límite de tasa del ingreso adulto (RNF-019: 10/min por IP)', () => {
 # 6. NIVEL 3: PRUEBAS DE SISTEMA (SYSTEM / E2E & PERFORMANCE)
 
 ## 6.1 Qué se evalúa
-- Recorrido real de una familia en la interfaz: registro → correo → verificación → ingreso → consentimiento → perfil → vínculo del dispositivo → ingreso del niño con avatar y PIN.
+- Recorrido real de una familia en la interfaz (el "E2E Familia" del SRS): registro → correo → verificación → ingreso → consentimiento → perfil → **exportar datos y descargar el PDF** → vínculo del dispositivo → ingreso del niño con avatar y PIN.
+- **Ingreso con código de aula** usando la tarjeta que genera el docente (código erróneo → mensaje claro).
+- **Cierre por inactividad** a los 10 minutos con el reloj simulado de Playwright (`page.clock`), sin esperar minutos reales.
 - Seguridad desde la UI: credenciales incorrectas, rutas protegidas, contexto obligatorio (RN-04), intentos de PIN restantes, separación de roles, sesión que sobrevive a recargar y cierre real.
 - Ambos dispositivos del SRS: escritorio 1280×800 y **tablet táctil 820×1180** (RNF-022), sin desplazamiento horizontal.
 - Carga: RNF-008 y RNF-001.
@@ -629,12 +765,12 @@ winget install k6 --source winget
 npm run test:load
 ```
 
-**Resultado de carga obtenido el 15/10/2026** (sondeo equivalente de 60 s con la misma tasa de llegada, mientras k6 no estaba instalado; el script k6 se ejecuta en CI):
+**Resultado de carga obtenido el 16/10/2026** (sondeo equivalente de 60 s con la misma tasa de llegada, mientras k6 no estaba instalado; el script k6 se ejecuta en CI). La medición se hizo en el portátil de desarrollo con la API en modo `watch` y otros procesos abiertos:
 
 | Escenario | Peticiones | Errores | p50 | p95 | p99 | Meta SRS | Estado |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
-| `POST /iam/sesiones` a 300/min (RNF-008) | 297 | 0,00 % | 90 ms | 108 ms | 114 ms | error < 0,5 % | ✅ |
-| `GET /iam/yo` con 10 usuarios (RNF-001) | 36 938 | 0,00 % | 16 ms | 23 ms | 26 ms | p95 < 300 ms, p99 < 800 ms | ✅ |
+| `POST /api/v1/auth/login` a 300/min (RNF-008) | 296 | 0,00 % | 127 ms | 277 ms | 440 ms | error < 0,5 % | ✅ |
+| `GET /api/v1/auth/yo` con 10 usuarios (RNF-001) | 19 571 | 0,00 % | 25 ms | 62 ms | 91 ms | p95 < 300 ms, p99 < 800 ms | ✅ |
 
 ## 6.4 Código completo del test de sistema + script de carga
 `tests/e2e/specs/iam/seguridad.spec.ts`:
@@ -642,7 +778,15 @@ npm run test:load
 ```ts
 import { expect, test } from '@playwright/test';
 
-import { cuentaVerificada, escribirPin, ingresarComoAdulto, ipSimulada, prepararFamilia } from '../../support/iam';
+import {
+  cuentaVerificada,
+  escribirPin,
+  esperarAreaEstudiante,
+  ingresarComoAdulto,
+  ipSimulada,
+  prepararFamilia,
+  URL_AREA_ESTUDIANTE,
+} from '../../support/iam';
 
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
@@ -660,6 +804,7 @@ test.describe('IAM — seguridad de acceso', () => {
     await expect(page).toHaveURL(/\/ingresar\?volver=%2Ffamilia/);
     await page.goto('/estudiante');
     await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
+    await expect(page.getByRole('heading', { name: /Entra a tu aula/ })).toBeVisible();
   });
 
   test('sin dispositivo vinculado no se muestran avatares, solo el código de aula (RN-04)', async ({ page }) => {
@@ -681,9 +826,9 @@ test.describe('IAM — seguridad de acceso', () => {
     await expect(page.getByRole('alert').filter({ hasText: /Te quedan 4 intentos/ })).toBeVisible();
 
     await escribirPin(page, '3691');
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await esperarAreaEstudiante(page, 'Lucía');
     await page.goto('/familia');
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
   });
 
   test('la sesión sobrevive a recargar y "Salir" la cierra de verdad (RF-003, RF-010)', async ({ page, request }) => {
@@ -712,6 +857,7 @@ import {
   correoUnico,
   enlaceDelCorreo,
   escribirPin,
+  esperarAreaEstudiante,
   ingresarComoAdulto,
   ipSimulada,
   prepararFamilia,
@@ -749,6 +895,12 @@ test('una familia se registra, crea el perfil de su hijo y el niño entra con av
   await prepararFamilia(page, { alias: 'Mateo', avatar: 'León', pin: '2580' });
   await expect(page.getByText('8–9 años')).toBeVisible();
 
+  // RF-012 (E2E Familia del SRS): exportar los datos del hijo en PDF y JSON.
+  await page.getByRole('button', { name: 'Descargar datos' }).click();
+  await expect(page.getByText(/Datos listos en PDF y JSON/)).toBeVisible();
+  const [descarga] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Descargar PDF' }).click()]);
+  expect(descarga.suggestedFilename()).toMatch(/^lectoaventura-datos-\d{4}-\d{2}-\d{2}\.pdf$/);
+
   // RF-007: el niño entra con su avatar y su PIN.
   await page.getByRole('button', { name: 'Salir' }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -756,8 +908,67 @@ test('una familia se registra, crea el perfil de su hijo y el niño entra con av
   await page.getByRole('button', { name: 'Mateo' }).click();
   await expect(page.getByRole('heading', { name: '¡Hola, Mateo!' })).toBeVisible();
   await escribirPin(page, '2580');
-  await expect(page).toHaveURL(/\/estudiante$/);
-  await expect(page.getByRole('heading', { name: '¡Hola, Mateo!' })).toBeVisible();
+  await esperarAreaEstudiante(page, 'Mateo');
+});
+```
+
+`tests/e2e/specs/iam/ingreso-aula-e-inactividad.spec.ts`:
+
+```ts
+import { expect, test } from '@playwright/test';
+
+import {
+  aulaConEstudiante,
+  cuentaVerificada,
+  escribirPin,
+  esperarAreaEstudiante,
+  ingresarComoAdulto,
+  ipSimulada,
+  prepararFamilia,
+  URL_AREA_ESTUDIANTE,
+} from '../../support/iam';
+
+test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
+
+/** Nivel 3 — Ingreso con código de aula (RF-007, RN-04) y cierre por inactividad (RF-010, R-02). */
+test.describe('IAM — aula e inactividad', () => {
+  test('el estudiante entra con el código de su aula, su avatar y el PIN de su tarjeta', async ({ page, request }) => {
+    const tarjeta = await aulaConEstudiante(request, { alias: 'Sofía', avatar: 'buho' });
+
+    await page.goto('/ingresar/estudiante');
+    await page.getByLabel('Código de tu aula').fill('ZZZZZZ');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: /No encontramos un aula con ese código/ })).toBeVisible();
+
+    await page.getByLabel('Código de tu aula').fill(tarjeta.codigoAula.toLowerCase());
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Aula: 3.° B' })).toBeVisible();
+    await page.getByRole('button', { name: 'Sofía' }).click();
+    await escribirPin(page, tarjeta.pin);
+    await esperarAreaEstudiante(page, 'Sofía');
+  });
+
+  test('si nadie toca la tablet por 10 minutos, la sesión del niño se cierra sola', async ({ page, request }) => {
+    await page.clock.install();
+    const { email, contrasena } = await cuentaVerificada(request);
+    await ingresarComoAdulto(page, email, contrasena);
+    await prepararFamilia(page, { alias: 'Nico', avatar: 'Koala', pin: '3691' });
+    await page.getByRole('button', { name: 'Salir' }).click();
+    await expect(page).toHaveURL(/\/$/);
+
+    await page.goto('/ingresar/estudiante');
+    await page.getByRole('button', { name: 'Nico' }).click();
+    await escribirPin(page, '3691');
+    await esperarAreaEstudiante(page, 'Nico');
+
+    // 9 minutos sin actividad: sigue dentro.
+    await page.clock.fastForward('09:00');
+    await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
+    // Al pasar los 10 minutos vuelve al ingreso y se le explica por qué.
+    await page.clock.fastForward('01:10');
+    await expect(page).toHaveURL(/\/ingresar\/estudiante\?motivo=inactividad$/);
+    await expect(page.getByText(/no hubo actividad por un rato/)).toBeVisible();
+  });
 });
 ```
 
@@ -770,15 +981,15 @@ import { check, fail } from 'k6';
 /**
  * Nivel 3 — Rendimiento de IAM (k6).
  *   RNF-008: pico de ingreso al inicio de la jornada escolar → 300 inicios de sesión/min con error < 0,5 %.
- *   RNF-001: endpoints de lectura (GET /iam/yo) con p95 < 300 ms y p99 < 800 ms.
+ *   RNF-001: endpoints de lectura (GET /auth/yo) con p95 < 300 ms y p99 < 800 ms.
  * Cada iteración simula un dispositivo distinto (X-Forwarded-For) para no mezclarse con el
  * límite de 10 ingresos/min por IP (RNF-019), como ocurriría con las tablets de un colegio.
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa, sin SMTP).
  * Ejecutar:   k6 run tests/load/scenarios/iam-sesiones.js
- *             k6 run -e API_URL=http://localhost:3001/api tests/load/scenarios/iam-sesiones.js
+ *             k6 run -e API_URL=http://localhost:3001/api/v1 tests/load/scenarios/iam-sesiones.js
  */
-const BASE = __ENV.API_URL || 'http://localhost:3001/api';
+const BASE = __ENV.API_URL || 'http://localhost:3001/api/v1';
 const CONTRASENA = 'Carga-Lectora-2026-k6';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -818,22 +1029,22 @@ function ipDispositivo() {
 export function setup() {
   const email = `carga.${Date.now()}@e2e.lectoaventura.test`;
   const cabeceras = { headers: { ...JSON_HEADERS, 'X-Forwarded-For': ipDispositivo() } };
-  const registro = http.post(`${BASE}/iam/cuentas`, JSON.stringify({ nombre: 'Docente Carga', email, contrasena: CONTRASENA, rol: 'DOCENTE' }), cabeceras);
+  const registro = http.post(`${BASE}/auth/registro`, JSON.stringify({ nombre: 'Docente Carga', email, contrasena: CONTRASENA, rol: 'DOCENTE' }), cabeceras);
   if (registro.status !== 201) fail(`No se pudo registrar la cuenta de carga: ${registro.status} ${registro.body}`);
 
-  const correo = http.get(`${BASE}/iam/dev/correos`).json().find((c) => c.para === email);
+  const correo = http.get(`${BASE}/dev/correos`).json().find((c) => c.para === email);
   const codigo = correo.enlace.split('codigo=')[1];
-  const verificacion = http.post(`${BASE}/iam/correo/verificar`, JSON.stringify({ codigo }), cabeceras);
+  const verificacion = http.post(`${BASE}/auth/verificar-correo`, JSON.stringify({ codigo }), cabeceras);
   if (verificacion.status !== 200) fail('No se pudo verificar la cuenta de carga');
 
-  const sesion = http.post(`${BASE}/iam/sesiones`, JSON.stringify({ email, contrasena: CONTRASENA }), cabeceras).json();
+  const sesion = http.post(`${BASE}/auth/login`, JSON.stringify({ email, contrasena: CONTRASENA }), cabeceras).json();
   return { email, accessToken: sesion.accessToken };
 }
 
 export function ingresar(datos) {
-  const res = http.post(`${BASE}/iam/sesiones`, JSON.stringify({ email: datos.email, contrasena: CONTRASENA }), {
+  const res = http.post(`${BASE}/auth/login`, JSON.stringify({ email: datos.email, contrasena: CONTRASENA }), {
     headers: { ...JSON_HEADERS, 'X-Forwarded-For': ipDispositivo() },
-    tags: { nombre: 'POST /iam/sesiones' },
+    tags: { nombre: 'POST /auth/login' },
   });
   check(res, {
     'ingreso 200': (r) => r.status === 200,
@@ -843,9 +1054,9 @@ export function ingresar(datos) {
 }
 
 export function consultarPerfil(datos) {
-  const res = http.get(`${BASE}/iam/yo`, {
+  const res = http.get(`${BASE}/auth/yo`, {
     headers: { Authorization: `Bearer ${datos.accessToken}` },
-    tags: { nombre: 'GET /iam/yo' },
+    tags: { nombre: 'GET /auth/yo' },
   });
   check(res, { 'perfil 200': (r) => r.status === 200 });
 }
@@ -856,7 +1067,7 @@ export function consultarPerfil(datos) {
 # 7. NIVEL 4: PRUEBAS DE ACEPTACIÓN (UAT / BDD)
 
 ## 7.1 Escenarios de negocio en Gherkin
-10 escenarios en 3 características (`tests/e2e/features/iam/`). Ejemplo completo:
+11 escenarios en 3 características (`tests/e2e/features/iam/`). Los etiquetados `@UAT-05` corresponden al caso de aceptación UAT-05 del propio SRS (consentimiento parental obligatorio).
 
 ```gherkin
 # language: es
@@ -895,6 +1106,14 @@ Característica: Ingreso del estudiante con avatar y PIN
     Y escribo el PIN "3691"
     Y intento abrir el panel familiar
     Entonces vuelvo a mi área de lectura con el saludo "¡Hola, Lucía!"
+
+  @RF-010 @R-02 @reloj
+  Escenario: Si dejo la tablet sin usar 10 minutos, se cierra mi sesión
+    Cuando toco mi avatar "Lucía"
+    Y escribo el PIN "3691"
+    Y llego a mi área de lectura con el saludo "¡Hola, Lucía!"
+    Y nadie toca la tablet durante 10 minutos
+    Entonces vuelvo a la pantalla de ingreso con el aviso "no hubo actividad por un rato"
 ```
 
 ```gherkin
@@ -910,12 +1129,12 @@ Característica: Perfil del niño protegido por el consentimiento del adulto
   Antecedentes:
     Dado que ingresé con mi cuenta familiar verificada
 
-  @RF-005 @RN-01
+  @RF-005 @RN-01 @UAT-05
   Escenario: Sin consentimiento no se puede crear ningún perfil
     Entonces se me pide dar mi consentimiento antes de agregar perfiles
     Y no puedo agregar perfiles todavía
 
-  @RF-006 @RN-02 @camino-feliz
+  @RF-006 @RN-02 @UAT-05 @camino-feliz
   Escenario: Con consentimiento creo el perfil pidiendo solo datos mínimos
     Cuando doy mi consentimiento como adulto responsable
     Y abro el formulario para agregar un perfil
@@ -976,6 +1195,7 @@ import {
   escribirPin,
   ingresarComoAdulto,
   prepararFamilia,
+  URL_AREA_ESTUDIANTE,
 } from '../support/iam';
 import { Cuando, Dado, Entonces } from './fixtures';
 
@@ -1127,17 +1347,27 @@ Cuando('escribo {int} veces el PIN equivocado {string}', async ({ page }, veces:
 });
 
 Cuando('intento abrir el panel familiar', async ({ page }) => {
-  await expect(page).toHaveURL(/\/estudiante$/);
+  await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
   await page.goto('/familia');
 });
 
 Entonces(
   /^(?:llego a|vuelvo a) mi área de lectura con el saludo "(.+)"$/,
   async ({ page }, saludo: string) => {
-    await expect(page).toHaveURL(/\/estudiante$/);
+    await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
+    await expect(page.getByText(/Tu mapa de aventuras/)).toBeVisible();
     await expect(page.getByRole('heading', { name: saludo })).toBeVisible();
   },
 );
+
+Cuando('nadie toca la tablet durante {int} minutos', async ({ page }, minutos: number) => {
+  await page.clock.fastForward(`${String(minutos).padStart(2, '0')}:10`);
+});
+
+Entonces('vuelvo a la pantalla de ingreso con el aviso {string}', async ({ page }, aviso: string) => {
+  await expect(page).toHaveURL(/\/ingresar\/estudiante\?motivo=inactividad$/);
+  await expect(page.getByText(aviso)).toBeVisible();
+});
 ```
 
 **Checklist manual para el Product Owner / docente evaluador:**
@@ -1149,7 +1379,10 @@ Entonces(
 | ☐ | Revisar el formulario de perfil | Solo pide alias, mes/año, avatar y PIN (sin apellidos, documento, foto ni correo) |
 | ☐ | Vincular la tablet y entrar como el niño en `/ingresar/estudiante` | Se ven solo los avatares de la familia; con el PIN correcto entra |
 | ☐ | Escribir 5 PIN equivocados | El perfil se bloquea y el adulto puede restablecer el PIN |
-| ☐ | Descargar los datos del perfil | Se baja un JSON con datos personales, consentimiento y aulas |
+| ☐ | "Descargar datos" del perfil | Aparecen los enlaces PDF y JSON con su fecha de vencimiento (72 h); el PDF se abre y es legible |
+| ☐ | Dejar al niño 10 minutos sin tocar la tablet | La sesión se cierra sola y el ingreso explica por qué |
+| ☐ | Como docente, crear un aula y matricular a un estudiante; entrar con el código de la tarjeta | El niño ve solo su aula y entra con el PIN de la tarjeta |
+| ☐ | Configurar la verificación en dos pasos desde `/familia` o `/docente` | La app autenticadora pide el código en el siguiente ingreso |
 | ☐ | Eliminar el perfil | Desaparece de la lista y del ingreso de la tablet |
 
 ## 7.3 Ejecutar y aprobar el UAT
@@ -1332,7 +1565,7 @@ jobs:
         uses: grafana/setup-k6-action@v1
       - run: |
           npm run start --workspace @lectoaventura/api &
-          npx wait-on -t 120000 http-get://localhost:3001/api/iam/dev/correos
+          npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
           k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
       - uses: actions/upload-artifact@v4
         if: always()
@@ -1367,35 +1600,47 @@ jobs:
 | IAM-U-16 | `JwtTokenService` | Unit | Negativo | Rechaza firma ajena, cuerpo alterado y `alg: none` | `npm run test:unit` |
 | IAM-U-17 | `Argon2HashService` (RNF-017) | Unit | Positivo | `m=19456, t=2, p=1`, sal distinta por hash | `npm run test:unit` |
 | IAM-U-18 | `RolesGuard` (RF-009/011) | Unit | Negativo | Otro rol 403; backoffice sin MFA 403 | `npm run test:unit` |
-| IAM-U-19 | `LimiteTasaGuard` (RNF-019) | Unit | Borde | Intento 11 → `LIMITE` + `Retry-After` | `npm run test:unit` |
-| IAM-I-01 | `POST /api/iam/cuentas` + BD | Int | Positivo | Argon2id guardado; enlace solo como huella SHA-256 | `npm run test:int` |
+| IAM-U-19 | `LimiteTasaGuard` (RNF-019) | Unit | Borde | Intento 11 → `LIMITE` + `Retry-After`; reglas por IP y por aula | `npm run test:unit` |
+| IAM-U-20 | `RenovarSesionUseCase` (ADR-005) | Unit | Negativo | Reutilizar un refresh rotado revoca la sesión y publica el evento | `npm run test:unit` |
+| IAM-U-21 | `Sesion.estaViva` (ADR-005) | Unit | Borde | Estudiante muere a las 8 h aunque haya actividad; adulto no | `npm run test:unit` |
+| IAM-U-22 | `ContextoIngresoUseCase` (RN-04) | Unit | Negativo | Código inexistente o aula archivada → sin avatares | `npm run test:unit` |
+| IAM-U-23 | `Solicitar/DescargarExportacion` (RF-012) | Unit | Borde | Vence a las 72 h exactas; firma/formato/fecha alterados → rechazo | `npm run test:unit` |
+| IAM-U-24 | `redactar` (RNF-031) | Unit | Negativo | Enmascara contraseñas, PIN, códigos, cookies, JWT, hashes y huellas | `npm run test:unit` |
+| IAM-U-25 | `FiltroErrores` (SRS §7) | Unit | Positivo | Problem Details RFC 9457; 500 sin filtrar el error interno | `npm run test:unit` |
+| IAM-U-26 | `PdfLibGenerador` (RF-012) | Unit | Positivo | PDF A4 válido, varias páginas, sin romper con caracteres no WinAnsi | `npm run test:unit` |
+| IAM-I-01 | `POST /api/v1/auth/registro` + BD | Int | Positivo | Argon2id (m=19456, t=2, p=1) guardado; enlace solo como huella SHA-256 | `npm run test:int` |
 | IAM-I-02 | `ValidationPipe` | Int | Negativo | 400 en español; rechaza campos extra (`estado`) | `npm run test:int` |
-| IAM-I-03 | Cookie de refresh | Int | Positivo | `HttpOnly`, `SameSite=Lax`, ruta acotada | `npm run test:int` |
-| IAM-I-04 | `POST /api/iam/sesiones/renovar` | Int | Negativo | Reutilizar refresh → 401 y borra la cookie | `npm run test:int` |
-| IAM-I-05 | `POST /api/iam/sesiones/cerrar` (RF-010) | Int | Positivo | Siguiente petición → 401 | `npm run test:int` |
+| IAM-I-03 | Cookie de refresh | Int | Positivo | `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth` | `npm run test:int` |
+| IAM-I-04 | `POST /api/v1/auth/refresh` (ADR-005) | Int | Negativo | Reutilizar refresh → 401, cookie borrada y sesión entera revocada | `npm run test:int` |
+| IAM-I-05 | `POST /api/v1/auth/logout` (RF-010) | Int | Positivo | Siguiente petición → 401 | `npm run test:int` |
 | IAM-I-06 | Bloqueo por PIN en BD + outbox | Int | Borde | 423 con hora; `iam.EstudianteBloqueado` publicado | `npm run test:int` |
-| IAM-I-07 | RBAC entre módulos (RF-009) | Int | Negativo | Estudiante/familiar en `/api/escuela/aulas` → 403 | `npm run test:int` |
-| IAM-I-08 | Exportación (RF-012) | Int | Positivo | JSON descargable sin hashes, incluye aulas | `npm run test:int` |
+| IAM-I-07 | RBAC entre módulos (RF-009) | Int | Negativo | Estudiante/familiar en `/api/v1/aulas` → 403 | `npm run test:int` |
+| IAM-I-08 | Exportación (RF-012) | Int | Positivo | JSON y PDF por enlace firmado; alterado → 403 | `npm run test:int` |
 | IAM-I-09 | RN-17 | Int | Negativo | Otra familia → 404 | `npm run test:int` |
-| IAM-I-10 | Eliminación (RF-013) | Int | Positivo | Alias "Perfil eliminado", PIN vacío, sesiones revocadas | `npm run test:int` |
-| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; otra IP no afectada | `npm run test:int` |
-| IAM-S-01 | Recorrido familia completo | Sys | Positivo | Del registro al niño leyendo, en escritorio y tablet | `npm run test:e2e` |
+| IAM-I-10 | Eliminación (RF-013) | Int | Positivo | Alias "Perfil eliminado", PIN vacío, sesiones revocadas, fuera del dispositivo | `npm run test:int` |
+| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; 31.º por código de aula → 429 | `npm run test:int` |
+| IAM-I-12 | Contrato del API (SRS §7) | Int | Positivo | `/api/v1`, `X-Request-Id`, Problem Details | `npm run test:int` |
+| IAM-I-13 | Ingreso con código de aula + Escuela (RF-007, RF-015, RF-020) | Int | Pos./Neg. | Entra el matriculado; ajeno 403; aula archivada 404 | `npm run test:int` |
+| IAM-I-14 | Logs sin secretos (RNF-031) | Int | Negativo | 0 apariciones de contraseña, PIN, tokens, códigos, firmas o hashes | `npm run test:int` |
+| IAM-S-01 | Recorrido familia completo + exportar PDF | Sys | Positivo | Del registro al niño leyendo, con descarga del PDF, en escritorio y tablet | `npm run test:e2e` |
+| IAM-S-08 | Ingreso con código de aula | Sys | Pos./Neg. | Código erróneo avisa; con la tarjeta, el niño entra a su área | `npm run test:e2e` |
+| IAM-S-09 | Cierre por inactividad (RF-010) | Sys | Borde | Con 9 min sigue dentro; pasados 10 min vuelve al ingreso con aviso | `npm run test:e2e` |
 | IAM-S-02 | Ingreso con credenciales erradas | Sys | Negativo | Mensaje claro, sigue en `/ingresar` | `npm run test:e2e` |
 | IAM-S-03 | Rutas protegidas sin sesión | Sys | Negativo | Redirige al ingreso correcto según el rol | `npm run test:e2e` |
 | IAM-S-04 | PIN errado y separación de roles | Sys | Negativo | "Te quedan 4 intentos"; niño no abre `/familia` | `npm run test:e2e` |
 | IAM-S-05 | Recarga y "Salir" | Sys | Positivo | Sesión persiste; "Salir" lleva a la portada y cierra | `npm run test:e2e` |
 | IAM-S-06 | Diseño sin desbordes (RNF-022) | Sys | Borde | Sin scroll horizontal en 820 px | `npm run test:e2e` |
-| IAM-S-07 | Carga RNF-008 / RNF-001 | Sys | Rendimiento | 0 % errores; p95 108 ms y 23 ms | `npm run test:load` |
-| IAM-A-01..10 | 10 escenarios Gherkin | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
+| IAM-S-07 | Carga RNF-008 / RNF-001 | Sys | Rendimiento | 0 % errores; p95 277 ms y 62 ms | `npm run test:load` |
+| IAM-A-01..11 | 11 escenarios Gherkin (incluye UAT-05 del SRS y la inactividad) | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
 
 ---
 
 # EVALUACIÓN FINAL DEL MÓDULO AUDITADO
 - **Testabilidad del código actual** ............ 9/10 — puertos e inyección por constructor en todos los casos de uso; la configuración se lee de `process.env` en el composition root.
-- **Cobertura unitaria alcanzable** ............. 9/10 — 92,2 % de líneas alcanzado sin pruebas frágiles.
-- **Aislamiento de dependencias** ............... 9/10 — dominio sin NestJS ni Prisma; lint de arquitectura activo.
+- **Cobertura unitaria alcanzable** ............. 9/10 — 93,1 % de líneas alcanzado sin pruebas frágiles.
+- **Aislamiento de dependencias** ............... 9/10 — dominio sin NestJS ni Prisma; IAM ya no depende de Escuela (contexto de aula por puerto); lint de arquitectura activo.
 - **Preparación para CI/CD** .................... 8/10 — pipeline listo; falta su primera ejecución en GitHub y k6 en local.
-- **Resiliencia ante fallos (edge cases)** ...... 8/10 — límites, bloqueos y vencimientos cubiertos; pendiente outbox transaccional y límite de tasa distribuido.
+- **Resiliencia ante fallos (edge cases)** ...... 9/10 — límites, bloqueos, vencimientos, reutilización de tokens e inactividad cubiertos; pendiente outbox transaccional y límite de tasa distribuido.
 
 # ESTADO DE CALIDAD (QUALITY READINESS)
 - **Unit Test Ready**        → ✅ Listo

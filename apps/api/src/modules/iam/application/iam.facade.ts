@@ -1,9 +1,8 @@
 import { NoEncontradoError, RangoEdad } from '../../shared-kernel/public-api';
 import { MedioConsentimiento } from '../domain/entities/consentimiento';
-import { PerfilEstudianteVista, Reloj, SesionEmitida } from './dto/iam.dto';
+import { PerfilEstudianteVista, Reloj } from './dto/iam.dto';
 import { CuentaRepository } from './ports/cuenta.repository';
 import { PerfilEstudianteRepository } from './ports/perfil-estudiante.repository';
-import { AutenticarEstudianteUseCase } from './use-cases/autenticar-estudiante.use-case';
 import { CrearPerfilEstudianteUseCase } from './use-cases/crear-perfil-estudiante.use-case';
 import { RegistrarConsentimientoUseCase } from './use-cases/registrar-consentimiento.use-case';
 import { RestablecerPinUseCase } from './use-cases/restablecer-pin.use-case';
@@ -36,7 +35,6 @@ export class IamFacade {
     private readonly perfiles: PerfilEstudianteRepository,
     private readonly registrarConsentimiento: RegistrarConsentimientoUseCase,
     private readonly crearPerfil: CrearPerfilEstudianteUseCase,
-    private readonly autenticarEstudiante: AutenticarEstudianteUseCase,
     private readonly restablecerPinUseCase: RestablecerPinUseCase,
     private readonly ahora: Reloj,
   ) {}
@@ -75,15 +73,6 @@ export class IamFacade {
       mesNacimiento: params.mesNacimiento,
       avatar: params.avatar,
       pin: params.pin,
-    });
-  }
-
-  /** RF-007: ingreso con contexto de aula (Escuela ya validó código y matrícula). */
-  autenticarEstudianteEnAula(params: { perfilId: string; pin: string; aulaId: string }): Promise<SesionEmitida> {
-    return this.autenticarEstudiante.ejecutar({
-      perfilId: params.perfilId,
-      pin: params.pin,
-      contexto: { tipo: 'AULA_VALIDADA', aulaId: params.aulaId },
     });
   }
 

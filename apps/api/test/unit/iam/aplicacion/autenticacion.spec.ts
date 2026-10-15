@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AutenticarAdultoUseCase } from '../../../../src/modules/iam/application/use-cases/autenticar-adulto.use-case';
-import { AutenticarEstudianteUseCase } from '../../../../src/modules/iam/application/use-cases/autenticar-estudiante.use-case';
+import { AutenticarEstudianteUseCase, ContextoIngreso } from '../../../../src/modules/iam/application/use-cases/autenticar-estudiante.use-case';
 import { CerrarSesionUseCase } from '../../../../src/modules/iam/application/use-cases/cerrar-sesion.use-case';
 import { ConfigurarMfaUseCase } from '../../../../src/modules/iam/application/use-cases/configurar-mfa.use-case';
+import { ContextoIngresoUseCase } from '../../../../src/modules/iam/application/use-cases/contexto-ingreso.use-case';
 import { IniciarMfaUseCase } from '../../../../src/modules/iam/application/use-cases/iniciar-mfa.use-case';
 import { RenovarSesionUseCase } from '../../../../src/modules/iam/application/use-cases/renovar-sesion.use-case';
 import { ValidarAccesoUseCase } from '../../../../src/modules/iam/application/use-cases/validar-acceso.use-case';
 import { DispositivoFamiliar } from '../../../../src/modules/iam/domain/entities/dispositivo-familiar';
 import { CredencialesInvalidasError } from '../../../../src/modules/iam/domain/errors/credenciales-invalidas-error';
 import {
+  CodigoAulaInvalidoError,
   CodigoMfaInvalidoError,
   CodigoMfaRequeridoError,
   CuentaNoVerificadaError,
@@ -19,6 +21,7 @@ import {
 import { PerfilBloqueadoError } from '../../../../src/modules/iam/domain/errors/perfil-bloqueado-error';
 import { PinIncorrectoError } from '../../../../src/modules/iam/domain/errors/pin-incorrecto-error';
 import { EVENTOS_IAM } from '../../../../src/modules/iam/domain/events/eventos-iam';
+import { ProhibidoError } from '../../../../src/modules/shared-kernel/public-api';
 import { crearEntorno, cuentaActiva, Entorno, perfilEstudiante } from '../dobles';
 
 const CONTRASENA = 'Lectura-Segura-2026';
@@ -46,12 +49,8 @@ describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
 
   it('el mismo error para correo inexistente o contraseña incorrecta (no revela cuentas)', async () => {
     await cuentaActiva(e, { email: 'ana@lectoaventura.test' });
-    await expect(caso.ejecutar({ email: 'nadie@lectoaventura.test', contrasena: CONTRASENA })).rejects.toThrow(
-      CredencialesInvalidasError,
-    );
-    await expect(caso.ejecutar({ email: 'ana@lectoaventura.test', contrasena: 'otra-clave-123' })).rejects.toThrow(
-      CredencialesInvalidasError,
-    );
+    await expect(caso.ejecutar({ email: 'nadie@lectoaventura.test', contrasena: CONTRASENA })).rejects.toThrow(CredencialesInvalidasError);
+    await expect(caso.ejecutar({ email: 'ana@lectoaventura.test', contrasena: 'otra-clave-123' })).rejects.toThrow(CredencialesInvalidasError);
   });
 
   it('rechaza cuentas sin verificar y suspendidas', async () => {
@@ -69,9 +68,9 @@ describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
     cuenta.confirmarMfa();
 
     await expect(caso.ejecutar({ email: 'mfa@lectoaventura.test', contrasena: CONTRASENA })).rejects.toThrow(CodigoMfaRequeridoError);
-    await expect(
-      caso.ejecutar({ email: 'mfa@lectoaventura.test', contrasena: CONTRASENA, codigoMfa: '000000' }),
-    ).rejects.toThrow(CodigoMfaInvalidoError);
+    await expect(caso.ejecutar({ email: 'mfa@lectoaventura.test', contrasena: CONTRASENA, codigoMfa: '000000' })).rejects.toThrow(
+      CodigoMfaInvalidoError,
+    );
 
     const r = await caso.ejecutar({ email: 'mfa@lectoaventura.test', contrasena: CONTRASENA, codigoMfa: '123456' });
     expect(e.tokens.verificarAccessToken(r.accessToken)?.mfa).toBe(true);
@@ -87,13 +86,15 @@ describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
   });
 });
 
-describe('AutenticarEstudiante (RF-007, RF-008, RN-03, RN-04)', () => {
+describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-04)', () => {
   let e: Entorno;
   let caso: AutenticarEstudianteUseCase;
+  let contexto: ContextoIngresoUseCase;
 
   beforeEach(() => {
     e = crearEntorno();
-    caso = new AutenticarEstudianteUseCase(e.perfiles, e.dispositivos, e.hash, e.tokens, e.emisor, e.bus, e.reloj.ahora);
+    caso = new AutenticarEstudianteUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.hash, e.tokens, e.emisor, e.bus, e.reloj.ahora);
+    contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
   });
 
   async function dispositivoDe(cuentaId: string, token = 'token-tablet') {
@@ -103,11 +104,12 @@ describe('AutenticarEstudiante (RF-007, RF-008, RN-03, RN-04)', () => {
     return token;
   }
 
-  it('happy path: dispositivo vinculado + PIN correcto → rol ESTUDIANTE', async () => {
+  it('dispositivo vinculado + PIN correcto → rol ESTUDIANTE', async () => {
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
     const token = await dispositivoDe(familia.id);
 
+    expect(await contexto.deDispositivo(token)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'zorro' }]);
     const r = await caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'DISPOSITIVO', tokenDispositivo: token } });
     expect(r.rol).toBe('ESTUDIANTE');
     expect(r.rutaInicial).toBe('/estudiante');
@@ -124,10 +126,38 @@ describe('AutenticarEstudiante (RF-007, RF-008, RN-03, RN-04)', () => {
     ).rejects.toThrow(/no está vinculado a tu familia/);
   });
 
+  it('código de aula: muestra solo a los matriculados y valida la matrícula al entrar', async () => {
+    const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+    const ana = await perfilEstudiante(e, docente.id, { alias: 'Ana' });
+    const beto = await perfilEstudiante(e, docente.id, { alias: 'Beto', avatar: 'panda' });
+    e.contextoAula.agregarAula('ABC234', 'aula-1', [ana.id]);
+
+    expect((await contexto.deAula('abc234')).estudiantes.map((x) => x.alias)).toEqual(['Ana']);
+    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ABC234' } })).resolves.toMatchObject({
+      rol: 'ESTUDIANTE',
+    });
+    await expect(caso.ejecutar({ perfilId: beto.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ABC234' } })).rejects.toThrow(
+      ProhibidoError,
+    );
+  });
+
+  it('un código inexistente o de un aula archivada no muestra avatares ni deja entrar', async () => {
+    const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+    const ana = await perfilEstudiante(e, docente.id, { alias: 'Ana' });
+    e.contextoAula.agregarAula('ARC999', 'aula-vieja', [ana.id], false);
+
+    await expect(contexto.deAula('ZZZZZZ')).rejects.toThrow(CodigoAulaInvalidoError);
+    await expect(contexto.deAula('ARC999')).rejects.toThrow(CodigoAulaInvalidoError);
+    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ARC999' } })).rejects.toThrow(
+      CodigoAulaInvalidoError,
+    );
+  });
+
   it('informa intentos restantes y bloquea al quinto error, publicando el evento', async () => {
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
-    const ctx = { tipo: 'AULA_VALIDADA' as const, aulaId: 'a1' };
+    e.contextoAula.agregarAula('ABC234', 'a1', [perfil.id]);
+    const ctx: ContextoIngreso = { tipo: 'AULA', codigoAula: 'ABC234' };
 
     for (let restantes = 4; restantes >= 1; restantes--) {
       const error = await caso.ejecutar({ perfilId: perfil.id, pin: '9090', contexto: ctx }).catch((err) => err);
@@ -147,28 +177,57 @@ describe('AutenticarEstudiante (RF-007, RF-008, RN-03, RN-04)', () => {
   it('un perfil desactivado no puede entrar', async () => {
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
+    const token = await dispositivoDe(familia.id);
     perfil.desactivar();
     await expect(
-      caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'AULA_VALIDADA', aulaId: 'a1' } }),
+      caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'DISPOSITIVO', tokenDispositivo: token } }),
     ).rejects.toThrow(PinIncorrectoError);
   });
 });
 
-describe('Sesiones: renovar, validar y cerrar (RF-003, RF-010)', () => {
+describe('Sesiones: renovar, validar y cerrar (RF-003, RF-010, ADR-005)', () => {
   let e: Entorno;
+  let renovar: RenovarSesionUseCase;
 
   beforeEach(() => {
     e = crearEntorno();
+    renovar = new RenovarSesionUseCase(e.sesiones, e.tokens, e.emisor, e.bus, e.reloj.ahora);
   });
 
   it('renovar rota el refresh token: el anterior deja de servir', async () => {
     const abierta = await e.emisor.abrir({ sujetoId: 'c1', rol: 'FAMILIAR', mfa: false });
-    const renovar = new RenovarSesionUseCase(e.sesiones, e.tokens, e.emisor, e.reloj.ahora);
-
     const nueva = await renovar.ejecutar(abierta.refreshToken);
     expect(nueva.refreshToken).not.toBe(abierta.refreshToken);
-    await expect(renovar.ejecutar(abierta.refreshToken)).rejects.toThrow(SesionInvalidaError);
     await expect(renovar.ejecutar(undefined)).rejects.toThrow(SesionInvalidaError);
+  });
+
+  it('ADR-005: reutilizar un refresh token ya rotado revoca la sesión entera y lo registra', async () => {
+    const abierta = await e.emisor.abrir({ sujetoId: 'c1', rol: 'FAMILIAR', mfa: false });
+    const legitima = await renovar.ejecutar(abierta.refreshToken);
+
+    // Un atacante usa el token viejo que copió: se rechaza y se cierra la sesión.
+    await expect(renovar.ejecutar(abierta.refreshToken)).rejects.toThrow(SesionInvalidaError);
+    expect(e.bus.nombres()).toContain(EVENTOS_IAM.REUTILIZACION_REFRESH);
+    // Por eso tampoco sirve ya el token legítimo más reciente: hay que volver a ingresar.
+    await expect(renovar.ejecutar(legitima.refreshToken)).rejects.toThrow(SesionInvalidaError);
+  });
+
+  it('un token desconocido (nunca emitido) no revoca nada', async () => {
+    await e.emisor.abrir({ sujetoId: 'c1', rol: 'FAMILIAR', mfa: false });
+    await expect(renovar.ejecutar('token-inventado')).rejects.toThrow(SesionInvalidaError);
+    expect(e.bus.nombres()).not.toContain(EVENTOS_IAM.REUTILIZACION_REFRESH);
+  });
+
+  it('ADR-005: la sesión del estudiante dura como máximo 8 h aunque haya actividad', async () => {
+    const abierta = await e.emisor.abrir({ sujetoId: 'p1', rol: 'ESTUDIANTE', mfa: false });
+    let refresh = abierta.refreshToken;
+    // Actividad cada 9 minutos durante 7 h 57 min: la sesión sigue viva.
+    for (let i = 0; i < 53; i++) {
+      e.reloj.avanzarMin(9);
+      refresh = (await renovar.ejecutar(refresh)).refreshToken;
+    }
+    e.reloj.avanzarMin(9); // 8 h 6 min desde el ingreso
+    await expect(renovar.ejecutar(refresh)).rejects.toThrow(SesionInvalidaError);
   });
 
   it('validar acceso: firma inválida, sesión revocada e inactividad del estudiante', async () => {
@@ -215,5 +274,8 @@ describe('MFA en dos pasos (RF-011)', () => {
     expect(elevada.rutaInicial).toBe('/backoffice');
     expect(cuenta.mfaHabilitado).toBe(true);
     expect(e.bus.nombres()).toContain(EVENTOS_IAM.MFA_CONFIGURADO);
+    // El refresh anterior a elevar la sesión ya no sirve (se rotó y quedó registrado).
+    const renovar = new RenovarSesionUseCase(e.sesiones, e.tokens, e.emisor, e.bus, e.reloj.ahora);
+    await expect(renovar.ejecutar(sesion.refreshToken)).rejects.toThrow(SesionInvalidaError);
   });
 });

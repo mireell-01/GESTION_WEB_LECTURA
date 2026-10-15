@@ -126,6 +126,16 @@ describe('Sesion — inactividad (RF-010)', () => {
     expect(s.estaViva(masMin(17))).toBe(true);
   });
 
+  it('ADR-005: la sesión del estudiante muere a las 8 h aunque tenga actividad; la del adulto no', () => {
+    const estudiante = abrir('ESTUDIANTE');
+    const adulto = abrir('DOCENTE');
+    estudiante.registrarActividad(masMin(8 * 60 - 1));
+    adulto.registrarActividad(masMin(8 * 60 - 1));
+    expect(estudiante.estaViva(masMin(8 * 60))).toBe(true);
+    expect(estudiante.estaViva(masMin(8 * 60 + 0.01))).toBe(false);
+    expect(adulto.estaViva(masMin(8 * 60 + 0.01))).toBe(true);
+  });
+
   it('una sesión revocada nunca está viva', () => {
     const s = abrir('FAMILIAR');
     s.revocar(T0);

@@ -23,7 +23,7 @@ export function VerificarCorreo() {
       setError('El enlace está incompleto.');
       return;
     }
-    api('/iam/correo/verificar', { metodo: 'POST', cuerpo: { codigo } })
+    api('/auth/verificar-correo', { metodo: 'POST', cuerpo: { codigo } })
       .then(() => setEstado('ok'))
       .catch((e) => {
         setEstado('error');

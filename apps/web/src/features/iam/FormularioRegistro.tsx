@@ -28,7 +28,7 @@ export function FormularioRegistro() {
     setError(null);
     setEnviando(true);
     try {
-      await api('/iam/cuentas', { metodo: 'POST', cuerpo: { nombre, email, contrasena, rol } });
+      await api('/auth/registro', { metodo: 'POST', cuerpo: { nombre, email, contrasena, rol } });
       setRegistrado(true);
     } catch (err) {
       setError(mensajeDeError(err));

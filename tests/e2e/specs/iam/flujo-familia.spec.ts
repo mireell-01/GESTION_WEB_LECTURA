@@ -5,6 +5,7 @@ import {
   correoUnico,
   enlaceDelCorreo,
   escribirPin,
+  esperarAreaEstudiante,
   ingresarComoAdulto,
   ipSimulada,
   prepararFamilia,
@@ -42,6 +43,12 @@ test('una familia se registra, crea el perfil de su hijo y el niño entra con av
   await prepararFamilia(page, { alias: 'Mateo', avatar: 'León', pin: '2580' });
   await expect(page.getByText('8–9 años')).toBeVisible();
 
+  // RF-012 (E2E Familia del SRS): exportar los datos del hijo en PDF y JSON.
+  await page.getByRole('button', { name: 'Descargar datos' }).click();
+  await expect(page.getByText(/Datos listos en PDF y JSON/)).toBeVisible();
+  const [descarga] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Descargar PDF' }).click()]);
+  expect(descarga.suggestedFilename()).toMatch(/^lectoaventura-datos-\d{4}-\d{2}-\d{2}\.pdf$/);
+
   // RF-007: el niño entra con su avatar y su PIN.
   await page.getByRole('button', { name: 'Salir' }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -49,6 +56,5 @@ test('una familia se registra, crea el perfil de su hijo y el niño entra con av
   await page.getByRole('button', { name: 'Mateo' }).click();
   await expect(page.getByRole('heading', { name: '¡Hola, Mateo!' })).toBeVisible();
   await escribirPin(page, '2580');
-  await expect(page).toHaveURL(/\/estudiante$/);
-  await expect(page.getByRole('heading', { name: '¡Hola, Mateo!' })).toBeVisible();
+  await esperarAreaEstudiante(page, 'Mateo');
 });

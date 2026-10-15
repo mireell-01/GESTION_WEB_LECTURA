@@ -26,7 +26,7 @@ export function FormularioIngreso() {
     setError(null);
     setEnviando(true);
     try {
-      const sesion = await api<RespuestaSesion>('/iam/sesiones', {
+      const sesion = await api<RespuestaSesion>('/auth/login', {
         metodo: 'POST',
         cuerpo: { email, contrasena, ...(pideMfa ? { codigoMfa } : {}) },
       });
@@ -47,6 +47,9 @@ export function FormularioIngreso() {
   return (
     <Tarjeta titulo="Ingresar">
       <form onSubmit={enviar} noValidate>
+        {parametros.get('motivo') === 'inactividad' ? (
+          <Alerta tipo="info">Cerramos tu sesión por inactividad para proteger tus datos. Vuelve a ingresar.</Alerta>
+        ) : null}
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
         <Campo
           etiqueta="Correo electrónico"

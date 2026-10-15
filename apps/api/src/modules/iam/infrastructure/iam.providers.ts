@@ -4,9 +4,11 @@ import { Provider } from '@nestjs/common';
 import {
   BUS_EVENTOS,
   BusEventos,
+  CONTEXTO_AULA,
   PrismaService,
   RECOLECTOR_DATOS,
   RecolectorDatosEstudiante,
+  ResolutorContextoAula,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_IAM, CasosUsoIam } from '../application/casos-uso-iam';
 import { IamFacade } from '../application/iam.facade';
@@ -17,11 +19,12 @@ import { AutenticarEstudianteUseCase } from '../application/use-cases/autenticar
 import { CerrarSesionUseCase } from '../application/use-cases/cerrar-sesion.use-case';
 import { ConfigurarMfaUseCase } from '../application/use-cases/configurar-mfa.use-case';
 import { CrearPerfilEstudianteUseCase } from '../application/use-cases/crear-perfil-estudiante.use-case';
-import { ExportarDatosUseCase } from '../application/use-cases/exportar-datos.use-case';
+import { ContextoIngresoUseCase } from '../application/use-cases/contexto-ingreso.use-case';
+import { DescargarExportacionUseCase } from '../application/use-cases/descargar-exportacion.use-case';
+import { SolicitarExportacionUseCase } from '../application/use-cases/solicitar-exportacion.use-case';
 import { IniciarMfaUseCase } from '../application/use-cases/iniciar-mfa.use-case';
 import { ListarPerfilesUseCase } from '../application/use-cases/listar-perfiles.use-case';
 import { ObtenerUsuarioActualUseCase } from '../application/use-cases/obtener-usuario-actual.use-case';
-import { PerfilesDeDispositivoUseCase } from '../application/use-cases/perfiles-de-dispositivo.use-case';
 import { RecuperarContrasenaUseCase } from '../application/use-cases/recuperar-contrasena.use-case';
 import { RegistrarConsentimientoUseCase } from '../application/use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from '../application/use-cases/registrar-cuenta.use-case';
@@ -34,9 +37,12 @@ import { VerificarCorreoUseCase } from '../application/use-cases/verificar-corre
 import { VincularDispositivoUseCase } from '../application/use-cases/vincular-dispositivo.use-case';
 import { ConsolaCorreoService, SmtpCorreoService } from './correo/correo.services';
 import { Argon2HashService } from './crypto/argon2-hash.service';
+import { HmacFirmador } from './crypto/hmac-firmador';
 import { JwtTokenService } from './crypto/jwt-token.service';
 import { OtplibTotpService } from './crypto/otplib-totp.service';
+import { PdfLibGenerador } from './export/pdf-lib-generador';
 import { ListaContrasenasFiltradas } from './passwords/lista-contrasenas-filtradas';
+import { PrismaAlmacenExportaciones } from './persistence/prisma-almacen-exportaciones';
 import { PrismaConsentimientoRepository } from './persistence/prisma-consentimiento-repository';
 import { PrismaCuentaRepository } from './persistence/prisma-cuenta-repository';
 import { PrismaDispositivoRepository } from './persistence/prisma-dispositivo-repository';
@@ -65,6 +71,7 @@ export function crearCasosUsoIam(
   prisma: PrismaService,
   bus: BusEventos,
   recolector: RecolectorDatosEstudiante,
+  contextoAula: ResolutorContextoAula,
 ): CasosUsoIam {
   const config = configuracion();
   const ahora = () => new Date();
@@ -81,6 +88,8 @@ export function crearCasosUsoIam(
   const tokens = new JwtTokenService(config.jwtSecret);
   const totp = new OtplibTotpService();
   const filtradas = new ListaContrasenasFiltradas();
+  const exportaciones = new PrismaAlmacenExportaciones(prisma);
+  const firmador = new HmacFirmador(config.jwtSecret, 'exportaciones');
 
   const bandejaDesarrollo = config.smtpHost ? null : new ConsolaCorreoService();
   const correo = config.smtpHost
@@ -94,7 +103,7 @@ export function crearCasosUsoIam(
 
   const registrarConsentimiento = new RegistrarConsentimientoUseCase(cuentas, consentimientos, bus, generarId, ahora);
   const crearPerfil = new CrearPerfilEstudianteUseCase(cuentas, perfiles, consentimientos, hash, bus, generarId, ahora);
-  const autenticarEstudiante = new AutenticarEstudianteUseCase(perfiles, dispositivos, hash, tokens, emisor, bus, ahora);
+  const autenticarEstudiante = new AutenticarEstudianteUseCase(perfiles, dispositivos, contextoAula, hash, tokens, emisor, bus, ahora);
   const restablecerPin = new RestablecerPinUseCase(perfiles, sesiones, hash, bus, ahora);
 
   return {
@@ -107,7 +116,7 @@ export function crearCasosUsoIam(
     restablecerContrasena: new RestablecerContrasenaUseCase(
       cuentas, verificaciones, hash, filtradas, tokens, sesiones, bus, ahora,
     ),
-    renovarSesion: new RenovarSesionUseCase(sesiones, tokens, emisor, ahora),
+    renovarSesion: new RenovarSesionUseCase(sesiones, tokens, emisor, bus, ahora),
     cerrarSesion: new CerrarSesionUseCase(sesiones, ahora),
     validarAcceso: new ValidarAccesoUseCase(sesiones, tokens, ahora),
     iniciarMfa: new IniciarMfaUseCase(cuentas, totp),
@@ -119,12 +128,15 @@ export function crearCasosUsoIam(
     listarPerfiles: new ListarPerfilesUseCase(perfiles, ahora),
     actualizarPerfil: new ActualizarPerfilUseCase(perfiles, sesiones, bus, ahora),
     restablecerPin,
-    exportarDatos: new ExportarDatosUseCase(perfiles, consentimientos, recolector, bus, ahora),
+    solicitarExportacion: new SolicitarExportacionUseCase(
+      perfiles, consentimientos, recolector, exportaciones, new PdfLibGenerador(), firmador, bus, generarId, ahora,
+    ),
+    descargarExportacion: new DescargarExportacionUseCase(exportaciones, firmador, ahora),
     solicitarEliminacion: new SolicitarEliminacionUseCase(perfiles, sesiones, bus, ahora),
     vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, tokens, bus, generarId, ahora),
-    perfilesDeDispositivo: new PerfilesDeDispositivoUseCase(dispositivos, perfiles, tokens, ahora),
+    contextoIngreso: new ContextoIngresoUseCase(perfiles, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
-    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, autenticarEstudiante, restablecerPin, ahora),
+    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, ahora),
     bandejaDesarrollo,
   };
 }
@@ -133,7 +145,7 @@ export const iamProviders: Provider[] = [
   {
     provide: CASOS_USO_IAM,
     useFactory: crearCasosUsoIam,
-    inject: [PrismaService, BUS_EVENTOS, RECOLECTOR_DATOS],
+    inject: [PrismaService, BUS_EVENTOS, RECOLECTOR_DATOS, CONTEXTO_AULA],
   },
   {
     provide: IamFacade,

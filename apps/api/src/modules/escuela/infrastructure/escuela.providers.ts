@@ -5,9 +5,11 @@ import { EVENTOS_IAM, IamFacade } from '../../iam/public-api';
 import {
   BUS_EVENTOS,
   BusEventos,
+  CONTEXTO_AULA,
   PrismaService,
   RECOLECTOR_DATOS,
   RecolectorDatosEstudiante,
+  RegistroContextoAula,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_ESCUELA, CasosUsoEscuela } from '../application/casos-uso-escuela';
 import { EscuelaFacade } from '../application/escuela.facade';
@@ -15,8 +17,8 @@ import { DetalleAulaUseCase, ListarAulasUseCase } from '../application/use-cases
 import { CrearAulaUseCase } from '../application/use-cases/crear-aula.use-case';
 import { GenerarTarjetasUseCase } from '../application/use-cases/generar-tarjetas.use-case';
 import { ArchivarAulaUseCase, RetirarEstudianteUseCase } from '../application/use-cases/gestionar-aula.use-case';
-import { ContextoIngresoAulaUseCase, IngresarEnAulaUseCase } from '../application/use-cases/ingreso-aula.use-case';
 import { MatricularEstudiantesUseCase } from '../application/use-cases/matricular-estudiantes.use-case';
+import { CodigoAula } from '../domain/value-objects/codigo-aula';
 import { ServicioIdentidadIam } from './identidad/servicio-identidad-iam';
 import { PrismaAulaRepository } from './persistence/prisma-aula-repository';
 import { PrismaMatriculaRepository } from './persistence/prisma-matricula-repository';
@@ -39,15 +41,15 @@ export function crearCasosUsoEscuela(prisma: PrismaService, bus: BusEventos, iam
     generarTarjetas: new GenerarTarjetasUseCase(aulas, matriculas, identidad, bus, aleatorio, ahora),
     archivarAula: new ArchivarAulaUseCase(aulas, matriculas, bus, ahora),
     retirarEstudiante: new RetirarEstudianteUseCase(aulas, matriculas, bus, ahora),
-    contextoIngreso: new ContextoIngresoAulaUseCase(aulas, matriculas, identidad),
-    ingresarEnAula: new IngresarEnAulaUseCase(aulas, matriculas, identidad),
+    aulas,
     matriculas,
     facade: new EscuelaFacade(aulas, matriculas),
   };
 }
 
 /**
- * Reacciones de Escuela a eventos de otros módulos y aporte a la exportación de datos (RF-012).
+ * Integración de Escuela con el resto: contexto de aula para el ingreso de estudiantes (RF-007),
+ * reacción a la eliminación de perfiles (RF-013) y aporte a la exportación de datos (RF-012).
  */
 @Injectable()
 export class EscuelaSuscripciones implements OnModuleInit {
@@ -55,14 +57,28 @@ export class EscuelaSuscripciones implements OnModuleInit {
     @Inject(CASOS_USO_ESCUELA) private readonly casos: CasosUsoEscuela,
     @Inject(BUS_EVENTOS) private readonly bus: BusEventos,
     @Inject(RECOLECTOR_DATOS) private readonly recolector: RecolectorDatosEstudiante,
+    @Inject(CONTEXTO_AULA) private readonly contextoAula: RegistroContextoAula,
   ) {}
 
   onModuleInit(): void {
+    const { aulas, matriculas } = this.casos;
+
+    // RF-007 / RN-04: IAM valida códigos de aula y matrículas a través de este resolutor.
+    this.contextoAula.registrar({
+      aulaActivaPorCodigo: async (texto) => {
+        const codigo = CodigoAula.intentar(texto);
+        const aula = codigo ? await aulas.buscarPorCodigo(codigo.value) : null;
+        return aula && aula.estaActiva ? { aulaId: aula.id, nombre: aula.nombre } : null;
+      },
+      estudiantesActivos: async (aulaId) => (await matriculas.listarActivasPorAula(aulaId)).map((m) => m.estudianteId),
+      estaMatriculado: async (aulaId, estudianteId) => !!(await matriculas.buscar(aulaId, estudianteId))?.activa,
+    });
+
     // RF-013: al eliminar un perfil, deja de figurar en las aulas.
     this.bus.suscribir(EVENTOS_IAM.PERFIL_ELIMINADO, async (evento) => {
-      for (const m of await this.casos.matriculas.listarPorEstudiante(evento.agregadoId)) {
+      for (const m of await matriculas.listarPorEstudiante(evento.agregadoId)) {
         m.retirar(evento.ocurreEn);
-        await this.casos.matriculas.guardar(m);
+        await matriculas.guardar(m);
       }
     });
 

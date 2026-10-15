@@ -2,7 +2,16 @@
  * Dobles de prueba de IAM: implementaciones en memoria de los puertos de la capa de aplicación.
  * Permiten probar los casos de uso sin base de datos, sin criptografía lenta y con reloj controlado.
  */
-import type { BusEventos, EventoDominio, ManejadorEvento, RecolectorDatosEstudiante } from '../../../src/modules/shared-kernel/public-api';
+import type {
+  BusEventos,
+  EventoDominio,
+  ManejadorEvento,
+  RecolectorDatosEstudiante,
+  ResolutorContextoAula,
+} from '../../../src/modules/shared-kernel/public-api';
+import type { AlmacenExportaciones, DatosExportacion, GeneradorPdfExportacion } from '../../../src/modules/iam/application/ports/exportaciones';
+import { Exportacion, FormatoExportacion } from '../../../src/modules/iam/domain/entities/exportacion';
+import { HmacFirmador } from '../../../src/modules/iam/infrastructure/crypto/hmac-firmador';
 import type { ConsentimientoRepository } from '../../../src/modules/iam/application/ports/consentimiento.repository';
 import type { ContrasenasFiltradasRepository } from '../../../src/modules/iam/application/ports/contrasenas-filtradas.repository';
 import type { CorreoService } from '../../../src/modules/iam/application/ports/correo.service';
@@ -67,12 +76,51 @@ export class VerificacionesEnMemoria implements VerificacionRepository {
 
 export class SesionesEnMemoria implements SesionRepository {
   readonly filas = new Map<string, Sesion>();
+  readonly refreshUsados = new Map<string, string>();
   async guardar(s: Sesion) { this.filas.set(s.id, s); }
   async buscarPorId(id: string) { return this.filas.get(id) ?? null; }
   async buscarPorHashRefreshToken(hash: string) { return [...this.filas.values()].find((s) => s.hashRefreshToken === hash) ?? null; }
   async revocarTodasDe(sujetoId: string, ahora: Date) {
     for (const s of this.filas.values()) if (s.sujetoId === sujetoId) s.revocar(ahora);
   }
+  async registrarRefreshUsado(hash: string, sesionId: string) { this.refreshUsados.set(hash, sesionId); }
+  async sesionDeRefreshUsado(hash: string) { return this.refreshUsados.get(hash) ?? null; }
+}
+
+/** Aulas y matrículas simuladas (las aporta Escuela en la aplicación real). */
+export class ContextoAulaFalso implements ResolutorContextoAula {
+  readonly aulas = new Map<string, { aulaId: string; nombre: string; activa: boolean }>();
+  readonly matriculas = new Map<string, Set<string>>();
+  agregarAula(codigo: string, aulaId: string, estudiantes: string[] = [], activa = true) {
+    this.aulas.set(codigo, { aulaId, nombre: `Aula ${codigo}`, activa });
+    this.matriculas.set(aulaId, new Set(estudiantes));
+  }
+  async aulaActivaPorCodigo(codigo: string) {
+    const aula = this.aulas.get(codigo);
+    return aula && aula.activa ? { aulaId: aula.aulaId, nombre: aula.nombre } : null;
+  }
+  async estudiantesActivos(aulaId: string) { return [...(this.matriculas.get(aulaId) ?? [])]; }
+  async estaMatriculado(aulaId: string, estudianteId: string) { return this.matriculas.get(aulaId)?.has(estudianteId) ?? false; }
+}
+
+export class ExportacionesEnMemoria implements AlmacenExportaciones {
+  readonly filas = new Map<string, { exportacion: Exportacion; archivos: Record<FormatoExportacion, Buffer> }>();
+  async guardar(exportacion: Exportacion, archivos: Record<FormatoExportacion, Buffer>) {
+    this.filas.set(exportacion.id, { exportacion, archivos });
+  }
+  async buscar(id: string) { return this.filas.get(id)?.exportacion ?? null; }
+  async archivo(id: string, formato: FormatoExportacion) { return this.filas.get(id)?.archivos[formato] ?? null; }
+  async eliminarVencidas(ahora: Date) {
+    let n = 0;
+    for (const [id, f] of this.filas) if (!f.exportacion.estaVigente(ahora)) { this.filas.delete(id); n++; }
+    return n;
+  }
+}
+
+/** PDF simulado: la generación real con pdf-lib se prueba aparte. */
+export class PdfFalso implements GeneradorPdfExportacion {
+  readonly recibidos: DatosExportacion[] = [];
+  async generar(datos: DatosExportacion) { this.recibidos.push(datos); return Buffer.from('%PDF-falso'); }
 }
 
 export class DispositivosEnMemoria implements DispositivoRepository {
@@ -158,6 +206,10 @@ export function crearEntorno() {
     filtradas: new FiltradasFalsas(),
     bus: new BusEspia(),
     recolector: new RecolectorFalso(),
+    contextoAula: new ContextoAulaFalso(),
+    exportaciones: new ExportacionesEnMemoria(),
+    pdf: new PdfFalso(),
+    firmador: new HmacFirmador('secreto-de-pruebas-unitarias-con-mas-de-32-caracteres', 'exportaciones'),
     emisor: new EmisorSesiones(sesiones, tokens, generarId, reloj.ahora),
   };
 }

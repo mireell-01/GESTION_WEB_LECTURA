@@ -10,12 +10,12 @@ Característica: Perfil del niño protegido por el consentimiento del adulto
   Antecedentes:
     Dado que ingresé con mi cuenta familiar verificada
 
-  @RF-005 @RN-01
+  @RF-005 @RN-01 @UAT-05
   Escenario: Sin consentimiento no se puede crear ningún perfil
     Entonces se me pide dar mi consentimiento antes de agregar perfiles
     Y no puedo agregar perfiles todavía
 
-  @RF-006 @RN-02 @camino-feliz
+  @RF-006 @RN-02 @UAT-05 @camino-feliz
   Escenario: Con consentimiento creo el perfil pidiendo solo datos mínimos
     Cuando doy mi consentimiento como adulto responsable
     Y abro el formulario para agregar un perfil

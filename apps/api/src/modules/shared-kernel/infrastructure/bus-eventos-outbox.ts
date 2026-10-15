@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BusEventos, ManejadorEvento } from '../application/bus-eventos';
 import { EventoDominio } from '../domain/events/domain-event';
 import { PrismaService } from './prisma.service';
+import { redactar } from './redaccion';
 
 /**
  * Adaptador: BusEventosOutbox — persiste cada evento en `OutboxEvento` y lo despacha en proceso.
@@ -38,9 +39,10 @@ export class BusEventosOutbox implements BusEventos {
           await manejador(evento);
         } catch (error) {
           ok = false;
+          // RNF-031: el mensaje de error puede incluir datos del evento; se redacta antes de registrarlo.
           this.logger.error(
-            `Falló un manejador de ${evento.nombreEvento}: ${(error as Error).message}`,
-            (error as Error).stack,
+            redactar(`Falló un manejador de ${evento.nombreEvento}: ${(error as Error).message}`),
+            (error as Error).stack ? redactar((error as Error).stack as string) : undefined,
           );
         }
       }

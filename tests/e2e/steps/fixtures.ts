@@ -9,8 +9,11 @@ export interface Mundo {
 }
 
 /**
- * Nivel 4 — Fixtures de UAT: cada escenario es un dispositivo distinto (IP simulada propia)
- * para que el límite de tasa por IP (RNF-019) no mezcle escenarios.
+ * Nivel 4 — Fixtures de UAT:
+ * - cada escenario es un dispositivo distinto (IP simulada) para que el límite de tasa por IP
+ *   (RNF-019) no mezcle escenarios;
+ * - los escenarios con @reloj controlan el reloj de la página para probar tiempos (RF-010)
+ *   sin esperar minutos reales.
  */
 export const test = base.extend<{ mundo: Mundo }>({
   mundo: async ({}, use) => {
@@ -18,6 +21,12 @@ export const test = base.extend<{ mundo: Mundo }>({
   },
   extraHTTPHeaders: async ({}, use) => {
     await use({ 'X-Forwarded-For': ipSimulada() });
+  },
+  page: async ({ page, $tags }, use) => {
+    if ($tags.includes('@reloj')) {
+      await page.clock.install();
+    }
+    await use(page);
   },
 });
 

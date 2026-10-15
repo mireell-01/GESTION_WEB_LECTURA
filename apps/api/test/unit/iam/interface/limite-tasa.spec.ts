@@ -12,7 +12,7 @@ import {
 /** Nivel 1 — RNF-019: limitación de tasa (login adulto 10/min por IP; PIN 30/min por código de aula). */
 function peticion(regla: ReglaLimiteTasa | undefined, req: { ip?: string; body?: unknown }) {
   const cabeceras: Record<string, string> = {};
-  const reflector = { get: (clave: string) => (clave === LIMITE_TASA ? regla : undefined) } as unknown as Reflector;
+  const reflector = { get: (clave: string) => (clave === LIMITE_TASA && regla ? [regla] : undefined) } as unknown as Reflector;
   const ctx = {
     getHandler: () => () => undefined,
     switchToHttp: () => ({ getRequest: () => req, getResponse: () => ({ setHeader: (k: string, v: string) => (cabeceras[k] = v) }) }),
@@ -76,6 +76,20 @@ describe('LimiteTasaGuard (RNF-019)', () => {
     }
     expect(() => guard.canActivate(peticion(AULA, { ip: '10.9.9.9', body: { codigoAula: 'ABC234' } }).ctx)).toThrow(/Demasiados intentos/);
     expect(guard.canActivate(peticion(AULA, { ip: '10.9.9.9', body: { codigoAula: 'XYZ789' } }).ctx)).toBe(true);
+  });
+
+  it('con dos reglas (IP y código de aula), la de aula no aplica si el cuerpo no trae código', () => {
+    const IP: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-ip', maximoPorMinuto: 30, por: 'ip' };
+    const reflector = { get: () => [IP, AULA] } as unknown as Reflector;
+    const guard = new LimiteTasaGuard(reflector);
+    const ctx = (ip: string, body: unknown) => peticion(AULA, { ip, body }).ctx;
+
+    // 30 ingresos desde la tablet de casa (sin código de aula) agotan solo la cuota de esa IP.
+    for (let i = 0; i < 30; i++) expect(guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toBe(true);
+    expect(() => guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toThrow(ErrorDeNegocio);
+    // Un intento bloqueado no consume la cuota del aula: otra IP con código sigue pudiendo entrar.
+    expect(() => guard.canActivate(ctx('10.1.1.1', { codigoAula: 'ABC234' }))).toThrow(ErrorDeNegocio);
+    expect(guard.canActivate(ctx('10.2.2.2', { codigoAula: 'ABC234' }))).toBe(true);
   });
 
   it('LIMITE_TASA_FACTOR multiplica el máximo en entornos de prueba de carga', () => {

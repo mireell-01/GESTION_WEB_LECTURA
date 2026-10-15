@@ -2,13 +2,19 @@
 
 import { FormEvent, ReactNode, useState } from 'react';
 
-import { Alerta, AVATARES, Avatar, Boton, BotonAvatar, Campo, Chip } from '@lectoaventura/ui';
+import { Alerta, AVATARES, Avatar, Boton, BotonAvatar, Campo, Chip, clasesBoton } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { NOMBRE_RANGO, PerfilEstudiante } from './tipos';
 
 type Modo = 'ver' | 'editar' | 'pin' | 'eliminar';
+
+interface Exportacion {
+  id: string;
+  expiraEn: string;
+  enlaces: { json: string; pdf: string };
+}
 
 /**
  * Gestión de un perfil por su adulto responsable (RF-008, RF-012, RF-013, RF-071):
@@ -30,6 +36,7 @@ export function TarjetaPerfil({
   const [confirmacion, setConfirmacion] = useState('');
   const [mensaje, setMensaje] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [exportacion, setExportacion] = useState<Exportacion | null>(null);
 
   const ejecutar = async (accion: () => Promise<unknown>, exito: string) => {
     setOcupado(true);
@@ -49,7 +56,7 @@ export function TarjetaPerfil({
   const guardarEdicion = (e: FormEvent) => {
     e.preventDefault();
     void ejecutar(
-      () => api(`/iam/perfiles-estudiante/${perfil.id}`, { metodo: 'PATCH', cuerpo: { alias, avatar } }),
+      () => api(`/familia/estudiantes/${perfil.id}`, { metodo: 'PATCH', cuerpo: { alias, avatar } }),
       'Perfil actualizado.',
     );
   };
@@ -57,28 +64,23 @@ export function TarjetaPerfil({
   const guardarPin = (e: FormEvent) => {
     e.preventDefault();
     void ejecutar(
-      () => api(`/iam/perfiles-estudiante/${perfil.id}/pin`, { metodo: 'POST', cuerpo: { pinNuevo: pin } }),
+      () => api(`/estudiantes/${perfil.id}/pin/restablecer`, { metodo: 'POST', cuerpo: { pinNuevo: pin } }),
       'PIN restablecido. Si el perfil estaba bloqueado, ya puede entrar.',
     ).then(() => setPin(''));
   };
 
-  const descargar = async () => {
+  /** RF-012: genera JSON + PDF en el servidor y muestra los enlaces firmados (72 h). */
+  const exportar = async () => {
     setOcupado(true);
+    setMensaje(null);
     try {
-      const datos = await api<unknown>(`/iam/perfiles-estudiante/${perfil.id}/exportacion`);
-      const url = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }));
-      const enlace = document.createElement('a');
-      enlace.href = url;
-      enlace.download = `lectoaventura-${perfil.alias}.json`;
-      enlace.click();
-      URL.revokeObjectURL(url);
+      setExportacion(await api<Exportacion>(`/estudiantes/${perfil.id}/exportaciones`, { metodo: 'POST' }));
     } catch (err) {
       setMensaje({ tipo: 'error', texto: mensajeDeError(err) });
     } finally {
       setOcupado(false);
     }
   };
-
   return (
     <article className="la-tarjeta pila-sm" style={{ opacity: perfil.activo ? 1 : 0.75 }}>
       <div className="fila">
@@ -96,6 +98,24 @@ export function TarjetaPerfil({
       {mensaje ? <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta> : null}
       {extra}
 
+      {exportacion ? (
+        <Alerta tipo="exito">
+          <div className="pila-sm">
+            <span>
+              Datos listos en PDF y JSON. Los enlaces funcionan hasta el{' '}
+              {new Date(exportacion.expiraEn).toLocaleString('es-PE', { dateStyle: 'long', timeStyle: 'short' })}.
+            </span>
+            <div className="fila" style={{ gap: 'var(--la-espacio-2)' }}>
+              <a href={exportacion.enlaces.pdf} className={clasesBoton('primario', { tamano: 'pequeno' })}>
+                Descargar PDF
+              </a>
+              <a href={exportacion.enlaces.json} className={clasesBoton('fantasma', { tamano: 'pequeno' })}>
+                Descargar JSON
+              </a>
+            </div>
+          </div>
+        </Alerta>
+      ) : null}
       {modo === 'ver' ? (
         <div className="fila" style={{ gap: 'var(--la-espacio-2)' }}>
           <Boton variante="fantasma" tamano="pequeno" onClick={() => setModo('editar')}>
@@ -110,14 +130,14 @@ export function TarjetaPerfil({
             disabled={ocupado}
             onClick={() =>
               ejecutar(
-                () => api(`/iam/perfiles-estudiante/${perfil.id}`, { metodo: 'PATCH', cuerpo: { activo: !perfil.activo } }),
+                () => api(`/familia/estudiantes/${perfil.id}`, { metodo: 'PATCH', cuerpo: { activo: !perfil.activo } }),
                 perfil.activo ? 'Perfil desactivado.' : 'Perfil activado.',
               )
             }
           >
             {perfil.activo ? 'Desactivar' : 'Activar'}
           </Boton>
-          <Boton variante="fantasma" tamano="pequeno" disabled={ocupado} onClick={descargar}>
+          <Boton variante="fantasma" tamano="pequeno" disabled={ocupado} onClick={exportar}>
             Descargar datos
           </Boton>
           <Boton variante="fantasma" tamano="pequeno" onClick={() => setModo('eliminar')}>
@@ -180,7 +200,7 @@ export function TarjetaPerfil({
               cargando={ocupado}
               disabled={confirmacion.trim() !== perfil.alias}
               onClick={() =>
-                ejecutar(() => api(`/iam/perfiles-estudiante/${perfil.id}`, { metodo: 'DELETE' }), 'Perfil eliminado.')
+                ejecutar(() => api(`/estudiantes/${perfil.id}/solicitudes-eliminacion`, { metodo: 'POST' }), 'Perfil eliminado.')
               }
             >
               Eliminar definitivamente

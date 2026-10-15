@@ -42,6 +42,18 @@ export class PrismaSesionRepository implements SesionRepository {
     });
   }
 
+  async registrarRefreshUsado(hash: string, sesionId: string, ahora: Date): Promise<void> {
+    await this.prisma.refreshTokenUsado.upsert({
+      where: { hash },
+      update: {},
+      create: { hash, sesionId, usadoEn: ahora },
+    });
+  }
+
+  async sesionDeRefreshUsado(hash: string): Promise<string | null> {
+    return (await this.prisma.refreshTokenUsado.findUnique({ where: { hash } }))?.sesionId ?? null;
+  }
+
   private aDominio(f: SesionFila): Sesion {
     return Sesion.desdePersistencia({
       id: f.id,

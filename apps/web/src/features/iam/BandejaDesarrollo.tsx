@@ -23,7 +23,7 @@ export function BandejaDesarrollo() {
   const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(() => {
-    api<Correo[]>('/iam/dev/correos')
+    api<Correo[]>('/dev/correos')
       .then(setCorreos)
       .catch((e) => setError(mensajeDeError(e)));
   }, []);

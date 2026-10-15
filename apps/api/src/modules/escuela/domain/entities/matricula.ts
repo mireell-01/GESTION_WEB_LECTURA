@@ -14,7 +14,14 @@ export class Matricula {
   private constructor(private readonly props: MatriculaProps) {}
 
   static crear(params: { id: string; aulaId: string; estudianteId: string; ahora: Date }): Matricula {
-    return new Matricula({ ...params, estado: 'ACTIVA', creadaEn: params.ahora, retiradaEn: null });
+    return new Matricula({
+      id: params.id,
+      aulaId: params.aulaId,
+      estudianteId: params.estudianteId,
+      estado: 'ACTIVA',
+      creadaEn: params.ahora,
+      retiradaEn: null,
+    });
   }
 
   static desdePersistencia(props: MatriculaProps): Matricula {

@@ -5,8 +5,9 @@ import {
   CrearPerfilEstudianteUseCase,
   MAX_PERFILES_FAMILIA,
 } from '../../../../src/modules/iam/application/use-cases/crear-perfil-estudiante.use-case';
-import { ExportarDatosUseCase } from '../../../../src/modules/iam/application/use-cases/exportar-datos.use-case';
-import { PerfilesDeDispositivoUseCase } from '../../../../src/modules/iam/application/use-cases/perfiles-de-dispositivo.use-case';
+import { ContextoIngresoUseCase } from '../../../../src/modules/iam/application/use-cases/contexto-ingreso.use-case';
+import { DescargarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/descargar-exportacion.use-case';
+import { SolicitarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/solicitar-exportacion.use-case';
 import { RecuperarContrasenaUseCase } from '../../../../src/modules/iam/application/use-cases/recuperar-contrasena.use-case';
 import { RegistrarConsentimientoUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-cuenta.use-case';
@@ -225,16 +226,19 @@ describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071
     const perfil = await perfilEstudiante(e, familia.id);
     const actualizar = new ActualizarPerfilUseCase(e.perfiles, e.sesiones, e.bus, e.reloj.ahora);
     const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.tokens, e.bus, e.generarId, e.reloj.ahora);
-    const listar = new PerfilesDeDispositivoUseCase(e.dispositivos, e.perfiles, e.tokens, e.reloj.ahora);
+    const contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
     const { tokenDispositivo } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
 
-    expect(await listar.ejecutar(tokenDispositivo)).toHaveLength(1);
+    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(1);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: false });
-    expect(await listar.ejecutar(tokenDispositivo)).toHaveLength(0);
+    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(0);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: true, avatar: 'panda' });
-    expect(await listar.ejecutar(tokenDispositivo)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
-    await expect(listar.ejecutar('token-desconocido')).rejects.toThrow(ProhibidoError);
-    await expect(listar.ejecutar(undefined)).rejects.toThrow(ProhibidoError);
+    expect(await contexto.deDispositivo(tokenDispositivo)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
+    await expect(contexto.deDispositivo('token-desconocido')).rejects.toThrow(ProhibidoError);
+    await expect(contexto.deDispositivo(undefined)).rejects.toThrow(ProhibidoError);
+    // RN-04: el vínculo vence a los 30 días.
+    e.reloj.avanzarMin(30 * 24 * 60);
+    await expect(contexto.deDispositivo(tokenDispositivo)).rejects.toThrow(ProhibidoError);
   });
 
   it('solo una cuenta familiar puede vincular un dispositivo', async () => {
@@ -243,19 +247,77 @@ describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071
     await expect(vincular.ejecutar({ cuentaId: docente.id, nombre: 'PC' })).rejects.toThrow(ProhibidoError);
   });
 
-  it('exportar reúne datos personales, consentimiento y lo que aportan otros módulos', async () => {
-    const familia = await cuentaActiva(e);
-    const c = await consentimientoParental(e, familia.id);
-    const perfil = await perfilEstudiante(e, familia.id, { consentimientoId: c.id });
-    const exportar = new ExportarDatosUseCase(e.perfiles, e.consentimientos, e.recolector, e.bus, e.reloj.ahora);
+  describe('Exportación de datos (RF-012)', () => {
+    async function preparar() {
+      const familia = await cuentaActiva(e);
+      const c = await consentimientoParental(e, familia.id);
+      const perfil = await perfilEstudiante(e, familia.id, { consentimientoId: c.id });
+      const solicitar = new SolicitarExportacionUseCase(
+        e.perfiles, e.consentimientos, e.recolector, e.exportaciones, e.pdf, e.firmador, e.bus, e.generarId, e.reloj.ahora,
+      );
+      const descargar = new DescargarExportacionUseCase(e.exportaciones, e.firmador, e.reloj.ahora);
+      return { familia, perfil, solicitar, descargar };
+    }
 
-    const datos = await exportar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id });
-    expect(datos).toMatchObject({
-      perfil: { alias: 'Lucía', rangoEdad: 'R2' },
-      consentimiento: { tipo: 'PARENTAL', versionPolitica: '2026-09' },
-      progreso: { lecturas: 3 },
+    /** Separa id, formato, expira y firma de un enlace firmado. */
+    function partes(enlace: string) {
+      const url = new URL(enlace, 'http://localhost');
+      const [, , , , id = '', formato = ''] = url.pathname.split('/');
+      return { id, formato, expira: url.searchParams.get('expira') ?? '', firma: url.searchParams.get('firma') ?? '' };
+    }
+
+    it('genera JSON y PDF con datos personales, consentimiento y lo que aportan otros módulos', async () => {
+      const { familia, perfil, solicitar, descargar } = await preparar();
+      const r = await solicitar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id });
+
+      expect(new Date(r.expiraEn).getTime() - e.reloj.ahora().getTime()).toBe(72 * 3_600_000);
+      expect(r.enlaces.json).toMatch(/^\/api\/v1\/exportaciones\/.+\/json\?expira=\d+&firma=/);
+
+      const json = await descargar.ejecutar(partes(r.enlaces.json));
+      const datos = JSON.parse(json.contenido.toString('utf8'));
+      expect(json.tipoMime).toMatch(/application\/json/);
+      expect(datos).toMatchObject({
+        perfil: { alias: 'Lucía', rangoEdad: 'R2' },
+        consentimiento: { tipo: 'PARENTAL', versionPolitica: '2026-09' },
+        progreso: { lecturas: 3 },
+      });
+      expect(JSON.stringify(datos)).not.toMatch(/hash|bloqueadoHasta/);
+
+      const pdf = await descargar.ejecutar(partes(r.enlaces.pdf));
+      expect(pdf.tipoMime).toBe('application/pdf');
+      expect(e.pdf.recibidos[0]).toEqual(datos);
+      expect(e.bus.nombres()).toContain(EVENTOS_IAM.DATOS_EXPORTADOS);
     });
-    expect(JSON.stringify(datos)).not.toContain('hash');
+
+    it('rechaza enlaces alterados: otra firma, otro formato u otra fecha de vencimiento', async () => {
+      const { familia, perfil, solicitar, descargar } = await preparar();
+      const r = await solicitar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id });
+      const json = partes(r.enlaces.json);
+
+      await expect(descargar.ejecutar({ ...json, firma: 'firma-falsa' })).rejects.toThrow(/no es válido/);
+      await expect(descargar.ejecutar({ ...json, formato: 'pdf' })).rejects.toThrow(/no es válido/);
+      await expect(descargar.ejecutar({ ...json, expira: String(Number(json.expira) + 86_400_000) })).rejects.toThrow(/no es válido/);
+      await expect(descargar.ejecutar({ ...json, formato: 'exe' })).rejects.toThrow(/no es válido/);
+    });
+
+    it('el enlace vence a las 72 h y la exportación vencida se borra en la siguiente solicitud', async () => {
+      const { familia, perfil, solicitar, descargar } = await preparar();
+      const r = await solicitar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id });
+
+      e.reloj.avanzarMin(72 * 60);
+      await expect(descargar.ejecutar(partes(r.enlaces.pdf))).resolves.toMatchObject({ tipoMime: 'application/pdf' });
+      e.reloj.avanzarMin(1);
+      await expect(descargar.ejecutar(partes(r.enlaces.pdf))).rejects.toThrow(/venció/);
+
+      await solicitar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id });
+      expect(await e.exportaciones.buscar(r.id)).toBeNull();
+    });
+
+    it('otra familia no puede exportar el perfil (RN-17)', async () => {
+      const { perfil, solicitar } = await preparar();
+      const intrusa = await cuentaActiva(e);
+      await expect(solicitar.ejecutar({ cuentaId: intrusa.id, perfilId: perfil.id })).rejects.toThrow(NoEncontradoError);
+    });
   });
 
   it('eliminar anonimiza, cierra sesiones y avisa a los demás módulos', async () => {

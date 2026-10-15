@@ -6,7 +6,8 @@ import { ErrorDeNegocio } from '../domain/errors/error-de-negocio';
 
 /**
  * RNF-019: limitación de tasa por ventana de 1 minuto.
- * `por` define qué se cuenta: la IP del cliente o un campo del cuerpo (p. ej. el código de aula).
+ * `por` define qué se cuenta: la IP del cliente o un campo del cuerpo (p. ej. el código de aula);
+ * si el campo no viene en la petición, esa regla no aplica.
  */
 export interface ReglaLimiteTasa {
   nombre: string;
@@ -15,7 +16,7 @@ export interface ReglaLimiteTasa {
 }
 
 export const LIMITE_TASA = 'la:limite-tasa';
-export const LimiteTasa = (regla: ReglaLimiteTasa) => SetMetadata(LIMITE_TASA, regla);
+export const LimiteTasa = (...reglas: ReglaLimiteTasa[]) => SetMetadata(LIMITE_TASA, reglas);
 
 const VENTANA_MS = 60_000;
 
@@ -31,34 +32,44 @@ export class LimiteTasaGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(contexto: ExecutionContext): boolean {
-    const regla = this.reflector.get<ReglaLimiteTasa | undefined>(LIMITE_TASA, contexto.getHandler());
-    if (!regla) return true;
+    const reglas = this.reflector.get<ReglaLimiteTasa[] | undefined>(LIMITE_TASA, contexto.getHandler());
+    if (!reglas || reglas.length === 0) return true;
 
     const http = contexto.switchToHttp();
     const req = http.getRequest<Request>();
-    const sujeto =
-      regla.por === 'ip'
-        ? req.ip ?? 'desconocida'
-        : String((req.body as Record<string, unknown> | undefined)?.[regla.por.campoCuerpo] ?? '').toUpperCase();
-    const clave = `${regla.nombre}:${sujeto}`;
-
     const ahora = Date.now();
     const factor = Number(process.env['LIMITE_TASA_FACTOR'] ?? 1) || 1;
-    const maximo = regla.maximoPorMinuto * factor;
-    const actual = this.contadores.get(clave);
-    if (!actual || ahora - actual.inicio >= VENTANA_MS) {
-      this.contadores.set(clave, { inicio: ahora, usados: 1 });
-      this.limpiar(ahora);
-      return true;
+
+    // Primero se comprueban todas las reglas; solo si ninguna se excede se cuenta el intento.
+    const claves: { clave: string; maximo: number }[] = [];
+    for (const regla of reglas) {
+      const sujeto =
+        regla.por === 'ip'
+          ? (req.ip ?? 'desconocida')
+          : String((req.body as Record<string, unknown> | undefined)?.[regla.por.campoCuerpo] ?? '').trim().toUpperCase();
+      if (!sujeto) continue;
+      const clave = `${regla.nombre}:${sujeto}`;
+      const maximo = regla.maximoPorMinuto * factor;
+      const actual = this.contadores.get(clave);
+      if (actual && ahora - actual.inicio < VENTANA_MS && actual.usados >= maximo) {
+        const reintentarEnSeg = Math.ceil((actual.inicio + VENTANA_MS - ahora) / 1000);
+        http.getResponse<Response>().setHeader('Retry-After', String(reintentarEnSeg));
+        throw new ErrorDeNegocio('Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.', 'LIMITE', {
+          reintentarEnSeg,
+        });
+      }
+      claves.push({ clave, maximo });
     }
-    if (actual.usados >= maximo) {
-      const reintentarEnSeg = Math.ceil((actual.inicio + VENTANA_MS - ahora) / 1000);
-      http.getResponse<Response>().setHeader('Retry-After', String(reintentarEnSeg));
-      throw new ErrorDeNegocio('Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.', 'LIMITE', {
-        reintentarEnSeg,
-      });
+
+    for (const { clave } of claves) {
+      const actual = this.contadores.get(clave);
+      if (!actual || ahora - actual.inicio >= VENTANA_MS) {
+        this.contadores.set(clave, { inicio: ahora, usados: 1 });
+      } else {
+        actual.usados += 1;
+      }
     }
-    actual.usados += 1;
+    this.limpiar(ahora);
     return true;
   }
 

@@ -15,6 +15,8 @@ export const EVENTOS_IAM = {
   PERFIL_ELIMINADO: 'iam.PerfilEstudianteEliminado',
   MFA_CONFIGURADO: 'iam.MfaConfigurado',
   DISPOSITIVO_VINCULADO: 'iam.DispositivoFamiliarVinculado',
+  /** ADR-005: se presentó un refresh token ya rotado (posible robo); la sesión se revoca. */
+  REUTILIZACION_REFRESH: 'iam.ReutilizacionRefreshDetectada',
 } as const;
 
 /** Datos comunes para auditoría: quién hizo la acción (cuenta adulta o sistema). */

@@ -20,7 +20,7 @@ export function RecuperarContrasena() {
     setEnviando(true);
     setError(null);
     try {
-      await api('/iam/contrasena/recuperar', { metodo: 'POST', cuerpo: { email } });
+      await api('/auth/recuperar', { metodo: 'POST', cuerpo: { email } });
       setEnviado(true);
     } catch (err) {
       setError(mensajeDeError(err));
@@ -70,7 +70,7 @@ export function RestablecerContrasena() {
     setEnviando(true);
     setError(null);
     try {
-      await api('/iam/contrasena/restablecer', { metodo: 'POST', cuerpo: { codigo, contrasenaNueva: contrasena } });
+      await api('/auth/restablecer', { metodo: 'POST', cuerpo: { codigo, contrasenaNueva: contrasena } });
       setListo(true);
       setTimeout(() => router.push('/ingresar'), 2500);
     } catch (err) {
