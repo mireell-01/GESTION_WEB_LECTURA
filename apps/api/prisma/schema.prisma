@@ -1,0 +1,165 @@
+// Prisma schema — detalle de infraestructura, fuera del dominio.
+// Los modelos son el reflejo persistente de los agregados de cada módulo (SRS §6),
+// agrupados por bounded context. No hay relaciones (FK) entre modelos de módulos distintos:
+// se referencian por id, igual que en el dominio.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// IAM — Identidad, Consentimiento y Acceso (RF-001 a RF-013)
+// ---------------------------------------------------------------------------
+
+/// Cuenta adulta (docente, familiar, editor, revisor, admin).
+model Cuenta {
+  id                 String    @id @default(cuid())
+  nombre             String
+  email              String    @unique
+  hashContrasena     String
+  rol                String
+  estado             String    @default("PENDIENTE_VERIFICACION")
+  mfaHabilitado      Boolean   @default(false)
+  mfaSecret          String?
+  mfaSecretPendiente String?
+  creadoEn           DateTime  @default(now())
+
+  perfilesEstudiante PerfilEstudiante[]
+  consentimientos    Consentimiento[]
+  verificaciones     Verificacion[]
+  dispositivos       DispositivoFamiliar[]
+
+  @@index([rol])
+}
+
+/// Perfil de menor. Sin apellidos, documento, foto real ni correo (RN-02).
+model PerfilEstudiante {
+  id                  String    @id @default(cuid())
+  cuentaResponsableId String
+  cuentaResponsable   Cuenta    @relation(fields: [cuentaResponsableId], references: [id], onDelete: Cascade)
+  consentimientoId    String
+  alias               String
+  anioNacimiento      Int
+  mesNacimiento       Int
+  avatar              String
+  hashPin             String
+  intentosFallidos    Int       @default(0)
+  bloqueadoHasta      DateTime?
+  activo              Boolean   @default(true)
+  eliminadoEn         DateTime?
+  creadoEn            DateTime  @default(now())
+
+  @@index([cuentaResponsableId])
+}
+
+/// Consentimiento parental o institucional (RF-005, RN-01).
+model Consentimiento {
+  id                  String   @id @default(cuid())
+  cuentaResponsableId String
+  cuentaResponsable   Cuenta   @relation(fields: [cuentaResponsableId], references: [id], onDelete: Cascade)
+  tipo                String   @default("PARENTAL")
+  aulaId              String?
+  versionPolitica     String
+  otorgadoEn          DateTime
+  otorganteNombre     String
+  medio               String
+  vigente             Boolean  @default(true)
+
+  @@index([cuentaResponsableId, tipo, vigente])
+}
+
+/// Enlaces de un solo uso: verificación de correo (24 h) y recuperación de contraseña (30 min).
+model Verificacion {
+  id       String   @id @default(cuid())
+  cuentaId String
+  cuenta   Cuenta   @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  tipo     String
+  codigo   String   @unique
+  expiraEn DateTime
+  canjeado Boolean  @default(false)
+
+  @@index([cuentaId, tipo])
+}
+
+/// Sesión de un adulto o de un estudiante, con refresh token rotativo (RF-003, RF-010).
+model Sesion {
+  id                String    @id @default(cuid())
+  sujetoId          String
+  rol               String
+  mfa               Boolean   @default(false)
+  hashRefreshToken  String    @unique
+  creadaEn          DateTime  @default(now())
+  ultimaActividadEn DateTime
+  revocadaEn        DateTime?
+
+  @@index([sujetoId])
+}
+
+/// Dispositivo de la familia vinculado por 30 días para el ingreso de los niños (RN-04).
+model DispositivoFamiliar {
+  id         String    @id @default(cuid())
+  cuentaId   String
+  cuenta     Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  nombre     String
+  hashToken  String    @unique
+  creadoEn   DateTime  @default(now())
+  expiraEn   DateTime
+  revocadoEn DateTime?
+
+  @@index([cuentaId])
+}
+
+// ---------------------------------------------------------------------------
+// ESCUELA — Aulas, matrículas y asignaciones (RF-014 a RF-020)
+// ---------------------------------------------------------------------------
+
+/// Aula de un docente en un año lectivo, con código de acceso único (RF-014).
+model Aula {
+  id          String      @id
+  docenteId   String
+  nombre      String
+  grado       String
+  anioLectivo Int
+  institucion String
+  codigo      String      @unique
+  estado      String      @default("ACTIVA")
+  creadaEn    DateTime    @default(now())
+  archivadaEn DateTime?
+  matriculas  Matricula[]
+
+  @@index([docenteId])
+}
+
+/// Estudiante (perfil de IAM) matriculado en un aula (RF-015).
+model Matricula {
+  id           String    @id
+  aulaId       String
+  aula         Aula      @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  estudianteId String
+  estado       String    @default("ACTIVA")
+  creadaEn     DateTime  @default(now())
+  retiradaEn   DateTime?
+
+  @@unique([aulaId, estudianteId])
+  @@index([estudianteId])
+}
+
+// ---------------------------------------------------------------------------
+// OUTBOX DE EVENTOS (patrón Outbox, ADR-009)
+// ---------------------------------------------------------------------------
+model OutboxEvento {
+  id          String    @id @default(cuid())
+  tipo        String
+  payload     Json
+  agregadoId  String
+  ocurrioEn   DateTime  @default(now())
+  publicadoEn DateTime?
+
+  @@index([publicadoEn])
+  @@index([tipo, agregadoId])
+}

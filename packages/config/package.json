@@ -1,0 +1,13 @@
+{
+  "name": "@lectoaventura/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configuración compartida: tsconfig, eslint y prettier.",
+  "files": ["tsconfig", "eslint", "prettier"],
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./tsconfig/nestjs.json": "./tsconfig/nestjs.json",
+    "./prettier": "./prettier/index.json"
+  }
+}

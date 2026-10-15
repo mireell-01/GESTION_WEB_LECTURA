@@ -1,0 +1,12 @@
+{
+  "name": "@lectoaventura/tests-load",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pruebas de rendimiento con k6 (k6 se instala como binario, no desde npm).",
+  "scripts": {
+    "test": "k6 run scenarios/iam-sesiones.js",
+    "test:smoke": "k6 run -e DURACION=30s scenarios/iam-sesiones.js",
+    "test:lectura": "k6 run scenarios/lectura.js"
+  }
+}
