@@ -1,6 +1,8 @@
 import { defineConfig } from '@playwright/test';
 import { cucumberReporter, defineBddConfig } from 'playwright-bdd';
 
+import { servidores, WEB } from './support/servidores';
+
 /**
  * Nivel 4 — Pruebas de aceptación (UAT/BDD): escenarios Gherkin en español ejecutados con
  * playwright-bdd sobre la aplicación real. Genera un informe legible para el Product Owner.
@@ -27,7 +29,7 @@ export default defineConfig({
   ],
   globalTeardown: './support/limpieza.ts',
   use: {
-    baseURL: process.env.WEB_URL ?? 'http://localhost:3002',
+    baseURL: WEB,
     locale: 'es-PE',
     timezoneId: 'America/Lima',
     trace: 'retain-on-failure',
@@ -37,4 +39,5 @@ export default defineConfig({
     viewport: { width: 820, height: 1180 },
     hasTouch: true,
   },
+  webServer: servidores,
 });

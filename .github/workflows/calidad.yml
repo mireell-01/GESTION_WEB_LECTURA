@@ -87,6 +87,9 @@ jobs:
       - run: npm run contracts:generate
       - run: npx playwright install --with-deps chromium
         working-directory: tests/e2e
+      # Se compila una sola vez; E2E, UAT y k6 arrancan la compilación de producción.
+      - name: Compilar API y web
+        run: npm run build --workspace @lectoaventura/api && npm run build --workspace @lectoaventura/web
       - name: 'Nivel 3: sistema E2E (escritorio y tablet)'
         run: npm run test:e2e
       - name: 'Nivel 4: aceptación (Gherkin)'
