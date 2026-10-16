@@ -2,19 +2,19 @@
 # Plan Maestro de Pruebas — Módulo 1: IAM (Identidad, Consentimiento y Acceso)
 
 > **Proyecto:** LectoAventura · **Módulo:** `apps/api/src/modules/iam` + pantallas web de acceso y panel familiar
-> **Requisitos cubiertos:** RF-001 a RF-013, RF-071, RN-01 a RN-04, RN-17, RNF-001, RNF-005, RNF-008, RNF-017, RNF-019, RNF-020, RNF-022, RNF-023, RNF-031, ADR-005, convenciones del API (SRS §7), caso UAT-05 del SRS y el cambio aprobado **CR-01** (tablet sin código de aula)
-> **Fecha de ejecución:** 16/10/2026 (actualizado con CR-01 y el diseño responsivo) · **Resultado global:** ✅ 235 pruebas automatizadas en verde en los 4 niveles
+> **Requisitos cubiertos:** RF-001 a RF-013, RF-071, RN-01 a RN-04, RN-17, RNF-001, RNF-005, RNF-008, RNF-017, RNF-019, RNF-020, RNF-022, RNF-023, RNF-031, ADR-005, convenciones del API (SRS §7), caso UAT-05 del SRS el cambio aprobado **CR-01** (tablet sin código de aula) y el reenvío seguro del enlace de verificación (RF-002)
+> **Fecha de ejecución:** 16/10/2026 (actualizado con CR-01 y el diseño responsivo) · **Resultado global:** ✅ 259 pruebas automatizadas en verde en los 4 niveles
 
 | Nivel | Pruebas | Resultado | Tiempo |
 | :--- | ---: | :--- | ---: |
-| 1 · Unitarias (Vitest) | 141 | ✅ 141/141 · cobertura 93,2 % líneas / 93,0 % ramas | 27 s |
-| 2 · Integración (Supertest + PostgreSQL real) | 33 | ✅ 33/33 | 31 s |
-| 3 · Sistema E2E (Playwright: computadora 1280 px, tablet 820 px y celular 390 px) | 48 | ✅ 48/48 | 11,6 min |
+| 1 · Unitarias (Vitest) | 150 | ✅ 150/150 · cobertura 93,6 % líneas / 93,0 % ramas | 27 s |
+| 2 · Integración (Supertest + PostgreSQL real) | 41 | ✅ 41/41 (incluye reinicio de la API) | 25 s |
+| 3 · Sistema E2E (Playwright: computadora 1280 px, tablet 820 px y celular 390 px) | 54 | ✅ 54/54 | 7,7 min |
 | 3 · Carga (RNF-008 / RNF-001) | 2 escenarios | ✅ 0 % errores · p95 187 ms (ingreso) · p95 51 ms (lectura) | 1 min |
 | 3 · Peso de la web (RNF-005) | 14 rutas | ✅ 110–115 kB de JS inicial por ruta (límite 250 kB) | — |
-| 4 · Aceptación (Gherkin en español) | 13 escenarios | ✅ 13/13 · informe para el Product Owner | 4,2 min |
+| 4 · Aceptación (Gherkin en español) | 14 escenarios | ✅ 14/14 · informe para el Product Owner | 1,8 min |
 
-**Defectos encontrados por las pruebas y corregidos:** 12 · **Brechas con el SRS detectadas en la auditoría y cerradas:** 6 · **Cambios de requisitos aprobados:** 1 (CR-01, detalle en [`docs/cambios/CR-01-tablet-sin-codigo-de-aula.md`](../cambios/CR-01-tablet-sin-codigo-de-aula.md)).
+**Defectos encontrados por las pruebas y corregidos:** 13 · **Brechas con el SRS detectadas en la auditoría y cerradas:** 6 · **Cambios de requisitos aprobados:** 1 (CR-01, detalle en [`docs/cambios/CR-01-tablet-sin-codigo-de-aula.md`](../cambios/CR-01-tablet-sin-codigo-de-aula.md)).
 
 > **Actualización — diseño responsivo y CR-01.** Se aplicó la identidad visual aprobada (violeta, amarillo, tipografía Fredoka + Nunito, botones "3D") en cuatro tamaños de pantalla: celular (< 768 px, barra inferior), tablet vertical (768–1023 px, barra inferior), tablet horizontal y equipos girados (riel de íconos) y computadora (≥ 1181 px, barra lateral con letrero). El niño ya no escribe códigos: la docente o la familia activa la tablet una vez y la app abre directo en los avatares.
 
@@ -83,6 +83,7 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | D-10 | **RNF-023** incumplido: botones de 44 px y 36 px y enlaces de texto de 23–26 px de alto (el SRS pide ≥ 48 × 48 px) | Análisis vs SRS + 3 · `responsivo.spec.ts` | Token `--la-target-min: 48px`; enlaces de tarjetas y formularios con altura táctil |
 | D-11 | Las páginas de ingreso, registro, recuperación y verificación no tenían título principal `h1` (un lector de pantalla no anunciaba de qué trataba la página) | 3 · `responsivo.spec.ts` | `Tarjeta` acepta `nivel={1}` cuando es el contenido principal |
 | D-12 | Las secciones "Muy pronto" del estudiante estaban marcadas como deshabilitadas (`aria-disabled`) aunque al tocarlas muestran un aviso: semántica engañosa | 3 · `responsivo.spec.ts` | Botón normal que se anuncia como ", muy pronto" |
+| D-13 | **Una cuenta podía quedar bloqueada para siempre sin verificar** (RF-002): si el enlace se perdía (la bandeja de desarrollo vive en memoria y se vacía al reiniciar la API) o vencía a las 24 h, no había forma de pedir otro ni de volver a registrarse con el mismo correo | 4 · prueba manual de la Product Owner | `POST /api/v1/auth/verificar-correo/reenviar` + botón "Reenviar enlace de verificación": enlace nuevo de un solo uso (24 h) que anula los anteriores; 60 s de espera y máximo 5 por hora por cuenta; límite 1/min por correo y 5/min por IP; respuesta idéntica exista o no la cuenta; mensajes claros (verificado, ya verificado, vencido, reemplazado) |
 
 **Brechas con el SRS detectadas en la auditoría del módulo y cerradas (todas con pruebas):**
 
@@ -158,7 +159,7 @@ G.W_PROYECTO/
 │   │   ├── playwright.config.ts          # Nivel 3 (escritorio + tablet)
 │   │   ├── playwright.uat.config.ts      # Nivel 4 (playwright-bdd)
 │   │   ├── support/{iam,limpieza}.ts     # Helpers y limpieza de datos e2e
-│   │   ├── specs/{smoke.spec.ts, diseno/responsivo.spec.ts, iam/{flujo-familia,seguridad,ingreso-tablet-aula-e-inactividad}.spec.ts}
+│   │   ├── specs/{smoke.spec.ts, diseno/responsivo.spec.ts, iam/{flujo-familia,seguridad,ingreso-tablet-aula-e-inactividad,verificacion-correo}.spec.ts}
 │   │   ├── features/iam/*.feature        # Gherkin en español
 │   │   └── steps/{fixtures,iam.steps}.ts # Step definitions
 │   └── load/scenarios/iam-sesiones.js    # k6
@@ -202,6 +203,7 @@ import {
   PerfilEstudiante,
 } from '../../../../src/modules/iam/domain/entities/perfil-estudiante';
 import { Sesion } from '../../../../src/modules/iam/domain/entities/sesion';
+import { VerificacionCorreo } from '../../../../src/modules/iam/domain/entities/verificacion-correo';
 import { DatoInvalidoError } from '../../../../src/modules/iam/domain/errors/errores-iam';
 import { PerfilBloqueadoError } from '../../../../src/modules/iam/domain/errors/perfil-bloqueado-error';
 import { AnioMesNacimiento } from '../../../../src/modules/iam/domain/value-objects/anio-mes-nacimiento';
@@ -382,6 +384,39 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
     expect(c.mfaHabilitado).toBe(true);
     expect(c.mfaSecret).toBe('SECRETO');
     expect(c.mfaSecretPendiente).toBeNull();
+  });
+});
+
+describe('VerificacionCorreo (RF-002)', () => {
+  const nuevo = () => VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella', ahora: T0 });
+
+  it('pasa de vigente a vencido a las 24 h y recuerda cuándo se creó', () => {
+    const v = nuevo();
+    expect(v.creadoEn).toEqual(T0);
+    expect(v.estadoEn(masMin(24 * 60))).toBe('VIGENTE');
+    expect(v.estadoEn(masMin(24 * 60 + 1))).toBe('VENCIDO');
+    expect(v.canjear(masMin(24 * 60 + 1))).toBe(false);
+  });
+
+  it('se usa una sola vez', () => {
+    const v = nuevo();
+    expect(v.canjear(masMin(5))).toBe(true);
+    expect(v.estadoEn(masMin(5))).toBe('USADO');
+    expect(v.canjear(masMin(6))).toBe(false);
+  });
+
+  it('un enlace reemplazado no sirve; uno ya usado no se marca como reemplazado', () => {
+    const v = nuevo();
+    v.reemplazar(masMin(1));
+    expect(v.estadoEn(masMin(2))).toBe('REEMPLAZADO');
+    expect(v.estaVigente(masMin(2))).toBe(false);
+    expect(v.canjear(masMin(2))).toBe(false);
+
+    const usado = nuevo();
+    usado.canjear(masMin(1));
+    usado.reemplazar(masMin(2));
+    expect(usado.reemplazadoEn).toBeNull();
+    expect(usado.estadoEn(masMin(3))).toBe('USADO');
   });
 });
 
@@ -750,6 +785,158 @@ describe('Límite de tasa (RNF-019)', () => {
     // Otra tablet desde la misma IP sigue pudiendo intentarlo.
     await ingreso(99, 'token-de-otra-tablet-que-no-existe-0002').expect(403);
   });
+
+  it('reenviar la verificación: 1 por minuto por correo (sin importar mayúsculas) y 5 por IP', async () => {
+    const reenviar = (ip: string, email: string) =>
+      t.http().post(`${API}/auth/verificar-correo/reenviar`).set('X-Forwarded-For', ip).send({ email });
+    await reenviar('10.1.0.1', 'ana@lectoaventura.test').expect(202);
+    const repetido = await reenviar('10.1.0.2', 'ANA@lectoaventura.test').expect(429);
+    expect(repetido.body).toMatchObject({ status: 429, reintentarEnSeg: expect.any(Number) });
+    expect(Number(repetido.headers['retry-after'])).toBeGreaterThan(0);
+
+    for (let i = 1; i <= 4; i++) await reenviar('10.1.0.9', `otra${i}@lectoaventura.test`).expect(202);
+    await reenviar('10.1.0.9', 'otra5@lectoaventura.test').expect(202);
+    await reenviar('10.1.0.9', 'otra6@lectoaventura.test').expect(429);
+  });
+});
+```
+
+`apps/api/test/integration/iam/verificacion-correo.int-spec.ts` (verificación, reenvío y reinicio de la API):
+
+```ts
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { AppDePrueba, crearApp, vaciarBase } from '../setup/app';
+
+/**
+ * Nivel 2 — Verificación de correo y reenvío del enlace (RF-002) integrados con PostgreSQL:
+ * enlaces de un solo uso guardados como huella, el anterior queda reemplazado al reenviar,
+ * mensajes claros por motivo y todo sigue funcionando después de reiniciar la API.
+ */
+const API = '/api/v1';
+const CONTRASENA = 'Lectura-Segura-2026';
+
+let t: AppDePrueba;
+
+beforeAll(async () => {
+  t = await crearApp();
+  await vaciarBase(t.prisma);
+});
+
+afterAll(async () => {
+  await t?.cerrar();
+});
+
+async function registrar(app: AppDePrueba, email: string) {
+  await app.http().post(`${API}/auth/registro`).send({ nombre: 'Rosa Ríos', email, contrasena: CONTRASENA, rol: 'FAMILIAR' }).expect(201);
+}
+
+/** Enlaces de la bandeja de desarrollo para ese correo, del más reciente al más antiguo. */
+async function enlacesDe(app: AppDePrueba, email: string, asunto = /Confirma tu correo/): Promise<string[]> {
+  const correos = (await app.http().get(`${API}/dev/correos`).expect(200)).body as { para: string; asunto: string; enlace?: string }[];
+  return correos.filter((c) => c.para === email && asunto.test(c.asunto)).map((c) => new URL(c.enlace as string).searchParams.get('codigo') as string);
+}
+
+/** Simula que el último enlace se envió hace `seg` segundos (para no esperar el tiempo de espera real). */
+async function retrocederUltimoEnlace(app: AppDePrueba, email: string, seg = 120) {
+  const cuenta = await app.prisma.cuenta.findUniqueOrThrow({ where: { email } });
+  await app.prisma.verificacion.updateMany({ where: { cuentaId: cuenta.id }, data: { creadoEn: new Date(Date.now() - seg * 1000) } });
+}
+
+describe('Reenvío del enlace de verificación (RF-002)', () => {
+  it('el ingreso de una cuenta sin verificar lo dice claramente (solo con la contraseña correcta)', async () => {
+    await registrar(t, 'pendiente@lectoaventura.test');
+    const r = await t.http().post(`${API}/auth/login`).send({ email: 'pendiente@lectoaventura.test', contrasena: CONTRASENA }).expect(403);
+    expect(r.body).toMatchObject({ detail: 'Tu cuenta aún no está verificada. Revisa tu correo.', motivo: 'CUENTA_NO_VERIFICADA' });
+    const mala = await t.http().post(`${API}/auth/login`).send({ email: 'pendiente@lectoaventura.test', contrasena: 'otra-contrasena-cualquiera' });
+    expect(mala.status).toBe(401);
+  });
+
+  it('responde 202 igual exista o no la cuenta; el enlace nuevo reemplaza al anterior', async () => {
+    const email = 'reenvio@lectoaventura.test';
+    await registrar(t, email);
+    const [primero] = await enlacesDe(t, email);
+    await retrocederUltimoEnlace(t, email);
+
+    const inexistente = await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email: 'nadie@lectoaventura.test' }).expect(202);
+    const existente = await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email: email.toUpperCase() }).expect(202);
+    expect(existente.body).toEqual(inexistente.body);
+    expect(existente.body).toEqual({ ok: true, reintentarEnSeg: 60 });
+
+    const [nuevo] = await enlacesDe(t, email);
+    expect(nuevo).not.toBe(primero);
+    const cuenta = await t.prisma.cuenta.findUniqueOrThrow({ where: { email } });
+    const filas = await t.prisma.verificacion.findMany({ where: { cuentaId: cuenta.id }, orderBy: { creadoEn: 'asc' } });
+    expect(filas).toHaveLength(2);
+    expect(filas.every((f) => /^[0-9a-f]{64}$/.test(f.codigo))).toBe(true);
+    expect(filas[0]?.reemplazadoEn).not.toBeNull();
+    expect(filas[1]?.reemplazadoEn).toBeNull();
+
+    const reemplazado = await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: primero }).expect(400);
+    expect(reemplazado.body).toMatchObject({ motivo: 'REEMPLAZADO', detail: expect.stringMatching(/reemplazado por uno más nuevo/) });
+    expect((await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: nuevo }).expect(200)).body).toEqual({ ok: true, estado: 'VERIFICADA' });
+    expect((await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: nuevo }).expect(200)).body).toEqual({ ok: true, estado: 'YA_VERIFICADA' });
+    await t.http().post(`${API}/auth/login`).send({ email, contrasena: CONTRASENA }).expect(200);
+
+    const outbox = await t.prisma.outboxEvento.findMany({ where: { agregadoId: cuenta.id } });
+    expect(outbox.map((e) => e.tipo)).toEqual(expect.arrayContaining(['iam.VerificacionCorreoReenviada', 'iam.CuentaVerificada']));
+  });
+
+  it('dentro de los 60 s no se crea otro enlace aunque se pida', async () => {
+    const email = 'espera@lectoaventura.test';
+    await registrar(t, email);
+    await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email }).expect(202);
+    expect(await enlacesDe(t, email)).toHaveLength(1);
+  });
+
+  it('un enlace vencido lo explica y se puede pedir otro', async () => {
+    const email = 'vencido@lectoaventura.test';
+    await registrar(t, email);
+    const [codigo] = await enlacesDe(t, email);
+    const cuenta = await t.prisma.cuenta.findUniqueOrThrow({ where: { email } });
+    await t.prisma.verificacion.updateMany({
+      where: { cuentaId: cuenta.id },
+      data: { expiraEn: new Date(Date.now() - 1000), creadoEn: new Date(Date.now() - 25 * 3_600_000) },
+    });
+
+    const r = await t.http().post(`${API}/auth/verificar-correo`).send({ codigo }).expect(400);
+    expect(r.body).toMatchObject({ motivo: 'VENCIDO', detail: 'Este enlace venció. Pide uno nuevo.' });
+    await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email }).expect(202);
+    const [nuevo] = await enlacesDe(t, email);
+    await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: nuevo }).expect(200);
+  });
+
+  it('a una cuenta ya verificada le llega un aviso sin enlace de verificación', async () => {
+    const email = 'reenvio@lectoaventura.test';
+    await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email }).expect(202);
+    expect(await enlacesDe(t, email, /ya está verificado/)).toHaveLength(1);
+  });
+
+  it('un correo mal escrito se rechaza con 400 en español', async () => {
+    const r = await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email: 'no-es-un-correo' }).expect(400);
+    expect(r.body.detail).toMatch(/correo electrónico válido/);
+  });
+});
+
+describe('Verificación después de reiniciar la API', () => {
+  it('el enlace sigue funcionando y, si el correo se perdió, se puede pedir otro', async () => {
+    await registrar(t, 'antes@lectoaventura.test');
+    await registrar(t, 'perdido@lectoaventura.test');
+    const [enlaceAntes] = await enlacesDe(t, 'antes@lectoaventura.test');
+
+    // Reinicio: la bandeja de desarrollo (en memoria) se vacía; los enlaces viven en la base.
+    await t.cerrar();
+    t = await crearApp();
+    expect(await enlacesDe(t, 'perdido@lectoaventura.test')).toHaveLength(0);
+
+    expect((await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: enlaceAntes }).expect(200)).body.estado).toBe('VERIFICADA');
+
+    await retrocederUltimoEnlace(t, 'perdido@lectoaventura.test');
+    await t.http().post(`${API}/auth/verificar-correo/reenviar`).send({ email: 'perdido@lectoaventura.test' }).expect(202);
+    const [nuevo] = await enlacesDe(t, 'perdido@lectoaventura.test');
+    await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: nuevo }).expect(200);
+    await t.http().post(`${API}/auth/login`).send({ email: 'perdido@lectoaventura.test', contrasena: CONTRASENA }).expect(200);
+  });
 });
 ```
 
@@ -1007,6 +1194,69 @@ test.describe('IAM — tablet del aula e inactividad', () => {
 });
 ```
 
+`tests/e2e/specs/iam/verificacion-correo.spec.ts`:
+
+```ts
+import { expect, test } from '@playwright/test';
+
+import {
+  correoUnico,
+  cuentaSinVerificar,
+  enlaceDelCorreo,
+  ingresarComoAdulto,
+  ipSimulada,
+  retrocederEnlacesDeVerificacion,
+} from '../../support/iam';
+
+test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
+
+const CONFIRMA = /Confirma tu correo/;
+const rutaDe = (enlace: string) => new URL(enlace).pathname + new URL(enlace).search;
+
+/** Nivel 3 — Verificación de correo y reenvío del enlace desde la interfaz (RF-002). */
+test.describe('IAM — verificación de correo', () => {
+  test('si el enlace se perdió, se pide otro desde el ingreso; el anterior deja de servir', async ({ page, request }) => {
+    const { email, contrasena } = await cuentaSinVerificar(request);
+    const primero = await enlaceDelCorreo(request, email, CONFIRMA);
+    await retrocederEnlacesDeVerificacion(email);
+
+    // Con la contraseña correcta, el ingreso explica qué falta y ofrece un enlace nuevo.
+    await ingresarComoAdulto(page, email, contrasena);
+    await expect(page.getByText('Tu cuenta aún no está verificada.')).toBeVisible();
+    await page.getByRole('button', { name: 'Reenviar enlace de verificación' }).click();
+    await expect(page.getByText(/te enviamos un enlace nuevo/)).toBeVisible();
+    // Tiempo de espera visible antes de poder pedir otro.
+    await expect(page.getByRole('button', { name: /Podrás pedir otro enlace en \d+ s/ })).toBeDisabled();
+
+    const nuevo = await enlaceDelCorreo(request, email, CONFIRMA);
+    expect(nuevo).not.toBe(primero);
+
+    await page.goto(rutaDe(primero));
+    await expect(page.getByRole('heading', { name: 'Este enlace ya no sirve', level: 1 })).toBeVisible();
+    await expect(page.getByText(/reemplazado por uno más nuevo/)).toBeVisible();
+
+    await page.goto(rutaDe(nuevo));
+    await expect(page.getByRole('heading', { name: /Correo verificado/, level: 1 })).toBeVisible();
+    await page.goto(rutaDe(nuevo));
+    await expect(page.getByRole('heading', { name: 'Tu correo ya estaba verificado', level: 1 })).toBeVisible();
+
+    await ingresarComoAdulto(page, email, contrasena);
+    await expect(page).toHaveURL(/\/familia$/);
+  });
+
+  test('un enlace incompleto lo explica y permite pedir otro escribiendo el correo', async ({ page }) => {
+    await page.goto('/verificar');
+    await expect(page.getByRole('heading', { name: 'No pudimos verificar', level: 1 })).toBeVisible();
+    await expect(page.getByText(/El enlace está incompleto/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reenviar enlace de verificación' })).toBeDisabled();
+    await page.getByLabel('Tu correo electrónico').fill(correoUnico('nadie'));
+    await page.getByRole('button', { name: 'Reenviar enlace de verificación' }).click();
+    // Misma respuesta exista o no la cuenta (no revela qué correos están registrados).
+    await expect(page.getByText(/Si tu cuenta está pendiente de verificación, te enviamos un enlace nuevo/)).toBeVisible();
+  });
+});
+```
+
 `tests/e2e/specs/diseno/responsivo.spec.ts`:
 
 ```ts
@@ -1190,7 +1440,7 @@ export function consultarPerfil(datos) {
 # 7. NIVEL 4: PRUEBAS DE ACEPTACIÓN (UAT / BDD)
 
 ## 7.1 Escenarios de negocio en Gherkin
-13 escenarios en 4 características (`tests/e2e/features/iam/`). Los etiquetados `@UAT-05` corresponden al caso de aceptación UAT-05 del propio SRS (consentimiento parental obligatorio) y los `@CR-01`, al cambio aprobado "tablet del aula sin códigos".
+14 escenarios en 4 características (`tests/e2e/features/iam/`). Los etiquetados `@UAT-05` corresponden al caso de aceptación UAT-05 del propio SRS (consentimiento parental obligatorio) y los `@CR-01`, al cambio aprobado "tablet del aula sin códigos".
 
 ```gherkin
 # language: es
@@ -1317,6 +1567,17 @@ Característica: Registro y acceso seguro de una familia
     Y ingreso con mi correo y mi contraseña
     Entonces veo mi panel familiar con el saludo "Hola, Rosa"
 
+  @RF-002 @borde
+  Escenario: Si pierdo el correo de confirmación, pido un enlace nuevo y activo mi cuenta
+    Dado que me registré pero perdí el correo de confirmación
+    Cuando ingreso con mi correo y mi contraseña
+    Entonces veo el aviso "Tu cuenta aún no está verificada"
+    Cuando pido un nuevo enlace de verificación
+    Y abro el enlace más reciente
+    Entonces veo el título "¡Correo verificado! 🎉"
+    Cuando ingreso con mi correo y mi contraseña
+    Entonces veo mi panel familiar con el saludo "Hola, Rosa"
+
   @RF-001 @negativo
   Escenario: Una contraseña muy común no se acepta al registrarse
     Dado que estoy en la página de registro
@@ -1341,11 +1602,13 @@ import {
   aulaConEstudiante,
   CONTRASENA_E2E,
   correoUnico,
+  cuentaSinVerificar,
   cuentaVerificada,
   enlaceDelCorreo,
   escribirPin,
   ingresarComoAdulto,
   prepararFamilia,
+  retrocederEnlacesDeVerificacion,
   salirDelPanel,
   URL_AREA_ESTUDIANTE,
 } from '../support/iam';
@@ -1393,6 +1656,27 @@ Cuando('abro el enlace de verificación que me llegó por correo', async ({ page
 
 Cuando('ingreso con mi correo y mi contraseña', async ({ page, mundo }) => {
   await ingresarComoAdulto(page, mundo.email as string, mundo.contrasena as string);
+});
+
+// ── Reenvío del enlace de verificación (RF-002) ───────────────────────────
+
+Dado('que me registré pero perdí el correo de confirmación', async ({ request, mundo }) => {
+  Object.assign(mundo, await cuentaSinVerificar(request, 'uat'));
+  await retrocederEnlacesDeVerificacion(mundo.email as string);
+});
+
+Entonces('veo el aviso {string}', async ({ page }, aviso: string) => {
+  await expect(page.getByText(aviso)).toBeVisible();
+});
+
+Cuando('pido un nuevo enlace de verificación', async ({ page }) => {
+  await page.getByRole('button', { name: 'Reenviar enlace de verificación' }).click();
+  await expect(page.getByText(/te enviamos un enlace nuevo/)).toBeVisible();
+});
+
+Cuando('abro el enlace más reciente', async ({ page, request, mundo }) => {
+  const enlace = new URL(await enlaceDelCorreo(request, mundo.email as string, /Confirma tu correo/));
+  await page.goto(enlace.pathname + enlace.search);
 });
 
 Entonces('veo mi panel familiar con el saludo {string}', async ({ page }, saludo: string) => {
@@ -1794,6 +2078,7 @@ jobs:
 | IAM-U-21 | `Sesion.estaViva` (ADR-005) | Unit | Borde | Estudiante muere a las 8 h aunque haya actividad; adulto no | `npm run test:unit` |
 | IAM-U-22 | `ContextoIngresoUseCase` (RN-04, CR-01) | Unit | Negativo | Sin tablet, tablet desconocida, vencida o de un aula archivada → sin avatares | `npm run test:unit` |
 | IAM-U-27 | `VincularDispositivoUseCase` (RN-04, CR-01) | Unit | Pos./Neg. | La docente activa solo sus aulas activas; la familia no activa aulas; solo se guarda la huella | `npm run test:unit` |
+| IAM-U-28 | `ReenviarVerificacionUseCase` + `VerificacionCorreo` (RF-002) | Unit | Pos./Neg./Borde | Enlace nuevo anula el anterior; sirve aunque el primero haya vencido; 60 s de espera y 5 por hora; cuenta ya verificada recibe aviso sin enlace; inexistente o suspendida: misma respuesta y nada enviado | `npm run test:unit` |
 | IAM-U-23 | `Solicitar/DescargarExportacion` (RF-012) | Unit | Borde | Vence a las 72 h exactas; firma/formato/fecha alterados → rechazo | `npm run test:unit` |
 | IAM-U-24 | `redactar` (RNF-031) | Unit | Negativo | Enmascara contraseñas, PIN, códigos, cookies, JWT, hashes y huellas | `npm run test:unit` |
 | IAM-U-25 | `FiltroErrores` (SRS §7) | Unit | Positivo | Problem Details RFC 9457; 500 sin filtrar el error interno | `npm run test:unit` |
@@ -1808,13 +2093,15 @@ jobs:
 | IAM-I-08 | Exportación (RF-012) | Int | Positivo | JSON y PDF por enlace firmado; alterado → 403 | `npm run test:int` |
 | IAM-I-09 | RN-17 | Int | Negativo | Otra familia → 404 | `npm run test:int` |
 | IAM-I-10 | Eliminación (RF-013) | Int | Positivo | Alias "Perfil eliminado", PIN vacío, sesiones revocadas, fuera del dispositivo | `npm run test:int` |
-| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; 31.º por tablet → 429 (otra tablet sigue) | `npm run test:int` |
+| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; 31.º por tablet → 429 (otra tablet sigue); reenviar verificación: 2.º pedido del mismo correo en 1 min → 429, 6.º de la misma IP → 429 | `npm run test:int` |
+| IAM-I-15 | Verificación y reenvío (RF-002) | Int | Pos./Neg./Borde | 202 idéntico exista o no la cuenta; huellas SHA-256; anterior `REEMPLAZADO`, vencido `VENCIDO`, repetido `YA_VERIFICADA`; **funciona después de reiniciar la API** | `npm run test:int` |
 | IAM-I-12 | Contrato del API (SRS §7) | Int | Positivo | `/api/v1`, `X-Request-Id`, Problem Details | `npm run test:int` |
 | IAM-I-13 | Tablet del aula + Escuela (RF-007, RF-015, RF-020, CR-01) | Int | Pos./Neg. | Entra el matriculado; ajeno 403; familia 403; otra docente 404; aula archivada 403 | `npm run test:int` |
 | IAM-I-14 | Logs sin secretos (RNF-031) | Int | Negativo | 0 apariciones de contraseña, PIN, tokens, códigos, firmas o hashes | `npm run test:int` |
 | IAM-S-01 | Recorrido familia completo + exportar PDF | Sys | Positivo | Del registro al niño leyendo, con descarga del PDF, en escritorio y tablet | `npm run test:e2e` |
 | IAM-S-08 | Tablet del aula (CR-01) | Sys | Pos./Neg. | Sin activar no hay avatares ni campos; activada, el niño entra sin códigos | `npm run test:e2e` |
 | IAM-S-10 | Diseño responsivo (RNF-022, RNF-023) | Sys | Borde | 0 px de desborde y objetivos ≥ 48 px en 1280, 820 y 390 px; barra lateral o inferior según el dispositivo | `npm run test:e2e` |
+| IAM-S-11 | Reenvío de la verificación desde la interfaz (RF-002) | Sys | Pos./Neg. | El ingreso ofrece "Reenviar enlace"; cuenta regresiva; enlace viejo "ya no sirve"; nuevo verifica; repetido "ya estaba verificado"; enlace incompleto permite pedir otro | `npm run test:e2e` |
 | IAM-S-09 | Cierre por inactividad (RF-010) | Sys | Borde | Con 9 min sigue dentro; pasados 10 min vuelve al ingreso con aviso | `npm run test:e2e` |
 | IAM-S-02 | Ingreso con credenciales erradas | Sys | Negativo | Mensaje claro, sigue en `/ingresar` | `npm run test:e2e` |
 | IAM-S-03 | Rutas protegidas sin sesión | Sys | Negativo | Redirige al ingreso correcto según el rol | `npm run test:e2e` |
@@ -1822,7 +2109,7 @@ jobs:
 | IAM-S-05 | Recarga y "Salir" | Sys | Positivo | Sesión persiste; "Salir" lleva a la portada y cierra | `npm run test:e2e` |
 | IAM-S-06 | Diseño sin desbordes (RNF-022) | Sys | Borde | Sin scroll horizontal en 820 px | `npm run test:e2e` |
 | IAM-S-07 | Carga RNF-008 / RNF-001 | Sys | Rendimiento | 0 % errores; p95 277 ms y 62 ms | `npm run test:load` |
-| IAM-A-01..13 | 13 escenarios Gherkin (incluye UAT-05 del SRS, la inactividad y la tablet del aula de CR-01) | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
+| IAM-A-01..14 | 14 escenarios Gherkin (incluye UAT-05 del SRS, la inactividad, la tablet del aula de CR-01 y el reenvío de la verificación) | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
 
 ---
 

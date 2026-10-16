@@ -43,4 +43,17 @@ describe('Límite de tasa (RNF-019)', () => {
     // Otra tablet desde la misma IP sigue pudiendo intentarlo.
     await ingreso(99, 'token-de-otra-tablet-que-no-existe-0002').expect(403);
   });
+
+  it('reenviar la verificación: 1 por minuto por correo (sin importar mayúsculas) y 5 por IP', async () => {
+    const reenviar = (ip: string, email: string) =>
+      t.http().post(`${API}/auth/verificar-correo/reenviar`).set('X-Forwarded-For', ip).send({ email });
+    await reenviar('10.1.0.1', 'ana@lectoaventura.test').expect(202);
+    const repetido = await reenviar('10.1.0.2', 'ANA@lectoaventura.test').expect(429);
+    expect(repetido.body).toMatchObject({ status: 429, reintentarEnSeg: expect.any(Number) });
+    expect(Number(repetido.headers['retry-after'])).toBeGreaterThan(0);
+
+    for (let i = 1; i <= 4; i++) await reenviar('10.1.0.9', `otra${i}@lectoaventura.test`).expect(202);
+    await reenviar('10.1.0.9', 'otra5@lectoaventura.test').expect(202);
+    await reenviar('10.1.0.9', 'otra6@lectoaventura.test').expect(429);
+  });
 });

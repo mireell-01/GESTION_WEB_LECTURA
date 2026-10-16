@@ -74,14 +74,17 @@ model Consentimiento {
 }
 
 /// Enlaces de un solo uso: verificación de correo (24 h) y recuperación de contraseña (30 min).
+/// Al reenviar la verificación, los enlaces anteriores quedan reemplazados y dejan de servir.
 model Verificacion {
-  id       String   @id @default(cuid())
-  cuentaId String
-  cuenta   Cuenta   @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
-  tipo     String
-  codigo   String   @unique
-  expiraEn DateTime
-  canjeado Boolean  @default(false)
+  id            String    @id @default(cuid())
+  cuentaId      String
+  cuenta        Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  tipo          String
+  codigo        String    @unique
+  expiraEn      DateTime
+  canjeado      Boolean   @default(false)
+  creadoEn      DateTime  @default(now())
+  reemplazadoEn DateTime?
 
   @@index([cuentaId, tipo])
 }

@@ -9,6 +9,7 @@ import {
   PerfilEstudiante,
 } from '../../../../src/modules/iam/domain/entities/perfil-estudiante';
 import { Sesion } from '../../../../src/modules/iam/domain/entities/sesion';
+import { VerificacionCorreo } from '../../../../src/modules/iam/domain/entities/verificacion-correo';
 import { DatoInvalidoError } from '../../../../src/modules/iam/domain/errors/errores-iam';
 import { PerfilBloqueadoError } from '../../../../src/modules/iam/domain/errors/perfil-bloqueado-error';
 import { AnioMesNacimiento } from '../../../../src/modules/iam/domain/value-objects/anio-mes-nacimiento';
@@ -189,6 +190,39 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
     expect(c.mfaHabilitado).toBe(true);
     expect(c.mfaSecret).toBe('SECRETO');
     expect(c.mfaSecretPendiente).toBeNull();
+  });
+});
+
+describe('VerificacionCorreo (RF-002)', () => {
+  const nuevo = () => VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella', ahora: T0 });
+
+  it('pasa de vigente a vencido a las 24 h y recuerda cuándo se creó', () => {
+    const v = nuevo();
+    expect(v.creadoEn).toEqual(T0);
+    expect(v.estadoEn(masMin(24 * 60))).toBe('VIGENTE');
+    expect(v.estadoEn(masMin(24 * 60 + 1))).toBe('VENCIDO');
+    expect(v.canjear(masMin(24 * 60 + 1))).toBe(false);
+  });
+
+  it('se usa una sola vez', () => {
+    const v = nuevo();
+    expect(v.canjear(masMin(5))).toBe(true);
+    expect(v.estadoEn(masMin(5))).toBe('USADO');
+    expect(v.canjear(masMin(6))).toBe(false);
+  });
+
+  it('un enlace reemplazado no sirve; uno ya usado no se marca como reemplazado', () => {
+    const v = nuevo();
+    v.reemplazar(masMin(1));
+    expect(v.estadoEn(masMin(2))).toBe('REEMPLAZADO');
+    expect(v.estaVigente(masMin(2))).toBe(false);
+    expect(v.canjear(masMin(2))).toBe(false);
+
+    const usado = nuevo();
+    usado.canjear(masMin(1));
+    usado.reemplazar(masMin(2));
+    expect(usado.reemplazadoEn).toBeNull();
+    expect(usado.estadoEn(masMin(3))).toBe('USADO');
   });
 });
 

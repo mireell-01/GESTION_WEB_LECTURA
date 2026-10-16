@@ -5,6 +5,7 @@
 export const EVENTOS_IAM = {
   CUENTA_CREADA: 'iam.CuentaCreada',
   CUENTA_VERIFICADA: 'iam.CuentaVerificada',
+  VERIFICACION_REENVIADA: 'iam.VerificacionCorreoReenviada',
   CONTRASENA_RESTABLECIDA: 'iam.ContrasenaRestablecida',
   CONSENTIMIENTO_OTORGADO: 'iam.ConsentimientoOtorgado',
   PERFIL_CREADO: 'iam.PerfilEstudianteCreado',

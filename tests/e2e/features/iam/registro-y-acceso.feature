@@ -15,6 +15,17 @@ Característica: Registro y acceso seguro de una familia
     Y ingreso con mi correo y mi contraseña
     Entonces veo mi panel familiar con el saludo "Hola, Rosa"
 
+  @RF-002 @borde
+  Escenario: Si pierdo el correo de confirmación, pido un enlace nuevo y activo mi cuenta
+    Dado que me registré pero perdí el correo de confirmación
+    Cuando ingreso con mi correo y mi contraseña
+    Entonces veo el aviso "Tu cuenta aún no está verificada"
+    Cuando pido un nuevo enlace de verificación
+    Y abro el enlace más reciente
+    Entonces veo el título "¡Correo verificado! 🎉"
+    Cuando ingreso con mi correo y mi contraseña
+    Entonces veo mi panel familiar con el saludo "Hola, Rosa"
+
   @RF-001 @negativo
   Escenario: Una contraseña muy común no se acepta al registrarse
     Dado que estoy en la página de registro

@@ -72,6 +72,16 @@ export class VerificacionesEnMemoria implements VerificacionRepository {
   async buscarPorCodigo(codigo: string, tipo: TipoVerificacion) {
     return [...this.filas.values()].find((v) => v.codigo.value === codigo && v.tipo === tipo) ?? null;
   }
+  async listarRecientes(cuentaId: string, tipo: TipoVerificacion, desde: Date) {
+    return [...this.filas.values()].filter((v) => v.cuentaId === cuentaId && v.tipo === tipo && v.creadoEn >= desde);
+  }
+  async reemplazarVigentes(cuentaId: string, tipo: TipoVerificacion, ahora: Date) {
+    const vigentes = [...this.filas.values()].filter(
+      (v) => v.cuentaId === cuentaId && v.tipo === tipo && !v.codigo.yaCanjeado && !v.reemplazadoEn,
+    );
+    vigentes.forEach((v) => v.reemplazar(ahora));
+    return vigentes.length;
+  }
 }
 
 export class SesionesEnMemoria implements SesionRepository {

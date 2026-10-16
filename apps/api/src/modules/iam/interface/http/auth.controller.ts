@@ -8,6 +8,7 @@ import {
   CodigoMfaRequestDto,
   CodigoRequestDto,
   RecuperarContrasenaRequestDto,
+  ReenviarVerificacionRequestDto,
   RegistrarCuentaRequestDto,
   RestablecerContrasenaRequestDto,
 } from '../dto/iam.request.dto';
@@ -33,6 +34,21 @@ export class AuthController {
   @HttpCode(200)
   verificarCorreo(@Body() dto: CodigoRequestDto) {
     return this.iam.verificarCorreo.ejecutar(dto.codigo);
+  }
+
+  /**
+   * RF-002: pedir otro enlace si se perdió o venció. Misma respuesta exista o no la cuenta.
+   * RNF-019: 5 por minuto por IP y 1 por minuto por correo (además, 60 s entre enlaces de una cuenta).
+   */
+  @Publico()
+  @LimiteTasa(
+    { nombre: 'reenviar-verificacion-ip', maximoPorMinuto: 5, por: 'ip' },
+    { nombre: 'reenviar-verificacion-correo', maximoPorMinuto: 1, por: { campoCuerpo: 'email' } },
+  )
+  @Post('verificar-correo/reenviar')
+  @HttpCode(202)
+  reenviarVerificacion(@Body() dto: ReenviarVerificacionRequestDto) {
+    return this.iam.reenviarVerificacion.ejecutar(dto.email);
   }
 
   /** RF-003, RF-009, RF-011 · RNF-019: 10 intentos por minuto por IP. */

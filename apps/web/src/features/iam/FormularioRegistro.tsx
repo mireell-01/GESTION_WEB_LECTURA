@@ -7,6 +7,8 @@ import { Alerta, Boton, Campo, Tarjeta } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
+import { ReenviarVerificacion } from './ReenviarVerificacion';
+
 type RolAdulto = 'FAMILIAR' | 'DOCENTE';
 
 /** RF-001: registro de cuenta adulta. La cuenta queda pendiente hasta verificar el correo (RF-002). */
@@ -46,6 +48,10 @@ export function FormularioRegistro() {
         <Alerta tipo="aviso">
           ¿Estás probando la plataforma sin servidor de correo? Abre la <Link href="/dev/correos">bandeja de desarrollo</Link>.
         </Alerta>
+        <p className="texto-suave" style={{ marginBottom: 'var(--la-espacio-2)' }}>
+          ¿No te llegó o se venció? Pide otro enlace (los anteriores dejan de servir).
+        </p>
+        <ReenviarVerificacion email={email} esperaInicialSeg={60} />
         <Link href="/ingresar">Ir a ingresar</Link>
       </Tarjeta>
     );

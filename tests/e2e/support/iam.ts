@@ -1,4 +1,7 @@
+import { resolve } from 'node:path';
+
 import { APIRequestContext, expect, Page } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 
 /** Dominio reservado para datos de prueba: la limpieza final borra todo lo que lo use. */
 export const DOMINIO_E2E = 'e2e.lectoaventura.test';
@@ -79,6 +82,35 @@ export async function activarTabletDelAula(page: Page, docente: { email: string;
 export async function salirDelPanel(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Salir' }).click();
   await expect(page).toHaveURL(/:\d+\/(ingresar\/estudiante)?$/);
+}
+
+/** Registra una cuenta por la API sin verificarla (RF-001): queda pendiente de verificación. */
+export async function cuentaSinVerificar(request: APIRequestContext, prefijo = 'pendiente'): Promise<{ email: string; contrasena: string }> {
+  const email = correoUnico(prefijo);
+  const registro = await request.post('/api/v1/auth/registro', {
+    data: { nombre: 'Rosa Prueba', email, contrasena: CONTRASENA_E2E, rol: 'FAMILIAR' },
+  });
+  expect(registro.status(), await registro.text()).toBe(201);
+  return { email, contrasena: CONTRASENA_E2E };
+}
+
+/**
+ * Simula que los enlaces de verificación de la cuenta se enviaron hace 2 minutos, para no esperar
+ * en la prueba los 60 s reales entre reenvíos (RF-002). Usa la base de las pruebas.
+ */
+export async function retrocederEnlacesDeVerificacion(email: string): Promise<void> {
+  try {
+    process.loadEnvFile(resolve(__dirname, '../../../apps/api/.env'));
+  } catch {
+    // En CI la URL de la base llega por variable de entorno.
+  }
+  const prisma = new PrismaClient();
+  try {
+    const cuenta = await prisma.cuenta.findUniqueOrThrow({ where: { email } });
+    await prisma.verificacion.updateMany({ where: { cuentaId: cuenta.id }, data: { creadoEn: new Date(Date.now() - 120_000) } });
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 export async function enlaceDelCorreo(request: APIRequestContext, email: string, asunto: RegExp): Promise<string> {

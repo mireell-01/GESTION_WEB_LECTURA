@@ -5,11 +5,13 @@ import {
   aulaConEstudiante,
   CONTRASENA_E2E,
   correoUnico,
+  cuentaSinVerificar,
   cuentaVerificada,
   enlaceDelCorreo,
   escribirPin,
   ingresarComoAdulto,
   prepararFamilia,
+  retrocederEnlacesDeVerificacion,
   salirDelPanel,
   URL_AREA_ESTUDIANTE,
 } from '../support/iam';
@@ -57,6 +59,27 @@ Cuando('abro el enlace de verificación que me llegó por correo', async ({ page
 
 Cuando('ingreso con mi correo y mi contraseña', async ({ page, mundo }) => {
   await ingresarComoAdulto(page, mundo.email as string, mundo.contrasena as string);
+});
+
+// ── Reenvío del enlace de verificación (RF-002) ───────────────────────────
+
+Dado('que me registré pero perdí el correo de confirmación', async ({ request, mundo }) => {
+  Object.assign(mundo, await cuentaSinVerificar(request, 'uat'));
+  await retrocederEnlacesDeVerificacion(mundo.email as string);
+});
+
+Entonces('veo el aviso {string}', async ({ page }, aviso: string) => {
+  await expect(page.getByText(aviso)).toBeVisible();
+});
+
+Cuando('pido un nuevo enlace de verificación', async ({ page }) => {
+  await page.getByRole('button', { name: 'Reenviar enlace de verificación' }).click();
+  await expect(page.getByText(/te enviamos un enlace nuevo/)).toBeVisible();
+});
+
+Cuando('abro el enlace más reciente', async ({ page, request, mundo }) => {
+  const enlace = new URL(await enlaceDelCorreo(request, mundo.email as string, /Confirma tu correo/));
+  await page.goto(enlace.pathname + enlace.search);
 });
 
 Entonces('veo mi panel familiar con el saludo {string}', async ({ page }, saludo: string) => {

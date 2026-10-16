@@ -9,6 +9,7 @@ import { ContextoIngresoUseCase } from '../../../../src/modules/iam/application/
 import { DescargarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/descargar-exportacion.use-case';
 import { SolicitarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/solicitar-exportacion.use-case';
 import { RecuperarContrasenaUseCase } from '../../../../src/modules/iam/application/use-cases/recuperar-contrasena.use-case';
+import { ReenviarVerificacionUseCase } from '../../../../src/modules/iam/application/use-cases/reenviar-verificacion.use-case';
 import { RegistrarConsentimientoUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-cuenta.use-case';
 import { RestablecerContrasenaUseCase } from '../../../../src/modules/iam/application/use-cases/restablecer-contrasena.use-case';
@@ -72,18 +73,104 @@ describe('Registro y verificación de cuenta (RF-001, RF-002)', () => {
     ).rejects.toThrow(ContrasenaFiltradaError);
   });
 
-  it('el enlace activa la cuenta una sola vez y vence a las 24 h', async () => {
+  it('el enlace activa la cuenta una sola vez; volver a abrirlo avisa que ya estaba verificada', async () => {
     const { cuentaId } = await registrar.ejecutar(datos);
     const codigo = codigoDelEnlace(e.correo.enviados[0]?.enlace);
 
-    await verificar.ejecutar(codigo);
+    expect(await verificar.ejecutar(codigo)).toEqual({ ok: true, estado: 'VERIFICADA' });
     expect((await e.cuentas.buscarPorId(cuentaId))?.estaActiva()).toBe(true);
-    await expect(verificar.ejecutar(codigo)).rejects.toThrow(EnlaceInvalidoError);
+    expect(e.bus.nombres()).toContain(EVENTOS_IAM.CUENTA_VERIFICADA);
+    expect(await verificar.ejecutar(codigo)).toEqual({ ok: true, estado: 'YA_VERIFICADA' });
+    expect(e.bus.nombres().filter((n) => n === EVENTOS_IAM.CUENTA_VERIFICADA)).toHaveLength(1);
+  });
 
-    await registrar.ejecutar({ ...datos, email: 'tarde@lectoaventura.test' });
-    const codigoTarde = codigoDelEnlace(e.correo.enviados[1]?.enlace);
+  it('explica por qué no sirve un enlace: vencido a las 24 h o inexistente', async () => {
+    await registrar.ejecutar(datos);
+    const codigo = codigoDelEnlace(e.correo.enviados[0]?.enlace);
     e.reloj.avanzarMin(24 * 60 + 1);
-    await expect(verificar.ejecutar(codigoTarde)).rejects.toThrow(EnlaceInvalidoError);
+
+    const vencido = await verificar.ejecutar(codigo).catch((err) => err);
+    expect(vencido).toBeInstanceOf(EnlaceInvalidoError);
+    expect(vencido.detalle).toEqual({ motivo: 'VENCIDO' });
+    expect(vencido.message).toMatch(/venció/);
+    const inexistente = await verificar.ejecutar('codigo-que-no-existe').catch((err) => err);
+    expect(inexistente.detalle).toEqual({ motivo: 'INVALIDO' });
+  });
+});
+
+describe('Reenvío del enlace de verificación (RF-002, RNF-019)', () => {
+  let e: Entorno;
+  let registrar: RegistrarCuentaUseCase;
+  let reenviar: ReenviarVerificacionUseCase;
+  let verificar: VerificarCorreoUseCase;
+  const datos = { nombre: 'Rosa Demo', email: 'rosa@lectoaventura.test', contrasena: 'Lectura-Segura-2026', rol: 'FAMILIAR' as const };
+  const RESPUESTA = { ok: true, reintentarEnSeg: 60 };
+
+  beforeEach(() => {
+    e = crearEntorno();
+    registrar = new RegistrarCuentaUseCase(
+      e.cuentas, e.verificaciones, e.hash, e.filtradas, e.tokens, e.correo, e.bus, URL_WEB, e.generarId, e.reloj.ahora,
+    );
+    reenviar = new ReenviarVerificacionUseCase(e.cuentas, e.verificaciones, e.tokens, e.correo, e.bus, URL_WEB, e.generarId, e.reloj.ahora);
+    verificar = new VerificarCorreoUseCase(e.cuentas, e.verificaciones, e.tokens, e.bus, e.reloj.ahora);
+  });
+
+  it('envía un enlace nuevo de un solo uso y deja sin efecto el anterior', async () => {
+    const { cuentaId } = await registrar.ejecutar(datos);
+    const anterior = codigoDelEnlace(e.correo.enviados[0]?.enlace);
+    e.reloj.avanzarMin(2);
+
+    expect(await reenviar.ejecutar(' Rosa@LectoAventura.test ')).toEqual(RESPUESTA);
+    expect(e.correo.enviados).toHaveLength(2);
+    expect(e.correo.enviados[1]).toMatchObject({ para: 'rosa@lectoaventura.test', asunto: 'Confirma tu correo en LectoAventura' });
+    expect(e.correo.enviados[1]?.texto).toMatch(/24 horas y solo funciona una vez/);
+    expect(e.bus.nombres()).toContain(EVENTOS_IAM.VERIFICACION_REENVIADA);
+
+    // El enlace anterior ya no sirve y lo dice; el nuevo activa la cuenta.
+    const reemplazado = await verificar.ejecutar(anterior).catch((err) => err);
+    expect(reemplazado).toBeInstanceOf(EnlaceInvalidoError);
+    expect(reemplazado.detalle).toEqual({ motivo: 'REEMPLAZADO' });
+    expect(await verificar.ejecutar(codigoDelEnlace(e.correo.enviados[1]?.enlace))).toEqual({ ok: true, estado: 'VERIFICADA' });
+    expect((await e.cuentas.buscarPorId(cuentaId))?.estaActiva()).toBe(true);
+  });
+
+  it('sirve aunque el primer enlace ya haya vencido', async () => {
+    await registrar.ejecutar(datos);
+    e.reloj.avanzarMin(25 * 60);
+    await reenviar.ejecutar(datos.email);
+    expect(await verificar.ejecutar(codigoDelEnlace(e.correo.enviados[1]?.enlace))).toEqual({ ok: true, estado: 'VERIFICADA' });
+  });
+
+  it('respeta 60 s de espera entre enlaces y un máximo de 5 por hora', async () => {
+    await registrar.ejecutar(datos);
+    // Recién registrada: debe esperar 60 s.
+    await reenviar.ejecutar(datos.email);
+    expect(e.correo.enviados).toHaveLength(1);
+
+    for (let i = 0; i < 6; i++) {
+      e.reloj.avanzarMin(1.5);
+      expect(await reenviar.ejecutar(datos.email)).toEqual(RESPUESTA);
+    }
+    // 1 del registro + 4 reenvíos = 5 en la última hora; el resto no se envía.
+    expect(e.correo.enviados).toHaveLength(5);
+    e.reloj.avanzarMin(60);
+    await reenviar.ejecutar(datos.email);
+    expect(e.correo.enviados).toHaveLength(6);
+  });
+
+  it('a una cuenta ya verificada le avisa por correo que puede ingresar, sin enlace de verificación', async () => {
+    await cuentaActiva(e, { email: 'ana@lectoaventura.test' });
+    expect(await reenviar.ejecutar('ana@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(e.correo.enviados[0]).toMatchObject({ asunto: 'Tu correo ya está verificado en LectoAventura', enlace: `${URL_WEB}/ingresar` });
+    expect(e.verificaciones.filas.size).toBe(0);
+  });
+
+  it('responde igual si la cuenta no existe o está suspendida, sin enviar nada (anti-enumeración)', async () => {
+    const suspendida = await cuentaActiva(e, { email: 'suspendida@lectoaventura.test' });
+    suspendida.suspender();
+    expect(await reenviar.ejecutar('nadie@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(await reenviar.ejecutar('suspendida@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(e.correo.enviados).toHaveLength(0);
   });
 });
 

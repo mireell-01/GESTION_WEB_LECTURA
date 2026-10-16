@@ -23,11 +23,12 @@ export const LimiteTasa = (...reglas: ReglaLimiteTasa[]) => SetMetadata(LIMITE_T
 const VENTANA_MS = 60_000;
 
 /**
- * El campo puede ser un secreto (el token de la tablet, CR-01): en memoria solo queda su huella.
+ * El campo puede ser un dato personal o un secreto (correo, token de la tablet): en memoria solo
+ * queda su huella. Sin distinguir mayúsculas, para que "Ana@x.pe" y "ana@x.pe" cuenten juntos.
  * Vacío si el campo no viene, para que esa regla no aplique.
  */
 function huellaDeCampo(cuerpo: unknown, campo: string): string {
-  const valor = String((cuerpo as Record<string, unknown> | undefined)?.[campo] ?? '').trim();
+  const valor = String((cuerpo as Record<string, unknown> | undefined)?.[campo] ?? '').trim().toLowerCase();
   return valor ? createHash('sha256').update(valor).digest('base64url') : '';
 }
 

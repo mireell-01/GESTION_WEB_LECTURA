@@ -7,15 +7,21 @@ export const VIGENCIA_RECUPERACION_MIN = 30;
 
 export type TipoVerificacion = 'CORREO' | 'RECUPERACION_CONTRASENA';
 
+/** En qué situación está un enlace en un momento dado (para mostrar mensajes claros). */
+export type EstadoEnlace = 'VIGENTE' | 'USADO' | 'VENCIDO' | 'REEMPLAZADO';
+
 /**
  * Entity: VerificacionCorreo — enlace de un solo uso para verificar correo (RF-002)
- * o recuperar contraseña (RF-004). Vigencia configurable por tipo.
+ * o recuperar contraseña (RF-004). Vigencia configurable por tipo. Al pedir un enlace
+ * nuevo, los anteriores quedan reemplazados y dejan de servir.
  */
 export interface VerificacionCorreoProps {
   id: string;
   cuentaId: string;
   tipo: TipoVerificacion;
   codigo: CodigoUnUso;
+  creadoEn: Date;
+  reemplazadoEn: Date | null;
 }
 
 export class VerificacionCorreo {
@@ -35,6 +41,8 @@ export class VerificacionCorreo {
       cuentaId: params.cuentaId,
       tipo: 'CORREO',
       codigo: CodigoUnUso.crear(params.codigo, expiraEn),
+      creadoEn: params.ahora,
+      reemplazadoEn: null,
     });
   }
 
@@ -52,6 +60,8 @@ export class VerificacionCorreo {
       cuentaId: params.cuentaId,
       tipo: 'RECUPERACION_CONTRASENA',
       codigo: CodigoUnUso.crear(params.codigo, expiraEn),
+      creadoEn: params.ahora,
+      reemplazadoEn: null,
     });
   }
 
@@ -78,12 +88,33 @@ export class VerificacionCorreo {
     return this.props.codigo;
   }
 
-  /** Canjea el código; devuelve false si ya fue usado o venció (RF-002/RF-004). */
+  get creadoEn(): Date {
+    return this.props.creadoEn;
+  }
+
+  get reemplazadoEn(): Date | null {
+    return this.props.reemplazadoEn;
+  }
+
+  estadoEn(ahora: Date): EstadoEnlace {
+    if (this.props.codigo.yaCanjeado) return 'USADO';
+    if (this.props.reemplazadoEn) return 'REEMPLAZADO';
+    if (ahora.getTime() > this.props.codigo.expira.getTime()) return 'VENCIDO';
+    return 'VIGENTE';
+  }
+
+  /** Canjea el código; devuelve false si ya fue usado, venció o fue reemplazado (RF-002/RF-004). */
   canjear(ahora: Date): boolean {
+    if (this.props.reemplazadoEn) return false;
     return this.props.codigo.canjear(ahora);
   }
 
   estaVigente(ahora: Date): boolean {
-    return this.props.codigo.estaVigente(ahora);
+    return this.estadoEn(ahora) === 'VIGENTE';
+  }
+
+  /** Un enlace más nuevo lo deja sin efecto (solo si aún no se usó). */
+  reemplazar(ahora: Date): void {
+    if (!this.props.codigo.yaCanjeado && !this.props.reemplazadoEn) this.props.reemplazadoEn = ahora;
   }
 }

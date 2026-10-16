@@ -57,6 +57,12 @@ export class RecuperarContrasenaRequestDto {
   email!: string;
 }
 
+/** RF-002: pedir otro enlace de verificación. */
+export class ReenviarVerificacionRequestDto {
+  @IsEmail({}, { message: 'Escribe un correo electrónico válido' })
+  email!: string;
+}
+
 export class RestablecerContrasenaRequestDto {
   @IsString()
   @MinLength(10)
