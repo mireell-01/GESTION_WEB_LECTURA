@@ -26,6 +26,7 @@ import { IniciarMfaUseCase } from '../application/use-cases/iniciar-mfa.use-case
 import { ListarPerfilesUseCase } from '../application/use-cases/listar-perfiles.use-case';
 import { ObtenerUsuarioActualUseCase } from '../application/use-cases/obtener-usuario-actual.use-case';
 import { RecuperarContrasenaUseCase } from '../application/use-cases/recuperar-contrasena.use-case';
+import { ReenviarVerificacionUseCase } from '../application/use-cases/reenviar-verificacion.use-case';
 import { RegistrarConsentimientoUseCase } from '../application/use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from '../application/use-cases/registrar-cuenta.use-case';
 import { RenovarSesionUseCase } from '../application/use-cases/renovar-sesion.use-case';
@@ -111,6 +112,7 @@ export function crearCasosUsoIam(
       cuentas, verificaciones, hash, filtradas, tokens, correo, bus, config.urlWeb, generarId, ahora,
     ),
     verificarCorreo: new VerificarCorreoUseCase(cuentas, verificaciones, tokens, bus, ahora),
+    reenviarVerificacion: new ReenviarVerificacionUseCase(cuentas, verificaciones, tokens, correo, bus, config.urlWeb, generarId, ahora),
     autenticarAdulto: new AutenticarAdultoUseCase(cuentas, hash, totp, emisor),
     recuperarContrasena: new RecuperarContrasenaUseCase(cuentas, verificaciones, tokens, correo, config.urlWeb, generarId, ahora),
     restablecerContrasena: new RestablecerContrasenaUseCase(
@@ -133,7 +135,7 @@ export function crearCasosUsoIam(
     ),
     descargarExportacion: new DescargarExportacionUseCase(exportaciones, firmador, ahora),
     solicitarEliminacion: new SolicitarEliminacionUseCase(perfiles, sesiones, bus, ahora),
-    vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, tokens, bus, generarId, ahora),
+    vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, contextoAula, tokens, bus, generarId, ahora),
     contextoIngreso: new ContextoIngresoUseCase(perfiles, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
     facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, ahora),

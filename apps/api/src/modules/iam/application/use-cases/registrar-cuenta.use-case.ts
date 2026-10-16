@@ -1,6 +1,5 @@
 import { BusEventos, crearEvento } from '../../../shared-kernel/public-api';
 import { Cuenta } from '../../domain/entities/cuenta';
-import { VerificacionCorreo } from '../../domain/entities/verificacion-correo';
 import { ContrasenaFiltradaError, EmailYaRegistradoError } from '../../domain/errors/errores-iam';
 import { EVENTOS_IAM } from '../../domain/events/eventos-iam';
 import { Contrasena } from '../../domain/value-objects/contrasena';
@@ -13,6 +12,7 @@ import { CuentaRepository } from '../ports/cuenta.repository';
 import { HashService } from '../ports/hash.service';
 import { TokenService } from '../ports/token.service';
 import { VerificacionRepository } from '../ports/verificacion.repository';
+import { enviarEnlaceVerificacion } from '../services/enlaces-verificacion';
 
 /**
  * Use Case: RegistrarCuenta (RF-001, RF-002).
@@ -56,21 +56,11 @@ export class RegistrarCuentaUseCase {
     await this.cuentas.guardar(cuenta);
 
     // RF-002: enlace de un solo uso; en la base solo se guarda su huella.
-    const codigo = this.tokens.generarTokenOpaco();
-    await this.verificaciones.guardar(
-      VerificacionCorreo.paraVerificacionCorreo({
-        id: this.generarId(),
-        cuentaId: cuenta.id,
-        codigo: this.tokens.huella(codigo),
-        ahora,
-      }),
+    await enviarEnlaceVerificacion(
+      { verificaciones: this.verificaciones, tokens: this.tokens, correo: this.correo, urlWeb: this.urlWeb, generarId: this.generarId },
+      { id: cuenta.id, nombre: cuenta.nombre, email: email.value },
+      ahora,
     );
-    await this.correo.enviar({
-      para: email.value,
-      asunto: 'Confirma tu correo en LectoAventura',
-      texto: `Hola, ${cuenta.nombre}. Confirma tu correo para activar tu cuenta. El enlace vence en 24 horas.`,
-      enlace: `${this.urlWeb}/verificar?codigo=${codigo}`,
-    });
 
     await this.bus.publicar([
       crearEvento(EVENTOS_IAM.CUENTA_CREADA, cuenta.id, { actorId: cuenta.id, rol: entrada.rol }, ahora),

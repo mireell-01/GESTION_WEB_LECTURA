@@ -24,7 +24,7 @@ export function clasesBoton(
     .join(' ');
 }
 
-/** Botón accesible: objetivo táctil ≥ 44 px, foco visible y contraste AA. */
+/** Botón accesible: objetivo táctil ≥ 48 px (RNF-023), foco visible y contraste AA. */
 export function Boton({
   variante = 'primario',
   tamano = 'normal',

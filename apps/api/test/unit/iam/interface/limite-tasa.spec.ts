@@ -21,7 +21,7 @@ function peticion(regla: ReglaLimiteTasa | undefined, req: { ip?: string; body?:
 }
 
 const LOGIN: ReglaLimiteTasa = { nombre: 'ingreso-adulto', maximoPorMinuto: 10, por: 'ip' };
-const AULA: ReglaLimiteTasa = { nombre: 'ingreso-aula', maximoPorMinuto: 30, por: { campoCuerpo: 'codigoAula' } };
+const TABLET: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-tablet', maximoPorMinuto: 30, por: { campoCuerpo: 'tokenDispositivo' } };
 
 describe('LimiteTasaGuard (RNF-019)', () => {
   beforeEach(() => {
@@ -69,27 +69,31 @@ describe('LimiteTasaGuard (RNF-019)', () => {
     expect(guard.canActivate(a)).toBe(true);
   });
 
-  it('el ingreso por aula cuenta por código (sin distinguir mayúsculas), no por IP', () => {
-    const guard = new LimiteTasaGuard(peticion(AULA, {}).reflector);
+  it('el ingreso del estudiante cuenta por tablet, no por IP, y no guarda el token en claro', () => {
+    const guard = new LimiteTasaGuard(peticion(TABLET, {}).reflector);
     for (let i = 0; i < 30; i++) {
-      guard.canActivate(peticion(AULA, { ip: `10.0.0.${i}`, body: { codigoAula: i % 2 ? 'abc234' : 'ABC234' } }).ctx);
+      guard.canActivate(peticion(TABLET, { ip: `10.0.0.${i}`, body: { tokenDispositivo: 'token-tablet-aula-3b' } }).ctx);
     }
-    expect(() => guard.canActivate(peticion(AULA, { ip: '10.9.9.9', body: { codigoAula: 'ABC234' } }).ctx)).toThrow(/Demasiados intentos/);
-    expect(guard.canActivate(peticion(AULA, { ip: '10.9.9.9', body: { codigoAula: 'XYZ789' } }).ctx)).toBe(true);
+    expect(() => guard.canActivate(peticion(TABLET, { ip: '10.9.9.9', body: { tokenDispositivo: 'token-tablet-aula-3b' } }).ctx)).toThrow(
+      /Demasiados intentos/,
+    );
+    expect(guard.canActivate(peticion(TABLET, { ip: '10.9.9.9', body: { tokenDispositivo: 'otra-tablet' } }).ctx)).toBe(true);
+    const claves = [...(guard as unknown as { contadores: Map<string, unknown> }).contadores.keys()].join(' ');
+    expect(claves).not.toContain('token-tablet-aula-3b');
   });
 
-  it('con dos reglas (IP y código de aula), la de aula no aplica si el cuerpo no trae código', () => {
+  it('con dos reglas (IP y tablet), la de tablet no aplica si el cuerpo no trae token', () => {
     const IP: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-ip', maximoPorMinuto: 30, por: 'ip' };
-    const reflector = { get: () => [IP, AULA] } as unknown as Reflector;
+    const reflector = { get: () => [IP, TABLET] } as unknown as Reflector;
     const guard = new LimiteTasaGuard(reflector);
-    const ctx = (ip: string, body: unknown) => peticion(AULA, { ip, body }).ctx;
+    const ctx = (ip: string, body: unknown) => peticion(TABLET, { ip, body }).ctx;
 
-    // 30 ingresos desde la tablet de casa (sin código de aula) agotan solo la cuota de esa IP.
-    for (let i = 0; i < 30; i++) expect(guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toBe(true);
-    expect(() => guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't' }))).toThrow(ErrorDeNegocio);
-    // Un intento bloqueado no consume la cuota del aula: otra IP con código sigue pudiendo entrar.
-    expect(() => guard.canActivate(ctx('10.1.1.1', { codigoAula: 'ABC234' }))).toThrow(ErrorDeNegocio);
-    expect(guard.canActivate(ctx('10.2.2.2', { codigoAula: 'ABC234' }))).toBe(true);
+    // 30 intentos sin token agotan solo la cuota de esa IP.
+    for (let i = 0; i < 30; i++) expect(guard.canActivate(ctx('10.1.1.1', {}))).toBe(true);
+    expect(() => guard.canActivate(ctx('10.1.1.1', {}))).toThrow(ErrorDeNegocio);
+    // Un intento bloqueado no consume la cuota de la tablet: desde otra IP la misma tablet sigue entrando.
+    expect(() => guard.canActivate(ctx('10.1.1.1', { tokenDispositivo: 't-aula' }))).toThrow(ErrorDeNegocio);
+    expect(guard.canActivate(ctx('10.2.2.2', { tokenDispositivo: 't-aula' }))).toBe(true);
   });
 
   it('LIMITE_TASA_FACTOR multiplica el máximo en entornos de prueba de carga', () => {

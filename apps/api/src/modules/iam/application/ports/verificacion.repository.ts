@@ -4,4 +4,8 @@ import { TipoVerificacion, VerificacionCorreo } from '../../domain/entities/veri
 export interface VerificacionRepository {
   guardar(verificacion: VerificacionCorreo): Promise<void>;
   buscarPorCodigo(codigo: string, tipo: TipoVerificacion): Promise<VerificacionCorreo | null>;
+  /** Enlaces de la cuenta creados desde `desde` (para el tiempo de espera entre reenvíos). */
+  listarRecientes(cuentaId: string, tipo: TipoVerificacion, desde: Date): Promise<VerificacionCorreo[]>;
+  /** Deja sin efecto los enlaces aún utilizables de la cuenta; devuelve cuántos. */
+  reemplazarVigentes(cuentaId: string, tipo: TipoVerificacion, ahora: Date): Promise<number>;
 }

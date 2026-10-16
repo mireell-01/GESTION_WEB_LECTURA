@@ -5,6 +5,7 @@
 export const EVENTOS_IAM = {
   CUENTA_CREADA: 'iam.CuentaCreada',
   CUENTA_VERIFICADA: 'iam.CuentaVerificada',
+  VERIFICACION_REENVIADA: 'iam.VerificacionCorreoReenviada',
   CONTRASENA_RESTABLECIDA: 'iam.ContrasenaRestablecida',
   CONSENTIMIENTO_OTORGADO: 'iam.ConsentimientoOtorgado',
   PERFIL_CREADO: 'iam.PerfilEstudianteCreado',
@@ -14,7 +15,7 @@ export const EVENTOS_IAM = {
   DATOS_EXPORTADOS: 'iam.DatosEstudianteExportados',
   PERFIL_ELIMINADO: 'iam.PerfilEstudianteEliminado',
   MFA_CONFIGURADO: 'iam.MfaConfigurado',
-  DISPOSITIVO_VINCULADO: 'iam.DispositivoFamiliarVinculado',
+  DISPOSITIVO_VINCULADO: 'iam.DispositivoVinculado',
   /** ADR-005: se presentó un refresh token ya rotado (posible robo); la sesión se revoca. */
   REUTILIZACION_REFRESH: 'iam.ReutilizacionRefreshDetectada',
 } as const;

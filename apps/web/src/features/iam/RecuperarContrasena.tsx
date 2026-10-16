@@ -30,7 +30,7 @@ export function RecuperarContrasena() {
   };
 
   return (
-    <Tarjeta titulo="Recuperar contraseña">
+    <Tarjeta titulo="Recuperar contraseña" nivel={1}>
       {enviado ? (
         <>
           <Alerta tipo="exito">
@@ -82,7 +82,7 @@ export function RestablecerContrasena() {
 
   if (listo) {
     return (
-      <Tarjeta titulo="Contraseña actualizada ✅">
+      <Tarjeta titulo="Contraseña actualizada ✅" nivel={1}>
         <p>Cerramos las sesiones abiertas por seguridad. Ya puedes ingresar con tu nueva contraseña.</p>
         <Link href="/ingresar">Ir a ingresar</Link>
       </Tarjeta>
@@ -90,7 +90,7 @@ export function RestablecerContrasena() {
   }
 
   return (
-    <Tarjeta titulo="Nueva contraseña">
+    <Tarjeta titulo="Nueva contraseña" nivel={1}>
       <form onSubmit={enviar} noValidate>
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
         <Campo

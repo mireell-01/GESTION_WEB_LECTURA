@@ -8,3 +8,5 @@ export * from './components/Campo';
 export * from './components/Alerta';
 export * from './components/Avatar';
 export * from './components/TecladoPin';
+export * from './components/Icono';
+export * from './components/Ilustraciones';

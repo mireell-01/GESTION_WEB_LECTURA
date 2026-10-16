@@ -9,6 +9,7 @@ import { ContextoIngresoUseCase } from '../../../../src/modules/iam/application/
 import { DescargarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/descargar-exportacion.use-case';
 import { SolicitarExportacionUseCase } from '../../../../src/modules/iam/application/use-cases/solicitar-exportacion.use-case';
 import { RecuperarContrasenaUseCase } from '../../../../src/modules/iam/application/use-cases/recuperar-contrasena.use-case';
+import { ReenviarVerificacionUseCase } from '../../../../src/modules/iam/application/use-cases/reenviar-verificacion.use-case';
 import { RegistrarConsentimientoUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from '../../../../src/modules/iam/application/use-cases/registrar-cuenta.use-case';
 import { RestablecerContrasenaUseCase } from '../../../../src/modules/iam/application/use-cases/restablecer-contrasena.use-case';
@@ -72,18 +73,104 @@ describe('Registro y verificación de cuenta (RF-001, RF-002)', () => {
     ).rejects.toThrow(ContrasenaFiltradaError);
   });
 
-  it('el enlace activa la cuenta una sola vez y vence a las 24 h', async () => {
+  it('el enlace activa la cuenta una sola vez; volver a abrirlo avisa que ya estaba verificada', async () => {
     const { cuentaId } = await registrar.ejecutar(datos);
     const codigo = codigoDelEnlace(e.correo.enviados[0]?.enlace);
 
-    await verificar.ejecutar(codigo);
+    expect(await verificar.ejecutar(codigo)).toEqual({ ok: true, estado: 'VERIFICADA' });
     expect((await e.cuentas.buscarPorId(cuentaId))?.estaActiva()).toBe(true);
-    await expect(verificar.ejecutar(codigo)).rejects.toThrow(EnlaceInvalidoError);
+    expect(e.bus.nombres()).toContain(EVENTOS_IAM.CUENTA_VERIFICADA);
+    expect(await verificar.ejecutar(codigo)).toEqual({ ok: true, estado: 'YA_VERIFICADA' });
+    expect(e.bus.nombres().filter((n) => n === EVENTOS_IAM.CUENTA_VERIFICADA)).toHaveLength(1);
+  });
 
-    await registrar.ejecutar({ ...datos, email: 'tarde@lectoaventura.test' });
-    const codigoTarde = codigoDelEnlace(e.correo.enviados[1]?.enlace);
+  it('explica por qué no sirve un enlace: vencido a las 24 h o inexistente', async () => {
+    await registrar.ejecutar(datos);
+    const codigo = codigoDelEnlace(e.correo.enviados[0]?.enlace);
     e.reloj.avanzarMin(24 * 60 + 1);
-    await expect(verificar.ejecutar(codigoTarde)).rejects.toThrow(EnlaceInvalidoError);
+
+    const vencido = await verificar.ejecutar(codigo).catch((err) => err);
+    expect(vencido).toBeInstanceOf(EnlaceInvalidoError);
+    expect(vencido.detalle).toEqual({ motivo: 'VENCIDO' });
+    expect(vencido.message).toMatch(/venció/);
+    const inexistente = await verificar.ejecutar('codigo-que-no-existe').catch((err) => err);
+    expect(inexistente.detalle).toEqual({ motivo: 'INVALIDO' });
+  });
+});
+
+describe('Reenvío del enlace de verificación (RF-002, RNF-019)', () => {
+  let e: Entorno;
+  let registrar: RegistrarCuentaUseCase;
+  let reenviar: ReenviarVerificacionUseCase;
+  let verificar: VerificarCorreoUseCase;
+  const datos = { nombre: 'Rosa Demo', email: 'rosa@lectoaventura.test', contrasena: 'Lectura-Segura-2026', rol: 'FAMILIAR' as const };
+  const RESPUESTA = { ok: true, reintentarEnSeg: 60 };
+
+  beforeEach(() => {
+    e = crearEntorno();
+    registrar = new RegistrarCuentaUseCase(
+      e.cuentas, e.verificaciones, e.hash, e.filtradas, e.tokens, e.correo, e.bus, URL_WEB, e.generarId, e.reloj.ahora,
+    );
+    reenviar = new ReenviarVerificacionUseCase(e.cuentas, e.verificaciones, e.tokens, e.correo, e.bus, URL_WEB, e.generarId, e.reloj.ahora);
+    verificar = new VerificarCorreoUseCase(e.cuentas, e.verificaciones, e.tokens, e.bus, e.reloj.ahora);
+  });
+
+  it('envía un enlace nuevo de un solo uso y deja sin efecto el anterior', async () => {
+    const { cuentaId } = await registrar.ejecutar(datos);
+    const anterior = codigoDelEnlace(e.correo.enviados[0]?.enlace);
+    e.reloj.avanzarMin(2);
+
+    expect(await reenviar.ejecutar(' Rosa@LectoAventura.test ')).toEqual(RESPUESTA);
+    expect(e.correo.enviados).toHaveLength(2);
+    expect(e.correo.enviados[1]).toMatchObject({ para: 'rosa@lectoaventura.test', asunto: 'Confirma tu correo en LectoAventura' });
+    expect(e.correo.enviados[1]?.texto).toMatch(/24 horas y solo funciona una vez/);
+    expect(e.bus.nombres()).toContain(EVENTOS_IAM.VERIFICACION_REENVIADA);
+
+    // El enlace anterior ya no sirve y lo dice; el nuevo activa la cuenta.
+    const reemplazado = await verificar.ejecutar(anterior).catch((err) => err);
+    expect(reemplazado).toBeInstanceOf(EnlaceInvalidoError);
+    expect(reemplazado.detalle).toEqual({ motivo: 'REEMPLAZADO' });
+    expect(await verificar.ejecutar(codigoDelEnlace(e.correo.enviados[1]?.enlace))).toEqual({ ok: true, estado: 'VERIFICADA' });
+    expect((await e.cuentas.buscarPorId(cuentaId))?.estaActiva()).toBe(true);
+  });
+
+  it('sirve aunque el primer enlace ya haya vencido', async () => {
+    await registrar.ejecutar(datos);
+    e.reloj.avanzarMin(25 * 60);
+    await reenviar.ejecutar(datos.email);
+    expect(await verificar.ejecutar(codigoDelEnlace(e.correo.enviados[1]?.enlace))).toEqual({ ok: true, estado: 'VERIFICADA' });
+  });
+
+  it('respeta 60 s de espera entre enlaces y un máximo de 5 por hora', async () => {
+    await registrar.ejecutar(datos);
+    // Recién registrada: debe esperar 60 s.
+    await reenviar.ejecutar(datos.email);
+    expect(e.correo.enviados).toHaveLength(1);
+
+    for (let i = 0; i < 6; i++) {
+      e.reloj.avanzarMin(1.5);
+      expect(await reenviar.ejecutar(datos.email)).toEqual(RESPUESTA);
+    }
+    // 1 del registro + 4 reenvíos = 5 en la última hora; el resto no se envía.
+    expect(e.correo.enviados).toHaveLength(5);
+    e.reloj.avanzarMin(60);
+    await reenviar.ejecutar(datos.email);
+    expect(e.correo.enviados).toHaveLength(6);
+  });
+
+  it('a una cuenta ya verificada le avisa por correo que puede ingresar, sin enlace de verificación', async () => {
+    await cuentaActiva(e, { email: 'ana@lectoaventura.test' });
+    expect(await reenviar.ejecutar('ana@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(e.correo.enviados[0]).toMatchObject({ asunto: 'Tu correo ya está verificado en LectoAventura', enlace: `${URL_WEB}/ingresar` });
+    expect(e.verificaciones.filas.size).toBe(0);
+  });
+
+  it('responde igual si la cuenta no existe o está suspendida, sin enviar nada (anti-enumeración)', async () => {
+    const suspendida = await cuentaActiva(e, { email: 'suspendida@lectoaventura.test' });
+    suspendida.suspender();
+    expect(await reenviar.ejecutar('nadie@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(await reenviar.ejecutar('suspendida@lectoaventura.test')).toEqual(RESPUESTA);
+    expect(e.correo.enviados).toHaveLength(0);
   });
 });
 
@@ -225,26 +312,72 @@ describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
     const actualizar = new ActualizarPerfilUseCase(e.perfiles, e.sesiones, e.bus, e.reloj.ahora);
-    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.tokens, e.bus, e.generarId, e.reloj.ahora);
+    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.contextoAula, e.tokens, e.bus, e.generarId, e.reloj.ahora);
     const contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
-    const { tokenDispositivo } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
+    const { tokenDispositivo, contexto: activado } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
+    const alumnos = async () => (await contexto.deDispositivo(tokenDispositivo)).estudiantes;
 
-    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(1);
+    expect(activado).toEqual({ tipo: 'FAMILIA', nombre: 'Tu familia' });
+    expect(await alumnos()).toHaveLength(1);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: false });
-    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(0);
+    expect(await alumnos()).toHaveLength(0);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: true, avatar: 'panda' });
-    expect(await contexto.deDispositivo(tokenDispositivo)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
-    await expect(contexto.deDispositivo('token-desconocido')).rejects.toThrow(ProhibidoError);
-    await expect(contexto.deDispositivo(undefined)).rejects.toThrow(ProhibidoError);
+    expect(await alumnos()).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
     // RN-04: el vínculo vence a los 30 días.
     e.reloj.avanzarMin(30 * 24 * 60);
     await expect(contexto.deDispositivo(tokenDispositivo)).rejects.toThrow(ProhibidoError);
   });
 
-  it('solo una cuenta familiar puede vincular un dispositivo', async () => {
-    const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
-    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.tokens, e.bus, e.generarId, e.reloj.ahora);
-    await expect(vincular.ejecutar({ cuentaId: docente.id, nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+  describe('Activar la tablet (RN-04, CR-01)', () => {
+    const crearCaso = () =>
+      new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.contextoAula, e.tokens, e.bus, e.generarId, e.reloj.ahora);
+
+    it('la docente activa la tablet de su aula: guarda solo la huella del token y publica el evento', async () => {
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('aula-1', { docenteId: docente.id, nombre: '2.° A' });
+
+      const r = await crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'Tablet 3', aulaId: 'aula-1' });
+
+      expect(r.contexto).toEqual({ tipo: 'AULA', nombre: '2.° A' });
+      const [guardado] = [...e.dispositivos.filas.values()];
+      expect(guardado.contexto).toEqual({ tipo: 'AULA', aulaId: 'aula-1' });
+      expect(guardado.propsSnapshot.hashToken).toBe(e.tokens.huella(r.tokenDispositivo));
+      expect(guardado.propsSnapshot.hashToken).not.toBe(r.tokenDispositivo);
+      expect(e.bus.publicados.at(-1)).toMatchObject({
+        nombreEvento: EVENTOS_IAM.DISPOSITIVO_VINCULADO,
+        datos: { actorId: docente.id, tipo: 'AULA', aulaId: 'aula-1' },
+      });
+    });
+
+    it('no deja activar el aula de otra docente, un aula archivada ni un aula inexistente', async () => {
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      const otra = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('ajena', { docenteId: otra.id });
+      e.contextoAula.agregarAula('vieja', { docenteId: docente.id, activa: false });
+
+      for (const aulaId of ['ajena', 'vieja', 'no-existe']) {
+        await expect(crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'Tablet', aulaId })).rejects.toThrow(
+          /No encontramos esa aula/,
+        );
+      }
+      expect(e.dispositivos.filas.size).toBe(0);
+    });
+
+    it('la familia no activa aulas y la docente debe elegir un aula', async () => {
+      const familia = await cuentaActiva(e);
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('aula-1', { docenteId: familia.id });
+
+      await expect(crearCaso().ejecutar({ cuentaId: familia.id, nombre: 'PC', aulaId: 'aula-1' })).rejects.toThrow(/No encontramos/);
+      await expect(crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'PC' })).rejects.toThrow(/Elige el aula/);
+    });
+
+    it('una cuenta inexistente o suspendida no activa dispositivos', async () => {
+      await expect(crearCaso().ejecutar({ cuentaId: 'nadie', nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+      const familia = await cuentaActiva(e);
+      familia.suspender();
+      await expect(crearCaso().ejecutar({ cuentaId: familia.id, nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+    });
   });
 
   describe('Exportación de datos (RF-012)', () => {

@@ -12,6 +12,7 @@ import { IniciarMfaUseCase } from './use-cases/iniciar-mfa.use-case';
 import { ListarPerfilesUseCase } from './use-cases/listar-perfiles.use-case';
 import { ObtenerUsuarioActualUseCase } from './use-cases/obtener-usuario-actual.use-case';
 import { RecuperarContrasenaUseCase } from './use-cases/recuperar-contrasena.use-case';
+import { ReenviarVerificacionUseCase } from './use-cases/reenviar-verificacion.use-case';
 import { RegistrarConsentimientoUseCase } from './use-cases/registrar-consentimiento.use-case';
 import { RegistrarCuentaUseCase } from './use-cases/registrar-cuenta.use-case';
 import { RenovarSesionUseCase } from './use-cases/renovar-sesion.use-case';
@@ -32,6 +33,7 @@ export interface BandejaDesarrollo {
 export interface CasosUsoIam {
   registrarCuenta: RegistrarCuentaUseCase;
   verificarCorreo: VerificarCorreoUseCase;
+  reenviarVerificacion: ReenviarVerificacionUseCase;
   autenticarAdulto: AutenticarAdultoUseCase;
   recuperarContrasena: RecuperarContrasenaUseCase;
   restablecerContrasena: RestablecerContrasenaUseCase;

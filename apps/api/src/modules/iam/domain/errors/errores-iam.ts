@@ -65,13 +65,6 @@ export class AliasRepetidoError extends ErrorDeNegocio {
   }
 }
 
-/** RN-04: el código de aula no existe o el aula ya no está activa. */
-export class CodigoAulaInvalidoError extends ErrorDeNegocio {
-  constructor() {
-    super('Ese código de aula no existe o el aula ya no está activa', 'NO_ENCONTRADO');
-  }
-}
-
 /** RF-012: enlace de descarga alterado, de otra exportación o vencido. */
 export class EnlaceDescargaInvalidoError extends ErrorDeNegocio {
   constructor(vencido: boolean) {

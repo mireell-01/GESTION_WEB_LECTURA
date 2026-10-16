@@ -1,17 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AutenticarAdultoUseCase } from '../../../../src/modules/iam/application/use-cases/autenticar-adulto.use-case';
-import { AutenticarEstudianteUseCase, ContextoIngreso } from '../../../../src/modules/iam/application/use-cases/autenticar-estudiante.use-case';
+import { AutenticarEstudianteUseCase } from '../../../../src/modules/iam/application/use-cases/autenticar-estudiante.use-case';
 import { CerrarSesionUseCase } from '../../../../src/modules/iam/application/use-cases/cerrar-sesion.use-case';
 import { ConfigurarMfaUseCase } from '../../../../src/modules/iam/application/use-cases/configurar-mfa.use-case';
 import { ContextoIngresoUseCase } from '../../../../src/modules/iam/application/use-cases/contexto-ingreso.use-case';
 import { IniciarMfaUseCase } from '../../../../src/modules/iam/application/use-cases/iniciar-mfa.use-case';
 import { RenovarSesionUseCase } from '../../../../src/modules/iam/application/use-cases/renovar-sesion.use-case';
 import { ValidarAccesoUseCase } from '../../../../src/modules/iam/application/use-cases/validar-acceso.use-case';
-import { DispositivoFamiliar } from '../../../../src/modules/iam/domain/entities/dispositivo-familiar';
+import { DispositivoIngreso } from '../../../../src/modules/iam/domain/entities/dispositivo-ingreso';
 import { CredencialesInvalidasError } from '../../../../src/modules/iam/domain/errors/credenciales-invalidas-error';
 import {
-  CodigoAulaInvalidoError,
   CodigoMfaInvalidoError,
   CodigoMfaRequeridoError,
   CuentaNoVerificadaError,
@@ -86,7 +85,7 @@ describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
   });
 });
 
-describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-04)', () => {
+describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-04, CR-01)', () => {
   let e: Entorno;
   let caso: AutenticarEstudianteUseCase;
   let contexto: ContextoIngresoUseCase;
@@ -97,91 +96,113 @@ describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-
     contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
   });
 
-  async function dispositivoDe(cuentaId: string, token = 'token-tablet') {
+  /** Tablet activada por un adulto: de su familia o, con aulaId, de su aula (CR-01). */
+  async function tabletDe(cuentaId: string, opciones: { token?: string; aulaId?: string } = {}) {
+    const token = opciones.token ?? 'token-tablet';
     await e.dispositivos.guardar(
-      DispositivoFamiliar.vincular({ id: e.generarId(), cuentaId, nombre: 'Tablet', hashToken: e.tokens.huella(token), ahora: e.reloj.ahora() }),
+      DispositivoIngreso.activar({
+        id: e.generarId(),
+        cuentaId,
+        contexto: opciones.aulaId ? { tipo: 'AULA', aulaId: opciones.aulaId } : { tipo: 'FAMILIA' },
+        nombre: '',
+        hashToken: e.tokens.huella(token),
+        ahora: e.reloj.ahora(),
+      }),
     );
     return token;
   }
 
-  it('dispositivo vinculado + PIN correcto → rol ESTUDIANTE', async () => {
+  it('tablet de la familia + PIN correcto → rol ESTUDIANTE', async () => {
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
-    const token = await dispositivoDe(familia.id);
+    const token = await tabletDe(familia.id);
 
-    expect(await contexto.deDispositivo(token)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'zorro' }]);
-    const r = await caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'DISPOSITIVO', tokenDispositivo: token } });
+    expect(await contexto.deDispositivo(token)).toEqual({
+      contexto: { tipo: 'FAMILIA', nombre: 'Tu familia' },
+      estudiantes: [{ id: perfil.id, alias: 'Lucía', avatar: 'zorro' }],
+    });
+    const r = await caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo: token });
     expect(r.rol).toBe('ESTUDIANTE');
     expect(r.rutaInicial).toBe('/estudiante');
   });
 
-  it('rechaza un dispositivo vinculado a otra familia', async () => {
+  it('rechaza la tablet de otra familia', async () => {
     const familia = await cuentaActiva(e);
     const otra = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
-    const tokenAjeno = await dispositivoDe(otra.id, 'token-ajeno');
+    const tokenAjeno = await tabletDe(otra.id, { token: 'token-ajeno' });
 
-    await expect(
-      caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'DISPOSITIVO', tokenDispositivo: tokenAjeno } }),
-    ).rejects.toThrow(/no está vinculado a tu familia/);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo: tokenAjeno })).rejects.toThrow(
+      /no está activada para tu familia/,
+    );
   });
 
-  it('código de aula: muestra solo a los matriculados y valida la matrícula al entrar', async () => {
+  it('tablet del aula: sin código, muestra solo a los matriculados y valida la matrícula al entrar', async () => {
     const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
     const ana = await perfilEstudiante(e, docente.id, { alias: 'Ana' });
     const beto = await perfilEstudiante(e, docente.id, { alias: 'Beto', avatar: 'panda' });
-    e.contextoAula.agregarAula('ABC234', 'aula-1', [ana.id]);
+    e.contextoAula.agregarAula('aula-1', { docenteId: docente.id, estudiantes: [ana.id] });
+    const token = await tabletDe(docente.id, { aulaId: 'aula-1' });
 
-    expect((await contexto.deAula('abc234')).estudiantes.map((x) => x.alias)).toEqual(['Ana']);
-    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ABC234' } })).resolves.toMatchObject({
-      rol: 'ESTUDIANTE',
+    expect(await contexto.deDispositivo(token)).toEqual({
+      contexto: { tipo: 'AULA', nombre: '3.° B' },
+      estudiantes: [{ id: ana.id, alias: 'Ana', avatar: 'zorro' }],
     });
-    await expect(caso.ejecutar({ perfilId: beto.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ABC234' } })).rejects.toThrow(
-      ProhibidoError,
-    );
+    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', tokenDispositivo: token })).resolves.toMatchObject({ rol: 'ESTUDIANTE' });
+    await expect(caso.ejecutar({ perfilId: beto.id, pin: '2580', tokenDispositivo: token })).rejects.toThrow(/No perteneces a esta aula/);
   });
 
-  it('un código inexistente o de un aula archivada no muestra avatares ni deja entrar', async () => {
+  it('al archivar el aula, su tablet deja de mostrar avatares y de dejar entrar', async () => {
     const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
     const ana = await perfilEstudiante(e, docente.id, { alias: 'Ana' });
-    e.contextoAula.agregarAula('ARC999', 'aula-vieja', [ana.id], false);
+    e.contextoAula.agregarAula('aula-1', { docenteId: docente.id, estudiantes: [ana.id] });
+    const token = await tabletDe(docente.id, { aulaId: 'aula-1' });
+    e.contextoAula.archivar('aula-1');
 
-    await expect(contexto.deAula('ZZZZZZ')).rejects.toThrow(CodigoAulaInvalidoError);
-    await expect(contexto.deAula('ARC999')).rejects.toThrow(CodigoAulaInvalidoError);
-    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', contexto: { tipo: 'AULA', codigoAula: 'ARC999' } })).rejects.toThrow(
-      CodigoAulaInvalidoError,
-    );
+    await expect(contexto.deDispositivo(token)).rejects.toThrow(ProhibidoError);
+    await expect(caso.ejecutar({ perfilId: ana.id, pin: '2580', tokenDispositivo: token })).rejects.toThrow(ProhibidoError);
+  });
+
+  it('sin tablet activada, desconocida o vencida (30 días) no se muestran avatares ni se entra', async () => {
+    const familia = await cuentaActiva(e);
+    const perfil = await perfilEstudiante(e, familia.id);
+    const token = await tabletDe(familia.id);
+
+    await expect(contexto.deDispositivo(undefined)).rejects.toThrow(/no está activada/);
+    await expect(contexto.deDispositivo('token-desconocido')).rejects.toThrow(ProhibidoError);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo: 'token-desconocido' })).rejects.toThrow(ProhibidoError);
+    e.reloj.avanzarMin(30 * 24 * 60);
+    await expect(contexto.deDispositivo(token)).rejects.toThrow(ProhibidoError);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo: token })).rejects.toThrow(ProhibidoError);
   });
 
   it('informa intentos restantes y bloquea al quinto error, publicando el evento', async () => {
-    const familia = await cuentaActiva(e);
-    const perfil = await perfilEstudiante(e, familia.id);
-    e.contextoAula.agregarAula('ABC234', 'a1', [perfil.id]);
-    const ctx: ContextoIngreso = { tipo: 'AULA', codigoAula: 'ABC234' };
+    const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+    const perfil = await perfilEstudiante(e, docente.id);
+    e.contextoAula.agregarAula('a1', { docenteId: docente.id, estudiantes: [perfil.id] });
+    const tokenDispositivo = await tabletDe(docente.id, { aulaId: 'a1' });
 
     for (let restantes = 4; restantes >= 1; restantes--) {
-      const error = await caso.ejecutar({ perfilId: perfil.id, pin: '9090', contexto: ctx }).catch((err) => err);
+      const error = await caso.ejecutar({ perfilId: perfil.id, pin: '9090', tokenDispositivo }).catch((err) => err);
       expect(error).toBeInstanceOf(PinIncorrectoError);
       expect(error.detalle).toEqual({ intentosRestantes: restantes });
     }
-    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '9090', contexto: ctx })).rejects.toThrow(PerfilBloqueadoError);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '9090', tokenDispositivo })).rejects.toThrow(PerfilBloqueadoError);
     expect(e.bus.nombres()).toContain(EVENTOS_IAM.ESTUDIANTE_BLOQUEADO);
 
     // Sexto intento con el PIN correcto durante el bloqueo: rechazado.
-    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: ctx })).rejects.toThrow(PerfilBloqueadoError);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo })).rejects.toThrow(PerfilBloqueadoError);
     // Pasados 15 minutos vuelve a poder entrar.
     e.reloj.avanzarMin(15);
-    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: ctx })).resolves.toMatchObject({ rol: 'ESTUDIANTE' });
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo })).resolves.toMatchObject({ rol: 'ESTUDIANTE' });
   });
 
   it('un perfil desactivado no puede entrar', async () => {
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
-    const token = await dispositivoDe(familia.id);
+    const token = await tabletDe(familia.id);
     perfil.desactivar();
-    await expect(
-      caso.ejecutar({ perfilId: perfil.id, pin: '2580', contexto: { tipo: 'DISPOSITIVO', tokenDispositivo: token } }),
-    ).rejects.toThrow(PinIncorrectoError);
+    await expect(caso.ejecutar({ perfilId: perfil.id, pin: '2580', tokenDispositivo: token })).rejects.toThrow(PinIncorrectoError);
   });
 });
 

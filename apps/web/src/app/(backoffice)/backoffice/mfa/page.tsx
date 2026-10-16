@@ -10,7 +10,7 @@ import { ConfigurarMfa } from '@/features/iam/ConfigurarMfa';
 export default function MfaBackofficePage() {
   const router = useRouter();
   return (
-    <Tarjeta titulo="🔐 Verificación en dos pasos">
+    <Tarjeta titulo="🔐 Verificación en dos pasos" nivel={1}>
       <Alerta tipo="aviso">
         Por seguridad, las cuentas del backoffice deben usar un código de una app autenticadora además de la contraseña.
       </Alerta>

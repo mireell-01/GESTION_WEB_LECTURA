@@ -57,6 +57,12 @@ export class RecuperarContrasenaRequestDto {
   email!: string;
 }
 
+/** RF-002: pedir otro enlace de verificación. */
+export class ReenviarVerificacionRequestDto {
+  @IsEmail({}, { message: 'Escribe un correo electrónico válido' })
+  email!: string;
+}
+
 export class RestablecerContrasenaRequestDto {
   @IsString()
   @MinLength(10)
@@ -131,7 +137,7 @@ export class VincularDispositivoRequestDto {
   nombre!: string;
 }
 
-/** RF-007: ingreso del estudiante con UN contexto (código de aula o dispositivo familiar). */
+/** RF-007 / CR-01: ingreso del estudiante desde una tablet activada (de la familia o del aula). */
 export class IngresoEstudianteRequestDto {
   @IsString()
   perfilId!: string;
@@ -139,12 +145,7 @@ export class IngresoEstudianteRequestDto {
   @Matches(/^\d{4}$/, { message: 'El PIN tiene 4 números' })
   pin!: string;
 
-  @IsOptional()
-  @Matches(/^[A-Za-z0-9]{6}$/, { message: 'El código de aula tiene 6 letras y números' })
-  codigoAula?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(20)
-  tokenDispositivo?: string;
+  @IsString({ message: 'Esta tablet no está activada' })
+  @MinLength(20, { message: 'Esta tablet no está activada' })
+  tokenDispositivo!: string;
 }

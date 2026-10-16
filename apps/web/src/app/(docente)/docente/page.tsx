@@ -1,7 +1,8 @@
 'use client';
 
-import { Alerta, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, Icono, Tarjeta } from '@lectoaventura/ui';
 
+import { ActivarTabletAula } from '@/features/iam/ActivarTabletAula';
 import { ConfigurarMfa } from '@/features/iam/ConfigurarMfa';
 import { useSesion } from '@/shared/auth/sesion';
 
@@ -9,14 +10,22 @@ export default function DocenteHomePage() {
   const { usuario } = useSesion();
   return (
     <div className="pila">
-      <Tarjeta titulo={`Hola, ${usuario?.nombre?.split(' ')[0] ?? ''} 👋`}>
-        <p className="texto-suave" style={{ margin: 0 }}>
-          Aquí administrarás tus aulas, estudiantes y asignaciones.
-        </p>
-      </Tarjeta>
+      <header className="saludo-adulto">
+        <h1>Hola, {usuario?.nombre?.split(' ')[0] ?? ''} 👋</h1>
+        <p className="texto-suave">Aquí administrarás tus aulas, estudiantes y asignaciones.</p>
+      </header>
+
+      <ActivarTabletAula />
 
       {/* RF-011: verificación en dos pasos opcional para docentes. */}
-      <Tarjeta titulo="🔐 Seguridad de tu cuenta">
+      <Tarjeta
+        titulo={
+          <span className="titulo-con-icono">
+            <Icono nombre="escudo" tamano={28} />
+            Seguridad de tu cuenta
+          </span>
+        }
+      >
         {usuario?.mfaHabilitado ? (
           <Alerta tipo="exito">La verificación en dos pasos está activa.</Alerta>
         ) : (

@@ -32,7 +32,7 @@ model Cuenta {
   perfilesEstudiante PerfilEstudiante[]
   consentimientos    Consentimiento[]
   verificaciones     Verificacion[]
-  dispositivos       DispositivoFamiliar[]
+  dispositivos       DispositivoIngreso[]
 
   @@index([rol])
 }
@@ -74,14 +74,17 @@ model Consentimiento {
 }
 
 /// Enlaces de un solo uso: verificación de correo (24 h) y recuperación de contraseña (30 min).
+/// Al reenviar la verificación, los enlaces anteriores quedan reemplazados y dejan de servir.
 model Verificacion {
-  id       String   @id @default(cuid())
-  cuentaId String
-  cuenta   Cuenta   @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
-  tipo     String
-  codigo   String   @unique
-  expiraEn DateTime
-  canjeado Boolean  @default(false)
+  id            String    @id @default(cuid())
+  cuentaId      String
+  cuenta        Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  tipo          String
+  codigo        String    @unique
+  expiraEn      DateTime
+  canjeado      Boolean   @default(false)
+  creadoEn      DateTime  @default(now())
+  reemplazadoEn DateTime?
 
   @@index([cuentaId, tipo])
 }
@@ -123,11 +126,13 @@ model Exportacion {
   @@index([expiraEn])
 }
 
-/// Dispositivo de la familia vinculado por 30 días para el ingreso de los niños (RN-04).
-model DispositivoFamiliar {
+/// Dispositivo activado por un adulto durante 30 días para el ingreso de los niños (RN-04, CR-01):
+/// de la familia (aulaId vacío) o de un aula (activado por su docente). Sin código de aula.
+model DispositivoIngreso {
   id         String    @id @default(cuid())
   cuentaId   String
   cuenta     Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  aulaId     String?
   nombre     String
   hashToken  String    @unique
   creadoEn   DateTime  @default(now())
@@ -135,6 +140,7 @@ model DispositivoFamiliar {
   revocadoEn DateTime?
 
   @@index([cuentaId])
+  @@index([aulaId])
 }
 
 // ---------------------------------------------------------------------------

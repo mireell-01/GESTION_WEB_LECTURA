@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { Consentimiento } from '../../../../src/modules/iam/domain/entities/consentimiento';
 import { Cuenta } from '../../../../src/modules/iam/domain/entities/cuenta';
-import { DispositivoFamiliar } from '../../../../src/modules/iam/domain/entities/dispositivo-familiar';
+import { DispositivoIngreso } from '../../../../src/modules/iam/domain/entities/dispositivo-ingreso';
 import {
   DURACION_BLOQUEO_MIN,
   MAX_INTENTOS_PIN,
   PerfilEstudiante,
 } from '../../../../src/modules/iam/domain/entities/perfil-estudiante';
 import { Sesion } from '../../../../src/modules/iam/domain/entities/sesion';
+import { VerificacionCorreo } from '../../../../src/modules/iam/domain/entities/verificacion-correo';
 import { DatoInvalidoError } from '../../../../src/modules/iam/domain/errors/errores-iam';
 import { PerfilBloqueadoError } from '../../../../src/modules/iam/domain/errors/perfil-bloqueado-error';
 import { AnioMesNacimiento } from '../../../../src/modules/iam/domain/value-objects/anio-mes-nacimiento';
@@ -192,7 +193,40 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
   });
 });
 
-describe('Consentimiento y DispositivoFamiliar', () => {
+describe('VerificacionCorreo (RF-002)', () => {
+  const nuevo = () => VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella', ahora: T0 });
+
+  it('pasa de vigente a vencido a las 24 h y recuerda cuándo se creó', () => {
+    const v = nuevo();
+    expect(v.creadoEn).toEqual(T0);
+    expect(v.estadoEn(masMin(24 * 60))).toBe('VIGENTE');
+    expect(v.estadoEn(masMin(24 * 60 + 1))).toBe('VENCIDO');
+    expect(v.canjear(masMin(24 * 60 + 1))).toBe(false);
+  });
+
+  it('se usa una sola vez', () => {
+    const v = nuevo();
+    expect(v.canjear(masMin(5))).toBe(true);
+    expect(v.estadoEn(masMin(5))).toBe('USADO');
+    expect(v.canjear(masMin(6))).toBe(false);
+  });
+
+  it('un enlace reemplazado no sirve; uno ya usado no se marca como reemplazado', () => {
+    const v = nuevo();
+    v.reemplazar(masMin(1));
+    expect(v.estadoEn(masMin(2))).toBe('REEMPLAZADO');
+    expect(v.estaVigente(masMin(2))).toBe(false);
+    expect(v.canjear(masMin(2))).toBe(false);
+
+    const usado = nuevo();
+    usado.canjear(masMin(1));
+    usado.reemplazar(masMin(2));
+    expect(usado.reemplazadoEn).toBeNull();
+    expect(usado.estadoEn(masMin(3))).toBe('USADO');
+  });
+});
+
+describe('Consentimiento y DispositivoIngreso', () => {
   it('el consentimiento institucional exige aula (RN-01)', () => {
     expect(() =>
       Consentimiento.otorgar({
@@ -203,10 +237,20 @@ describe('Consentimiento y DispositivoFamiliar', () => {
   });
 
   it('el dispositivo vence a los 30 días o al revocarse (RN-04)', () => {
-    const d = DispositivoFamiliar.vincular({ id: 'd1', cuentaId: 'c1', nombre: 'Tablet', hashToken: 'h', ahora: T0 });
+    const d = DispositivoIngreso.activar({ id: 'd1', cuentaId: 'c1', contexto: { tipo: 'FAMILIA' }, nombre: 'Tablet', hashToken: 'h', ahora: T0 });
     expect(d.estaVigente(masMin(30 * 24 * 60 - 1))).toBe(true);
     expect(d.estaVigente(masMin(30 * 24 * 60))).toBe(false);
     d.revocar(T0);
     expect(d.estaVigente(T0)).toBe(false);
+  });
+
+  it('la tablet del aula recuerda su aula y recibe un nombre por defecto (CR-01)', () => {
+    const aula = DispositivoIngreso.activar({ id: 'd2', cuentaId: 'docente', contexto: { tipo: 'AULA', aulaId: 'a1' }, nombre: '  ', hashToken: 'h', ahora: T0 });
+    const casa = DispositivoIngreso.activar({ id: 'd3', cuentaId: 'familia', contexto: { tipo: 'FAMILIA' }, nombre: '', hashToken: 'h2', ahora: T0 });
+    expect(aula.contexto).toEqual({ tipo: 'AULA', aulaId: 'a1' });
+    expect(aula.propsSnapshot.nombre).toBe('Tablet del aula');
+    expect(casa.contexto).toEqual({ tipo: 'FAMILIA' });
+    expect(casa.propsSnapshot.nombre).toBe('Dispositivo familiar');
+    expect(casa.propsSnapshot.aulaId).toBeNull();
   });
 });

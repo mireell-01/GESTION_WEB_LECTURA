@@ -34,6 +34,8 @@ export default defineConfig({
     { name: 'escritorio', use: { ...navegador, viewport: { width: 1280, height: 800 } } },
     // RNF-022: diseño tablet-first (768–1180 px) con pantalla táctil.
     { name: 'tablet', use: { ...navegador, viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true } },
+    // RNF-022: desde 360 px; celular táctil en vertical.
+    { name: 'celular', use: { ...navegador, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
   ],
   webServer: servidores,
 });
