@@ -1,0 +1,39 @@
+{
+    "name":  "lectoaventura",
+    "version":  "0.1.0",
+    "private":  true,
+    "description":  "Plataforma de lectoaventura: lectura guiada por aventuras para estudiantes, con diagnÃ³stico, progreso y gamificaciÃ³n.",
+    "workspaces":  [
+                       "apps/*",
+                       "packages/*",
+                       "tests/*"
+                   ],
+    "scripts":  {
+                    "dev:web":  "npm run dev --workspace @lectoaventura/web",
+                    "dev:api":  "npm run start:dev --workspace @lectoaventura/api",
+                    "build":  "npm run build --workspaces --if-present",
+                    "lint":  "eslint .",
+                    "lint:fix":  "eslint . --fix",
+                    "format":  "prettier --write .",
+                    "format:check":  "prettier --check .",
+                    "contracts:generate":  "node packages/contracts/scripts/generate.mjs",
+                    "test:unit":  "npm run test:cov --workspace @lectoaventura/api",
+                    "test:int":  "npm run test:int --workspace @lectoaventura/api",
+                    "test:e2e":  "npm run test --workspace @lectoaventura/tests-e2e",
+                    "test:uat":  "npm run test:uat --workspace @lectoaventura/tests-e2e",
+                    "test:load":  "npm run test --workspace @lectoaventura/tests-load",
+                    "typecheck":  "tsc --noEmit -p apps/api/tsconfig.json \u0026\u0026 tsc --noEmit -p apps/web/tsconfig.json"
+                },
+    "devDependencies":  {
+                            "eslint":  "^9.14.0",
+                            "eslint-plugin-boundaries":  "^5.0.2",
+                            "@eslint/js":  "^9.14.0",
+                            "typescript-eslint":  "^8.14.0",
+                            "globals":  "^15.12.0",
+                            "prettier":  "^3.3.3",
+                            "typescript":  "^5.6.3"
+                        },
+    "engines":  {
+                    "node":  "\u003e=20.11.0"
+                }
+}

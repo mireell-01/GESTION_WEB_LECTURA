@@ -1,0 +1,109 @@
+# Pipeline de calidad (Modelo V): ejecuta los 4 niveles de prueba en orden y bloquea el merge
+# si alguno falla o si la cobertura unitaria baja del umbral (80 % líneas, definido en vitest.config.ts).
+name: Calidad
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: calidad-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  JWT_SECRET: secreto-de-ci-solo-para-pruebas-con-mas-de-32-caracteres
+  WEB_ORIGIN: http://localhost:3002
+
+jobs:
+  estatico:
+    name: Lint, arquitectura y tipos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - run: npm run contracts:generate
+      - run: npm run lint
+      - run: npm run typecheck
+
+  unitarias:
+    name: 'Nivel 1: unitarias + cobertura'
+    needs: estatico
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      # Falla si la cobertura baja de los umbrales de vitest.config.ts.
+      - run: npm run test:unit
+        env: { CI: 'true' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: cobertura-unitaria, path: apps/api/reports/unit }
+
+  integracion:
+    name: 'Nivel 2: integración (Testcontainers)'
+    needs: unitarias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      # El runner de GitHub tiene Docker: PostgreSQL 16 efímero con Testcontainers.
+      - run: npm run test:int
+        env: { CI: 'true', USAR_TESTCONTAINERS: '1' }
+
+  sistema-y-aceptacion:
+    name: 'Niveles 3 y 4: sistema (E2E), carga y aceptación (UAT)'
+    needs: integracion
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: lectoaventura_e2e }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      CI: 'true'
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lectoaventura_e2e?schema=public
+      PW_CANAL: chromium
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+      - run: npm run contracts:generate
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/e2e
+      # Se compila una sola vez; E2E, UAT y k6 arrancan la compilación de producción.
+      - name: Compilar API y web
+        run: npm run build --workspace @lectoaventura/api && npm run build --workspace @lectoaventura/web
+      - name: 'Nivel 3: sistema E2E (escritorio y tablet)'
+        run: npm run test:e2e
+      - name: 'Nivel 4: aceptación (Gherkin)'
+        run: npm run test:uat
+      - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-008)'
+        uses: grafana/setup-k6-action@v1
+      - run: |
+          npm run start --workspace @lectoaventura/api &
+          npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
+          k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reportes-sistema-y-uat
+          path: |
+            tests/e2e/reportes
+            tests/e2e/test-results

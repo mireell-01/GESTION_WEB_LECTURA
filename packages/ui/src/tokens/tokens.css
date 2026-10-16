@@ -1,0 +1,51 @@
+/**
+ * Design tokens del design system infantil accesible.
+ * Paleta de alto contraste (texto ≥ 4.5:1), tipografía redondeada y objetivos táctiles grandes.
+ */
+:root {
+  /* Color */
+  --la-color-primario: #2f6df6;
+  --la-color-primario-fuerte: #1e4fd0;
+  --la-color-primario-suave: #e3ecff;
+  --la-color-secundario: #ffb703;
+  --la-color-secundario-suave: #fff3d1;
+  --la-color-exito: #2a9d8f;
+  --la-color-exito-fuerte: #1d7a6f;
+  --la-color-exito-suave: #dcf5f1;
+  --la-color-exito-texto: #135a51;
+  --la-color-error: #e63946;
+  --la-color-error-fuerte: #c1121f;
+  --la-color-error-suave: #fde3e5;
+  --la-color-fondo: #f7fbff;
+  --la-color-fondo-alterno: #eef2f8;
+  --la-color-superficie: #ffffff;
+  --la-color-borde: #d5ddea;
+  --la-color-texto: #14213d;
+  --la-color-texto-suave: #4f5a6e;
+
+  /* Tipografía */
+  --la-font-redondeada: 'Nunito', 'Baloo 2', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
+  --la-texto-sm: 0.875rem;
+  --la-texto-base: 1rem;
+  --la-texto-lg: 1.25rem;
+  --la-texto-xl: 1.5rem;
+  --la-texto-2xl: 2rem;
+
+  /* Espaciado */
+  --la-espacio-1: 0.25rem;
+  --la-espacio-2: 0.5rem;
+  --la-espacio-3: 1rem;
+  --la-espacio-4: 1.5rem;
+  --la-espacio-5: 2rem;
+  --la-espacio-6: 3rem;
+
+  /* Radios y sombras */
+  --la-radio: 1rem;
+  --la-sombra: 0 4px 14px rgba(20, 33, 61, 0.12);
+
+  /* Accesibilidad: objetivo táctil mínimo 44px (WCAG 2.2 2.5.5) */
+  --la-target-min: 44px;
+
+  /* Foco visible consistente */
+  --la-foco: 0 0 0 3px #ffb703;
+}

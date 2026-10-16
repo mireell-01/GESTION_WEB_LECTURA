@@ -1,0 +1,17 @@
+{
+    "name":  "@lectoaventura/tests-e2e",
+    "version":  "0.1.0",
+    "private":  true,
+    "description":  "Pruebas end-to-end con Playwright â€” System Testing (secciÃ³n 14).",
+    "scripts":  {
+                    "test":  "playwright test",
+                    "test:ui":  "playwright test --ui",
+                    "report":  "playwright show-report reportes/sistema",
+                    "test:uat":  "bddgen -c playwright.uat.config.ts \u0026\u0026 playwright test -c playwright.uat.config.ts"
+                },
+    "devDependencies":  {
+                            "@playwright/test":  "^1.48.2",
+                            "@types/node":  "^22.9.0",
+                            "playwright-bdd":  "^9.2.1"
+                        }
+}

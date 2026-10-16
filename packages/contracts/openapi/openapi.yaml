@@ -1,0 +1,103 @@
+openapi: 3.1.0
+info:
+  title: Lectoaventura API
+  version: 0.1.0
+  description: >
+    Contrato único entre apps/web y apps/api.
+    Este esqueleto expone un endpoint demo por módulo; cada módulo agregará sus rutas.
+servers:
+  - url: http://localhost:3001
+    description: Local
+tags:
+  - name: lectura
+  - name: iam
+  - name: escuela
+  - name: contenido
+  - name: aventura
+  - name: diagnostico
+  - name: progreso
+  - name: gamificacion
+  - name: asistente
+  - name: administracion
+paths:
+  /lectura/demo:
+    post:
+      tags: [lectura]
+      summary: Endpoint demo del módulo lectura
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modulo: { type: string }
+                  recibido: { type: object, additionalProperties: true }
+  /iam/demo:
+    post:
+      tags: [iam]
+      summary: Endpoint demo del módulo iam
+      responses:
+        '200': { description: OK }
+  /escuela/demo:
+    post:
+      tags: [escuela]
+      summary: Endpoint demo del módulo escuela
+      responses:
+        '200': { description: OK }
+  /contenido/demo:
+    post:
+      tags: [contenido]
+      summary: Endpoint demo del módulo contenido
+      responses:
+        '200': { description: OK }
+  /aventura/demo:
+    post:
+      tags: [aventura]
+      summary: Endpoint demo del módulo aventura
+      responses:
+        '200': { description: OK }
+  /diagnostico/demo:
+    post:
+      tags: [diagnostico]
+      summary: Endpoint demo del módulo diagnostico
+      responses:
+        '200': { description: OK }
+  /progreso/demo:
+    post:
+      tags: [progreso]
+      summary: Endpoint demo del módulo progreso
+      responses:
+        '200': { description: OK }
+  /gamificacion/demo:
+    post:
+      tags: [gamificacion]
+      summary: Endpoint demo del módulo gamificacion
+      responses:
+        '200': { description: OK }
+  /asistente/demo:
+    post:
+      tags: [asistente]
+      summary: Endpoint demo del módulo asistente
+      responses:
+        '200': { description: OK }
+  /administracion/demo:
+    post:
+      tags: [administracion]
+      summary: Endpoint demo del módulo administracion
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
