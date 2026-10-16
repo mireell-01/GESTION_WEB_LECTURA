@@ -1,194 +1,948 @@
 // Prisma schema — detalle de infraestructura, fuera del dominio.
-// Los modelos son el reflejo persistente de los agregados de cada módulo (SRS §6),
-// agrupados por bounded context. No hay relaciones (FK) entre modelos de módulos distintos:
-// se referencian por id, igual que en el dominio.
+// Diseño de datos del SRS §7: un schema de PostgreSQL por bounded context, tablas y columnas en
+// snake_case, identificadores UUID v7 y fechas TIMESTAMPTZ. Dentro de un schema hay FK; entre
+// schemas las referencias son solo por id (sin FK), para poder extraer módulos a servicios.
+// Los modelos conservan nombres en PascalCase/camelCase para el código (@@map / @map).
+// Las reglas que Prisma no expresa (CHECK, append-only, datos de catálogo, vistas materializadas
+// de reportes) viven en las migraciones SQL.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["iam", "escuela", "contenido", "aventura", "diagnostico", "lectura", "progreso", "gamificacion", "asistente", "admin", "reporting"]
 }
 
-// ---------------------------------------------------------------------------
-// IAM — Identidad, Consentimiento y Acceso (RF-001 a RF-013)
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// IAM — Identidad, Consentimiento y Acceso (RF-001 a RF-013, RF-071)
+// ===========================================================================
 
-/// Cuenta adulta (docente, familiar, editor, revisor, admin).
+/// Cuenta adulta: docente, familiar, editor, revisor o administrador (RF-001).
 model Cuenta {
-  id                 String    @id @default(cuid())
-  nombre             String
-  email              String    @unique
-  hashContrasena     String
-  rol                String
-  estado             String    @default("PENDIENTE_VERIFICACION")
-  mfaHabilitado      Boolean   @default(false)
-  mfaSecret          String?
-  mfaSecretPendiente String?
-  creadoEn           DateTime  @default(now())
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre         String
+  email          String   @unique
+  hashContrasena String   @map("hash_contrasena")
+  rol            String
+  estado         String   @default("PENDIENTE_VERIFICACION")
+  creadoEn       DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
 
+  factorMfa          FactorMfa?
   perfilesEstudiante PerfilEstudiante[]
   consentimientos    Consentimiento[]
   verificaciones     Verificacion[]
   dispositivos       DispositivoIngreso[]
+  vinculos           VinculoResponsable[]
 
   @@index([rol])
+  @@map("cuenta_adulta")
+  @@schema("iam")
 }
 
-/// Perfil de menor. Sin apellidos, documento, foto real ni correo (RN-02).
+/// Segundo factor TOTP de una cuenta adulta (RF-011): secreto activo y secreto en configuración.
+model FactorMfa {
+  cuentaId         String   @id @map("cuenta_id") @db.Uuid
+  cuenta           Cuenta   @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  tipo             String   @default("TOTP")
+  habilitado       Boolean  @default(false)
+  secreto          String?
+  secretoPendiente String?  @map("secreto_pendiente")
+  actualizadoEn    DateTime @default(now()) @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  @@map("factor_mfa")
+  @@schema("iam")
+}
+
+/// Perfil del menor. Solo alias, año-mes de nacimiento, avatar y PIN cifrado (RN-02).
+/// `cuentaResponsableId` es el responsable principal (exactamente uno).
 model PerfilEstudiante {
-  id                  String    @id @default(cuid())
-  cuentaResponsableId String
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cuentaResponsableId String    @map("cuenta_responsable_id") @db.Uuid
   cuentaResponsable   Cuenta    @relation(fields: [cuentaResponsableId], references: [id], onDelete: Cascade)
-  consentimientoId    String
+  consentimientoId    String    @map("consentimiento_id") @db.Uuid
   alias               String
-  anioNacimiento      Int
-  mesNacimiento       Int
+  anioNacimiento      Int       @map("anio_nacimiento")
+  mesNacimiento       Int       @map("mes_nacimiento")
   avatar              String
-  hashPin             String
-  intentosFallidos    Int       @default(0)
-  bloqueadoHasta      DateTime?
+  hashPin             String    @map("hash_pin")
+  intentosFallidos    Int       @default(0) @map("intentos_fallidos")
+  bloqueadoHasta      DateTime? @map("bloqueado_hasta") @db.Timestamptz(3)
   activo              Boolean   @default(true)
-  eliminadoEn         DateTime?
-  creadoEn            DateTime  @default(now())
+  eliminadoEn         DateTime? @map("eliminado_en") @db.Timestamptz(3)
+  creadoEn            DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  vinculos VinculoResponsable[]
 
   @@index([cuentaResponsableId])
+  @@map("perfil_estudiante")
+  @@schema("iam")
+}
+
+/// Familiares vinculados a un perfil además del responsable principal: hasta 2 (SRS §7, RF-019).
+model VinculoResponsable {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  perfilId    String           @map("perfil_id") @db.Uuid
+  perfil      PerfilEstudiante @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+  cuentaId    String           @map("cuenta_id") @db.Uuid
+  cuenta      Cuenta           @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  origen      String
+  vinculadoEn DateTime         @default(now()) @map("vinculado_en") @db.Timestamptz(3)
+  revocadoEn  DateTime?        @map("revocado_en") @db.Timestamptz(3)
+
+  @@unique([perfilId, cuentaId])
+  @@index([cuentaId])
+  @@map("vinculo_responsable")
+  @@schema("iam")
 }
 
 /// Consentimiento parental o institucional (RF-005, RN-01).
 model Consentimiento {
-  id                  String   @id @default(cuid())
-  cuentaResponsableId String
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cuentaResponsableId String   @map("cuenta_responsable_id") @db.Uuid
   cuentaResponsable   Cuenta   @relation(fields: [cuentaResponsableId], references: [id], onDelete: Cascade)
   tipo                String   @default("PARENTAL")
-  aulaId              String?
-  versionPolitica     String
-  otorgadoEn          DateTime
-  otorganteNombre     String
+  aulaId              String?  @map("aula_id") @db.Uuid
+  versionPolitica     String   @map("version_politica")
+  otorgadoEn          DateTime @map("otorgado_en") @db.Timestamptz(3)
+  otorganteNombre     String   @map("otorgante_nombre")
   medio               String
   vigente             Boolean  @default(true)
 
   @@index([cuentaResponsableId, tipo, vigente])
+  @@map("consentimiento")
+  @@schema("iam")
 }
 
 /// Enlaces de un solo uso: verificación de correo (24 h) y recuperación de contraseña (30 min).
 /// Al reenviar la verificación, los enlaces anteriores quedan reemplazados y dejan de servir.
 model Verificacion {
-  id            String    @id @default(cuid())
-  cuentaId      String
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cuentaId      String    @map("cuenta_id") @db.Uuid
   cuenta        Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
   tipo          String
   codigo        String    @unique
-  expiraEn      DateTime
+  expiraEn      DateTime  @map("expira_en") @db.Timestamptz(3)
   canjeado      Boolean   @default(false)
-  creadoEn      DateTime  @default(now())
-  reemplazadoEn DateTime?
+  creadoEn      DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  reemplazadoEn DateTime? @map("reemplazado_en") @db.Timestamptz(3)
 
   @@index([cuentaId, tipo])
+  @@map("verificacion_correo")
+  @@schema("iam")
 }
 
-/// Sesión de un adulto o de un estudiante, con refresh token rotativo (RF-003, RF-010).
+/// Sesión con refresh token rotativo de un adulto o un estudiante (RF-003, RF-010, ADR-005).
 model Sesion {
-  id                String    @id @default(cuid())
-  sujetoId          String
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sujetoId          String    @map("sujeto_id") @db.Uuid
   rol               String
   mfa               Boolean   @default(false)
-  hashRefreshToken  String    @unique
-  creadaEn          DateTime  @default(now())
-  ultimaActividadEn DateTime
-  revocadaEn        DateTime?
+  hashRefreshToken  String    @unique @map("hash_refresh_token")
+  creadaEn          DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+  ultimaActividadEn DateTime  @map("ultima_actividad_en") @db.Timestamptz(3)
+  revocadaEn        DateTime? @map("revocada_en") @db.Timestamptz(3)
 
   @@index([sujetoId])
+  @@map("refresh_token")
+  @@schema("iam")
 }
 
 /// Huellas de refresh tokens ya rotados: si alguien reutiliza uno, se revoca la sesión (ADR-005).
 model RefreshTokenUsado {
   hash     String   @id
-  sesionId String
-  usadoEn  DateTime @default(now())
+  sesionId String   @map("sesion_id") @db.Uuid
+  usadoEn  DateTime @default(now()) @map("usado_en") @db.Timestamptz(3)
 
   @@index([sesionId])
+  @@map("refresh_token_usado")
+  @@schema("iam")
 }
 
 /// Exportación de datos del estudiante (RF-012): JSON + PDF, descargables por enlace firmado 72 h.
 model Exportacion {
-  id            String   @id
-  perfilId      String
-  solicitadaPor String
-  creadaEn      DateTime
-  expiraEn      DateTime
-  archivoJson   Bytes
-  archivoPdf    Bytes
+  id            String   @id @db.Uuid
+  perfilId      String   @map("perfil_id") @db.Uuid
+  solicitadaPor String   @map("solicitada_por") @db.Uuid
+  creadaEn      DateTime @map("creada_en") @db.Timestamptz(3)
+  expiraEn      DateTime @map("expira_en") @db.Timestamptz(3)
+  archivoJson   Bytes    @map("archivo_json")
+  archivoPdf    Bytes    @map("archivo_pdf")
 
   @@index([perfilId])
   @@index([expiraEn])
+  @@map("exportacion")
+  @@schema("iam")
 }
 
-/// Dispositivo activado por un adulto durante 30 días para el ingreso de los niños (RN-04, CR-01):
-/// de la familia (aulaId vacío) o de un aula (activado por su docente). Sin código de aula.
+/// Tablet activada por un adulto durante 30 días para el ingreso de los niños (RN-04, CR-01):
+/// de la familia (aula_id vacío) o de un aula (activada por su docente). Sin código de aula.
 model DispositivoIngreso {
-  id         String    @id @default(cuid())
-  cuentaId   String
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cuentaId   String    @map("cuenta_id") @db.Uuid
   cuenta     Cuenta    @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
-  aulaId     String?
+  aulaId     String?   @map("aula_id") @db.Uuid
   nombre     String
-  hashToken  String    @unique
-  creadoEn   DateTime  @default(now())
-  expiraEn   DateTime
-  revocadoEn DateTime?
+  hashToken  String    @unique @map("hash_token")
+  creadoEn   DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  expiraEn   DateTime  @map("expira_en") @db.Timestamptz(3)
+  revocadoEn DateTime? @map("revocado_en") @db.Timestamptz(3)
 
   @@index([cuentaId])
   @@index([aulaId])
+  @@map("dispositivo_ingreso")
+  @@schema("iam")
 }
 
-// ---------------------------------------------------------------------------
-// ESCUELA — Aulas, matrículas y asignaciones (RF-014 a RF-020)
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// ESCUELA — Instituciones, aulas, matrículas y asignaciones (RF-014 a RF-020)
+// ===========================================================================
 
-/// Aula de un docente en un año lectivo, con código de acceso único (RF-014).
+/// Institución educativa que declara el consentimiento institucional (RF-076).
+model Institucion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre        String
+  codigoModular String?  @unique @map("codigo_modular")
+  region        String?
+  estado        String   @default("ACTIVA")
+  creadaEn      DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  aulas Aula[]
+
+  @@map("institucion")
+  @@schema("escuela")
+}
+
+/// Aula de un docente en un año lectivo (RF-014). Máximo 45 matrículas activas.
 model Aula {
-  id          String      @id
-  docenteId   String
-  nombre      String
-  grado       String
-  anioLectivo Int
-  institucion String
-  codigo      String      @unique
-  estado      String      @default("ACTIVA")
-  creadaEn    DateTime    @default(now())
-  archivadaEn DateTime?
-  matriculas  Matricula[]
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  docenteId      String       @map("docente_id") @db.Uuid
+  institucionId  String?      @map("institucion_id") @db.Uuid
+  institucionRef Institucion? @relation(fields: [institucionId], references: [id], onDelete: SetNull)
+  nombre         String
+  grado          String
+  anioLectivo    Int          @map("anio_lectivo")
+  institucion    String
+  codigo         String       @unique
+  estado         String       @default("ACTIVA")
+  creadaEn       DateTime     @default(now()) @map("creada_en") @db.Timestamptz(3)
+  archivadaEn    DateTime?    @map("archivada_en") @db.Timestamptz(3)
+
+  matriculas   Matricula[]
+  asignaciones Asignacion[]
+  invitaciones InvitacionFamiliar[]
 
   @@index([docenteId])
+  @@index([institucionId])
+  @@map("aula")
+  @@schema("escuela")
 }
 
 /// Estudiante (perfil de IAM) matriculado en un aula (RF-015).
 model Matricula {
-  id           String    @id
-  aulaId       String
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aulaId       String    @map("aula_id") @db.Uuid
   aula         Aula      @relation(fields: [aulaId], references: [id], onDelete: Cascade)
-  estudianteId String
+  estudianteId String    @map("estudiante_id") @db.Uuid
   estado       String    @default("ACTIVA")
-  creadaEn     DateTime  @default(now())
-  retiradaEn   DateTime?
+  creadaEn     DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+  retiradaEn   DateTime? @map("retirada_en") @db.Timestamptz(3)
 
   @@unique([aulaId, estudianteId])
   @@index([estudianteId])
+  @@map("matricula")
+  @@schema("escuela")
 }
 
-// ---------------------------------------------------------------------------
-// OUTBOX DE EVENTOS (patrón Outbox, ADR-009)
-// ---------------------------------------------------------------------------
+/// Lectura o misión asignada por el docente con fecha límite (RF-018).
+model Asignacion {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aulaId         String   @map("aula_id") @db.Uuid
+  aula           Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  docenteId      String   @map("docente_id") @db.Uuid
+  tipo           String
+  lecturaId      String?  @map("lectura_id") @db.Uuid
+  misionId       String?  @map("mision_id") @db.Uuid
+  titulo         String
+  paraTodaElAula Boolean  @default(true) @map("para_toda_el_aula")
+  fechaInicio    DateTime @map("fecha_inicio") @db.Timestamptz(3)
+  fechaLimite    DateTime @map("fecha_limite") @db.Timestamptz(3)
+  estado         String   @default("PROGRAMADA")
+  creadaEn       DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  destinatarios AsignacionDestinatario[]
+
+  @@index([aulaId, estado])
+  @@map("asignacion")
+  @@schema("escuela")
+}
+
+/// Estudiantes específicos de una asignación cuando no es para toda el aula (RF-018).
+model AsignacionDestinatario {
+  asignacionId String     @map("asignacion_id") @db.Uuid
+  asignacion   Asignacion @relation(fields: [asignacionId], references: [id], onDelete: Cascade)
+  estudianteId String     @map("estudiante_id") @db.Uuid
+
+  @@id([asignacionId, estudianteId])
+  @@index([estudianteId])
+  @@map("asignacion_destinatario")
+  @@schema("escuela")
+}
+
+/// Código de un solo uso (7 días) para vincular a un familiar con un estudiante (RF-019).
+model InvitacionFamiliar {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aulaId           String    @map("aula_id") @db.Uuid
+  aula             Aula      @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  estudianteId     String    @map("estudiante_id") @db.Uuid
+  docenteId        String    @map("docente_id") @db.Uuid
+  hashCodigo       String    @unique @map("hash_codigo")
+  expiraEn         DateTime  @map("expira_en") @db.Timestamptz(3)
+  usadaEn          DateTime? @map("usada_en") @db.Timestamptz(3)
+  cuentaFamiliarId String?   @map("cuenta_familiar_id") @db.Uuid
+  creadaEn         DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  @@index([estudianteId])
+  @@map("invitacion_familiar")
+  @@schema("escuela")
+}
+
+// ===========================================================================
+// CONTENIDO — Biblioteca, versiones y actividades (RF-021 a RF-029)
+// ===========================================================================
+
+/// Lectura: identidad estable; su contenido vive en versiones inmutables al publicarse (RN-14).
+model Lectura {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  autorId            String          @map("autor_id") @db.Uuid
+  versionPublicadaId String?         @unique @map("version_publicada_id") @db.Uuid
+  versionPublicada   VersionLectura? @relation("VersionPublicada", fields: [versionPublicadaId], references: [id], onDelete: SetNull)
+  creadaEn           DateTime        @default(now()) @map("creada_en") @db.Timestamptz(3)
+  archivadaEn        DateTime?       @map("archivada_en") @db.Timestamptz(3)
+
+  versiones VersionLectura[] @relation("VersionesDeLectura")
+
+  @@index([autorId])
+  @@map("lectura")
+  @@schema("contenido")
+}
+
+/// Versión de una lectura con metadatos y flujo Borrador → En revisión → Publicado → Archivado (RF-021, RF-026, RF-027).
+model VersionLectura {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lecturaId           String    @map("lectura_id") @db.Uuid
+  lectura             Lectura   @relation("VersionesDeLectura", fields: [lecturaId], references: [id], onDelete: Cascade)
+  numero              Int
+  estado              String    @default("BORRADOR")
+  titulo              String
+  rangoEdad           String    @map("rango_edad")
+  nivelDificultad     Int       @map("nivel_dificultad") @db.SmallInt
+  tematica            String
+  tipoTexto           String    @map("tipo_texto")
+  habilidadesObjetivo String[]  @map("habilidades_objetivo")
+  licencia            String?
+  texto               String
+  autorId             String    @map("autor_id") @db.Uuid
+  revisorId           String?   @map("revisor_id") @db.Uuid
+  esRamificada        Boolean   @default(false) @map("es_ramificada")
+  creadaEn            DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+  enviadaRevisionEn   DateTime? @map("enviada_revision_en") @db.Timestamptz(3)
+  publicadaEn         DateTime? @map("publicada_en") @db.Timestamptz(3)
+  archivadaEn         DateTime? @map("archivada_en") @db.Timestamptz(3)
+
+  publicadaEnLectura Lectura?       @relation("VersionPublicada")
+  oraciones          Oracion[]
+  recursos           Recurso[]
+  actividades        Actividad[]
+  nodos              NodoHistoria[]
+
+  @@unique([lecturaId, numero])
+  @@index([estado, rangoEdad, nivelDificultad])
+  @@map("version_lectura")
+  @@schema("contenido")
+}
+
+/// Oración segmentada con identificador estable dentro de la versión (RF-022).
+model Oracion {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionLecturaId String         @map("version_lectura_id") @db.Uuid
+  versionLectura   VersionLectura @relation(fields: [versionLecturaId], references: [id], onDelete: Cascade)
+  orden            Int
+  parrafo          Int
+  texto            String
+
+  anclajeDe Actividad[]
+  claves    ClaveEvidencia[]
+
+  @@unique([versionLecturaId, orden])
+  @@map("oracion")
+  @@schema("contenido")
+}
+
+/// Imagen o audio de una lectura (RF-023): AVIF/WebP ≤ 200 KB, audio ≤ 2 MB, texto alternativo obligatorio.
+model Recurso {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionLecturaId String         @map("version_lectura_id") @db.Uuid
+  versionLectura   VersionLectura @relation(fields: [versionLecturaId], references: [id], onDelete: Cascade)
+  tipo             String
+  claveAlmacen     String         @map("clave_almacen")
+  tipoMime         String         @map("tipo_mime")
+  bytes            Int
+  textoAlternativo String?        @map("texto_alternativo")
+  duracionSeg      Int?           @map("duracion_seg")
+  creadoEn         DateTime       @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@index([versionLecturaId])
+  @@map("recurso")
+  @@schema("contenido")
+}
+
+/// Actividad de un momento de lectura: antes, durante (con oración de anclaje) o después (RF-024).
+model Actividad {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionLecturaId String         @map("version_lectura_id") @db.Uuid
+  versionLectura   VersionLectura @relation(fields: [versionLecturaId], references: [id], onDelete: Cascade)
+  momento          String
+  tipo             String
+  orden            Int
+  oracionAnclajeId String?        @map("oracion_anclaje_id") @db.Uuid
+  oracionAnclaje   Oracion?       @relation(fields: [oracionAnclajeId], references: [id], onDelete: SetNull)
+
+  items Item[]
+
+  @@unique([versionLecturaId, orden])
+  @@map("actividad")
+  @@schema("contenido")
+}
+
+/// Ítem con habilidad, dificultad, modalidad y explicación modelada obligatoria (RF-024, RF-025).
+model Item {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actividadId         String    @map("actividad_id") @db.Uuid
+  actividad           Actividad @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  orden               Int
+  habilidad           String
+  nivelDificultad     Int       @map("nivel_dificultad") @db.SmallInt
+  modalidad           String
+  esCerrado           Boolean   @default(true) @map("es_cerrado")
+  enunciado           String
+  contenido           Json      @default("{}")
+  respuestaCorrecta   Json?     @map("respuesta_correcta")
+  explicacionModelada String    @map("explicacion_modelada")
+
+  pistas Pista[]
+  claves ClaveEvidencia[]
+
+  @@unique([actividadId, orden])
+  @@index([habilidad])
+  @@map("item")
+  @@schema("contenido")
+}
+
+/// Pistas progresivas P1–P3 de un ítem; la pista nunca contiene la respuesta literal (RF-025, RN-06).
+model Pista {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  nivel  String
+  texto  String
+
+  @@unique([itemId, nivel])
+  @@map("pista")
+  @@schema("contenido")
+}
+
+/// Oraciones que respaldan la respuesta de un ítem de evidencia (RF-043, RN-15).
+model ClaveEvidencia {
+  itemId    String  @map("item_id") @db.Uuid
+  item      Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  oracionId String  @map("oracion_id") @db.Uuid
+  oracion   Oracion @relation(fields: [oracionId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, oracionId])
+  @@map("clave_evidencia")
+  @@schema("contenido")
+}
+
+/// Nodo de una historia ramificada; el grafo es acíclico y todo nodo llega a un final (RF-029).
+model NodoHistoria {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  versionLecturaId String         @map("version_lectura_id") @db.Uuid
+  versionLectura   VersionLectura @relation(fields: [versionLecturaId], references: [id], onDelete: Cascade)
+  clave            String
+  contenido        String
+  esInicio         Boolean        @default(false) @map("es_inicio")
+  esFinal          Boolean        @default(false) @map("es_final")
+  opciones         Json           @default("[]")
+
+  @@unique([versionLecturaId, clave])
+  @@map("nodo_historia")
+  @@schema("contenido")
+}
+
+// ===========================================================================
+// AVENTURA — Mapa, mundos y misiones (RF-030 a RF-033)
+// ===========================================================================
+
+/// Uno de los 5 mundos del mapa de aventuras (catálogo del SRS).
+model Mundo {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  numero          Int      @unique @db.SmallInt
+  nombre          String
+  habilidadesFoco String[] @map("habilidades_foco")
+  descripcion     String
+
+  misiones  Mision[]
+  progresos ProgresoMundo[]
+
+  @@map("mundo")
+  @@schema("aventura")
+}
+
+/// Misión de un mundo, compuesta por una o más lecturas (RF-032). Entre 3 y 20 por mundo.
+model Mision {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mundoId     String @map("mundo_id") @db.Uuid
+  mundo       Mundo  @relation(fields: [mundoId], references: [id], onDelete: Cascade)
+  orden       Int
+  titulo      String
+  descripcion String @default("")
+
+  lecturas  MisionLectura[]
+  progresos ProgresoMision[]
+
+  @@unique([mundoId, orden])
+  @@map("mision")
+  @@schema("aventura")
+}
+
+/// Lecturas de una misión (N:M con Contenido, por id).
+model MisionLectura {
+  misionId  String @map("mision_id") @db.Uuid
+  mision    Mision @relation(fields: [misionId], references: [id], onDelete: Cascade)
+  lecturaId String @map("lectura_id") @db.Uuid
+  orden     Int
+
+  @@id([misionId, lecturaId])
+  @@index([lecturaId])
+  @@map("mision_lectura")
+  @@schema("aventura")
+}
+
+/// Estado de cada mundo para un estudiante: BLOQUEADO → DISPONIBLE → COMPLETADO (RF-030, RF-031).
+model ProgresoMundo {
+  estudianteId   String    @map("estudiante_id") @db.Uuid
+  mundoId        String    @map("mundo_id") @db.Uuid
+  mundo          Mundo     @relation(fields: [mundoId], references: [id], onDelete: Cascade)
+  estado         String    @default("BLOQUEADO")
+  desbloqueadoEn DateTime? @map("desbloqueado_en") @db.Timestamptz(3)
+  completadoEn   DateTime? @map("completado_en") @db.Timestamptz(3)
+
+  @@id([estudianteId, mundoId])
+  @@map("progreso_mundo")
+  @@schema("aventura")
+}
+
+/// Estado de cada misión para un estudiante: PENDIENTE → EN_CURSO → COMPLETADA (RF-032).
+model ProgresoMision {
+  estudianteId String    @map("estudiante_id") @db.Uuid
+  misionId     String    @map("mision_id") @db.Uuid
+  mision       Mision    @relation(fields: [misionId], references: [id], onDelete: Cascade)
+  estado       String    @default("PENDIENTE")
+  iniciadaEn   DateTime? @map("iniciada_en") @db.Timestamptz(3)
+  completadaEn DateTime? @map("completada_en") @db.Timestamptz(3)
+
+  @@id([estudianteId, misionId])
+  @@map("progreso_mision")
+  @@schema("aventura")
+}
+
+// ===========================================================================
+// DIAGNÓSTICO — Reto inicial y reevaluaciones (RF-034 a RF-037)
+// ===========================================================================
+
+/// Ítems del diagnóstico por rango de edad y habilidad; `forma` agrupa ítems equivalentes (RF-037).
+model BancoItemDiagnostico {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rangoEdad         String  @map("rango_edad")
+  habilidad         String
+  nivelDificultad   Int     @map("nivel_dificultad") @db.SmallInt
+  forma             String  @default("A")
+  enunciado         String
+  contenido         Json    @default("{}")
+  respuestaCorrecta Json    @map("respuesta_correcta")
+  activo            Boolean @default(true)
+
+  respuestas RespuestaDiagnostico[]
+
+  @@index([rangoEdad, habilidad, forma])
+  @@map("banco_item_diagnostico")
+  @@schema("diagnostico")
+}
+
+/// Diagnóstico de un estudiante: NO_INICIADO → EN_CURSO → PAUSADO → FINALIZADO (RF-034 a RF-036).
+/// Solo un diagnóstico INICIAL por estudiante (secuencia 1).
+model Diagnostico {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estudianteId String    @map("estudiante_id") @db.Uuid
+  tipo         String    @default("INICIAL")
+  secuencia    Int       @default(1)
+  estado       String    @default("NO_INICIADO")
+  rangoEdad    String    @map("rango_edad")
+  totalItems   Int       @map("total_items") @db.SmallInt
+  asignadoPor  String?   @map("asignado_por") @db.Uuid
+  resultado    Json?
+  iniciadoEn   DateTime? @map("iniciado_en") @db.Timestamptz(3)
+  pausadoEn    DateTime? @map("pausado_en") @db.Timestamptz(3)
+  finalizadoEn DateTime? @map("finalizado_en") @db.Timestamptz(3)
+
+  respuestas RespuestaDiagnostico[]
+
+  @@unique([estudianteId, tipo, secuencia])
+  @@map("diagnostico")
+  @@schema("diagnostico")
+}
+
+/// Respuesta a un ítem del diagnóstico; una por ítem (RF-036: reanudar sin perder respuestas).
+model RespuestaDiagnostico {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  diagnosticoId String               @map("diagnostico_id") @db.Uuid
+  diagnostico   Diagnostico          @relation(fields: [diagnosticoId], references: [id], onDelete: Cascade)
+  itemId        String               @map("item_id") @db.Uuid
+  item          BancoItemDiagnostico @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  contenido     Json
+  esCorrecta    Boolean              @map("es_correcta")
+  respondidaEn  DateTime             @default(now()) @map("respondida_en") @db.Timestamptz(3)
+
+  @@unique([diagnosticoId, itemId])
+  @@map("respuesta_diagnostico")
+  @@schema("diagnostico")
+}
+
+// ===========================================================================
+// LECTURA — Sesiones de lectura interactiva (RF-038 a RF-051)
+// ===========================================================================
+
+/// Un intento de un estudiante sobre una versión de lectura (SRS §7, DDL de referencia).
+model SesionLectura {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estudianteId      String    @map("estudiante_id") @db.Uuid
+  versionLecturaId  String    @map("version_lectura_id") @db.Uuid
+  asignacionId      String?   @map("asignacion_id") @db.Uuid
+  estado            String    @default("INICIADA")
+  prediccion        String?
+  reflexion         String?
+  itemActualId      String?   @map("item_actual_id") @db.Uuid
+  esRepeticion      Boolean   @default(false) @map("es_repeticion")
+  iniciadaEn        DateTime  @default(now()) @map("iniciada_en") @db.Timestamptz(3)
+  ultimaActividadEn DateTime  @default(now()) @map("ultima_actividad_en") @db.Timestamptz(3)
+  finalizadaEn      DateTime? @map("finalizada_en") @db.Timestamptz(3)
+
+  respuestas Respuesta[]
+  decisiones DecisionRuta[]
+
+  @@index([estudianteId, iniciadaEn(sort: Desc)], map: "ix_sesion_estudiante")
+  @@map("sesion_lectura")
+  @@schema("lectura")
+}
+
+/// Respuesta a un ítem; una por ítem por intento, envío idempotente (RF-040 a RF-046).
+model Respuesta {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sesionId       String        @map("sesion_id") @db.Uuid
+  sesion         SesionLectura @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  itemId         String        @map("item_id") @db.Uuid
+  habilidad      String
+  modalidad      String
+  contenido      Json
+  esCorrecta     Boolean?      @map("es_correcta")
+  pistasUsadas   Int           @default(0) @map("pistas_usadas") @db.SmallInt
+  puntajeItem    Decimal?      @map("puntaje_item") @db.Decimal(3, 2)
+  estado         String        @default("ENVIADA")
+  idempotencyKey String        @unique @map("idempotency_key") @db.Uuid
+  respondidaEn   DateTime      @default(now()) @map("respondida_en") @db.Timestamptz(3)
+
+  usosPista     UsoPista[]
+  justificacion Justificacion?
+  valoracion    ValoracionRubrica?
+
+  @@unique([sesionId, itemId])
+  @@map("respuesta")
+  @@schema("lectura")
+}
+
+/// Pista usada en una respuesta: P1 → P2 → P3 → explicación (RF-045, RN-06).
+model UsoPista {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  respuestaId String    @map("respuesta_id") @db.Uuid
+  respuesta   Respuesta @relation(fields: [respuestaId], references: [id], onDelete: Cascade)
+  nivel       String
+  usadaEn     DateTime  @default(now()) @map("usada_en") @db.Timestamptz(3)
+
+  @@unique([respuestaId, nivel])
+  @@map("uso_pista")
+  @@schema("lectura")
+}
+
+/// "Defiende tu respuesta": por escritura (R2, R3) o eligiendo la mejor justificación (R1) (RF-044).
+model Justificacion {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  respuestaId   String    @unique @map("respuesta_id") @db.Uuid
+  respuesta     Respuesta @relation(fields: [respuestaId], references: [id], onDelete: Cascade)
+  modalidad     String
+  texto         String?
+  opcionElegida Json?     @map("opcion_elegida")
+  creadaEn      DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  @@map("justificacion")
+  @@schema("lectura")
+}
+
+/// Decisión del estudiante en una historia ramificada (RF-048).
+model DecisionRuta {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sesionId      String        @map("sesion_id") @db.Uuid
+  sesion        SesionLectura @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  nodoOrigenId  String        @map("nodo_origen_id") @db.Uuid
+  nodoDestinoId String        @map("nodo_destino_id") @db.Uuid
+  decididaEn    DateTime      @default(now()) @map("decidida_en") @db.Timestamptz(3)
+
+  @@index([sesionId])
+  @@map("decision_ruta")
+  @@schema("lectura")
+}
+
+/// Valoración docente de una respuesta abierta con rúbrica de 3 niveles (RF-051, RF-075).
+model ValoracionRubrica {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  respuestaId String    @unique @map("respuesta_id") @db.Uuid
+  respuesta   Respuesta @relation(fields: [respuestaId], references: [id], onDelete: Cascade)
+  docenteId   String    @map("docente_id") @db.Uuid
+  nivel       Int       @db.SmallInt
+  comentario  String?
+  borradorIa  String?   @map("borrador_ia")
+  valoradaEn  DateTime  @default(now()) @map("valorada_en") @db.Timestamptz(3)
+
+  @@map("valoracion_rubrica")
+  @@schema("lectura")
+}
+
+// ===========================================================================
+// PROGRESO — Perfil lector, maestría y recomendaciones (RF-052 a RF-055)
+// ===========================================================================
+
+/// Maestría por habilidad (0–100); exactamente 5 por estudiante (SRS §7, DDL de referencia).
+model MaestriaHabilidad {
+  estudianteId  String   @map("estudiante_id") @db.Uuid
+  habilidad     String
+  valor         Decimal  @db.Decimal(5, 2)
+  itemsContados Int      @default(0) @map("items_contados")
+  actualizadoEn DateTime @map("actualizado_en") @db.Timestamptz(3)
+  version       Int      @default(0)
+
+  @@id([estudianteId, habilidad])
+  @@map("maestria_habilidad")
+  @@schema("progreso")
+}
+
+/// Historial de cambios de maestría (trazabilidad para el docente y la familia).
+model HistorialMaestria {
+  id            BigInt   @id @default(autoincrement())
+  estudianteId  String   @map("estudiante_id") @db.Uuid
+  habilidad     String
+  valorAnterior Decimal  @map("valor_anterior") @db.Decimal(5, 2)
+  valorNuevo    Decimal  @map("valor_nuevo") @db.Decimal(5, 2)
+  origen        String
+  origenId      String?  @map("origen_id") @db.Uuid
+  registradoEn  DateTime @default(now()) @map("registrado_en") @db.Timestamptz(3)
+
+  @@index([estudianteId, habilidad, registradoEn])
+  @@map("historial_maestria")
+  @@schema("progreso")
+}
+
+/// Recomendación vigente para un estudiante: entre 1 y 3 a la vez (RF-055, RN-20).
+model Recomendacion {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estudianteId String    @map("estudiante_id") @db.Uuid
+  tipo         String
+  lecturaId    String?   @map("lectura_id") @db.Uuid
+  asignacionId String?   @map("asignacion_id") @db.Uuid
+  habilidad    String?
+  prioridad    Int       @db.SmallInt
+  motivo       String
+  vigente      Boolean   @default(true)
+  generadaEn   DateTime  @default(now()) @map("generada_en") @db.Timestamptz(3)
+  venceEn      DateTime? @map("vence_en") @db.Timestamptz(3)
+
+  @@index([estudianteId, vigente])
+  @@map("recomendacion")
+  @@schema("progreso")
+}
+
+// ===========================================================================
+// GAMIFICACIÓN — Puntos, insignias, racha y reto del día (RF-056 a RF-062, RF-078)
+// ===========================================================================
+
+/// Libro de puntos append-only; idempotente ante reentrega de eventos (SRS §7, DDL de referencia).
+model AsientoPuntos {
+  id           BigInt   @id @default(autoincrement())
+  estudianteId String   @map("estudiante_id") @db.Uuid
+  puntos       Int
+  motivo       String
+  eventoOrigen String   @map("evento_origen") @db.Uuid
+  fechaLima    DateTime @map("fecha_lima") @db.Date
+  creadoEn     DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@unique([eventoOrigen, motivo])
+  @@index([estudianteId, fechaLima])
+  @@map("asiento_puntos")
+  @@schema("gamificacion")
+}
+
+/// Catálogo de insignias con su regla de otorgamiento (RF-058).
+model Insignia {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codigo      String  @unique
+  nombre      String
+  descripcion String
+  regla       Json    @default("{}")
+  activa      Boolean @default(true)
+
+  otorgadas InsigniaOtorgada[]
+
+  @@map("insignia")
+  @@schema("gamificacion")
+}
+
+/// Insignia ganada por un estudiante: una sola vez e irrevocable (RF-058, RN-13).
+model InsigniaOtorgada {
+  estudianteId String   @map("estudiante_id") @db.Uuid
+  insigniaId   String   @map("insignia_id") @db.Uuid
+  insignia     Insignia @relation(fields: [insigniaId], references: [id], onDelete: Restrict)
+  eventoOrigen String   @map("evento_origen") @db.Uuid
+  otorgadaEn   DateTime @default(now()) @map("otorgada_en") @db.Timestamptz(3)
+
+  @@id([estudianteId, insigniaId])
+  @@map("insignia_otorgada")
+  @@schema("gamificacion")
+}
+
+/// Racha de días consecutivos con actividad lectora, con un comodín semanal (RF-061).
+model Racha {
+  estudianteId       String    @id @map("estudiante_id") @db.Uuid
+  diasActuales       Int       @default(0) @map("dias_actuales")
+  mejorRacha         Int       @default(0) @map("mejor_racha")
+  ultimaFechaLima    DateTime? @map("ultima_fecha_lima") @db.Date
+  comodinUsadoSemana DateTime? @map("comodin_usado_semana") @db.Date
+  actualizadaEn      DateTime  @default(now()) @map("actualizada_en") @db.Timestamptz(3)
+
+  @@map("racha")
+  @@schema("gamificacion")
+}
+
+/// Reto del día: uno por estudiante por fecha de Lima, orientado a la habilidad más débil (RF-060, RN-18).
+model RetoDiario {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estudianteId String    @map("estudiante_id") @db.Uuid
+  fechaLima    DateTime  @map("fecha_lima") @db.Date
+  habilidad    String
+  contenido    Json      @default("{}")
+  estado       String    @default("PROPUESTO")
+  completadoEn DateTime? @map("completado_en") @db.Timestamptz(3)
+
+  @@unique([estudianteId, fechaLima])
+  @@map("reto_diario")
+  @@schema("gamificacion")
+}
+
+/// Parámetros de gamificación versionados; cada cambio aplica solo a eventos posteriores (RF-078).
+model ParametroGamificacion {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  version      Int      @unique
+  parametros   Json
+  vigenteDesde DateTime @map("vigente_desde") @db.Timestamptz(3)
+  creadoPor    String?  @map("creado_por") @db.Uuid
+  creadoEn     DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@map("parametro_gamificacion")
+  @@schema("gamificacion")
+}
+
+// ===========================================================================
+// ASISTENTE — Diálogo socrático acotado (RF-072 a RF-075), retención 30 días
+// ===========================================================================
+
+/// Conversación del asistente en una sesión de lectura: máximo 10 intercambios (RF-074).
+model Conversacion {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estudianteId    String    @map("estudiante_id") @db.Uuid
+  sesionLecturaId String    @map("sesion_lectura_id") @db.Uuid
+  intercambios    Int       @default(0) @db.SmallInt
+  iniciadaEn      DateTime  @default(now()) @map("iniciada_en") @db.Timestamptz(3)
+  cerradaEn       DateTime? @map("cerrada_en") @db.Timestamptz(3)
+  expiraEn        DateTime  @map("expira_en") @db.Timestamptz(3)
+
+  turnos Turno[]
+
+  @@index([estudianteId])
+  @@index([expiraEn])
+  @@map("conversacion")
+  @@schema("asistente")
+}
+
+/// Turno de la conversación; la salida del asistente pasa por el filtro (RF-073, RN-16).
+model Turno {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversacionId String       @map("conversacion_id") @db.Uuid
+  conversacion   Conversacion @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+  orden          Int
+  emisor         String
+  texto          String
+  filtrado       Boolean      @default(false)
+  creadoEn       DateTime     @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@unique([conversacionId, orden])
+  @@map("turno")
+  @@schema("asistente")
+}
+
+// ===========================================================================
+// ADMINISTRACIÓN — Auditoría y outbox de eventos (RF-077, ADR-009)
+// ===========================================================================
+
+/// Registro inmutable de acciones sensibles: actor, acción, recurso, fecha e IP; retención 2 años (RF-077).
+model Auditoria {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  actorRol    String?  @map("actor_rol")
+  accion      String
+  recursoTipo String   @map("recurso_tipo")
+  recursoId   String?  @map("recurso_id")
+  ip          String?  @db.Inet
+  datos       Json     @default("{}")
+  ocurridoEn  DateTime @default(now()) @map("ocurrido_en") @db.Timestamptz(3)
+
+  @@index([ocurridoEn])
+  @@index([actorId, ocurridoEn])
+  @@map("auditoria")
+  @@schema("admin")
+}
+
+/// Outbox de eventos de dominio: se guardan antes de despacharse (patrón Outbox, ADR-009).
 model OutboxEvento {
-  id          String    @id @default(cuid())
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tipo        String
   payload     Json
-  agregadoId  String
-  ocurrioEn   DateTime  @default(now())
-  publicadoEn DateTime?
+  agregadoId  String    @map("agregado_id")
+  ocurrioEn   DateTime  @default(now()) @map("ocurrio_en") @db.Timestamptz(3)
+  publicadoEn DateTime? @map("publicado_en") @db.Timestamptz(3)
 
   @@index([publicadoEn])
   @@index([tipo, agregadoId])
+  @@map("outbox_evento")
+  @@schema("admin")
 }

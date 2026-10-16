@@ -1,6 +1,6 @@
 import type { Consentimiento as ConsentimientoFila } from '@prisma/client';
 
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { ConsentimientoRepository } from '../../application/ports/consentimiento.repository';
 import {
   Consentimiento,
@@ -48,7 +48,7 @@ export class PrismaConsentimientoRepository implements ConsentimientoRepository 
   }
 
   async listarPorIds(ids: string[]): Promise<Consentimiento[]> {
-    const filas = await this.prisma.consentimiento.findMany({ where: { id: { in: ids } } });
+    const filas = await this.prisma.consentimiento.findMany({ where: { id: { in: ids.filter(esUuid) } } });
     return filas.map((f) => this.aDominio(f));
   }
 

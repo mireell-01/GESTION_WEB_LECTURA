@@ -84,6 +84,9 @@ export class FiltroErrores implements ExceptionFilter {
             ? respuesta.message.join('. ')
             : (respuesta.message ?? excepcion.message);
       cuerpo = problema(req, excepcion.getStatus(), TIPO_POR_ESTADO[excepcion.getStatus()], detail);
+    } else if ((excepcion as { code?: unknown } | undefined)?.code === 'P2023') {
+      // Prisma P2023: un id con formato inválido para una columna UUID. Ese recurso no existe.
+      cuerpo = problema(req, HttpStatus.NOT_FOUND, 'NO_ENCONTRADO', 'Recurso no encontrado');
     } else {
       const error = excepcion as Error | undefined;
       this.logger.error(

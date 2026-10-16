@@ -1,6 +1,6 @@
 import type { Aula as AulaFila } from '@prisma/client';
 
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { AulaRepository } from '../../application/ports/aula.repository';
 import { Aula, EstadoAula, Grado } from '../../domain/entities/aula';
 import { CodigoAula } from '../../domain/value-objects/codigo-aula';
@@ -29,7 +29,7 @@ export class PrismaAulaRepository implements AulaRepository {
   }
 
   async buscarPorId(id: string): Promise<Aula | null> {
-    const fila = await this.prisma.aula.findUnique({ where: { id } });
+    const fila = esUuid(id) ? await this.prisma.aula.findUnique({ where: { id } }) : null;
     return fila ? this.aDominio(fila) : null;
   }
 
@@ -49,7 +49,7 @@ export class PrismaAulaRepository implements AulaRepository {
 
   async buscarPorIds(ids: string[]): Promise<Aula[]> {
     if (ids.length === 0) return [];
-    const filas = await this.prisma.aula.findMany({ where: { id: { in: ids } } });
+    const filas = await this.prisma.aula.findMany({ where: { id: { in: ids.filter(esUuid) } } });
     return filas.map((f) => this.aDominio(f));
   }
 

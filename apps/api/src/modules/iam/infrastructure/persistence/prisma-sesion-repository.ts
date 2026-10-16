@@ -1,6 +1,6 @@
 import type { Sesion as SesionFila } from '@prisma/client';
 
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { SesionRepository } from '../../application/ports/sesion.repository';
 import { Sesion } from '../../domain/entities/sesion';
 
@@ -26,7 +26,7 @@ export class PrismaSesionRepository implements SesionRepository {
   }
 
   async buscarPorId(id: string): Promise<Sesion | null> {
-    const fila = await this.prisma.sesion.findUnique({ where: { id } });
+    const fila = esUuid(id) ? await this.prisma.sesion.findUnique({ where: { id } }) : null;
     return fila ? this.aDominio(fila) : null;
   }
 

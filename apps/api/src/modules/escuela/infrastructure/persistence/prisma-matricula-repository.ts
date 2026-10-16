@@ -1,6 +1,6 @@
 import type { Matricula as MatriculaFila } from '@prisma/client';
 
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { MatriculaRepository } from '../../application/ports/matricula.repository';
 import { EstadoMatricula, Matricula } from '../../domain/entities/matricula';
 
@@ -18,16 +18,19 @@ export class PrismaMatriculaRepository implements MatriculaRepository {
   }
 
   async buscar(aulaId: string, estudianteId: string): Promise<Matricula | null> {
+    if (!esUuid(aulaId) || !esUuid(estudianteId)) return null;
     const fila = await this.prisma.matricula.findUnique({ where: { aulaId_estudianteId: { aulaId, estudianteId } } });
     return fila ? this.aDominio(fila) : null;
   }
 
   async listarActivasPorAula(aulaId: string): Promise<Matricula[]> {
+    if (!esUuid(aulaId)) return [];
     const filas = await this.prisma.matricula.findMany({ where: { aulaId, estado: 'ACTIVA' }, orderBy: { creadaEn: 'asc' } });
     return filas.map((f) => this.aDominio(f));
   }
 
   async listarPorEstudiante(estudianteId: string): Promise<Matricula[]> {
+    if (!esUuid(estudianteId)) return [];
     const filas = await this.prisma.matricula.findMany({ where: { estudianteId } });
     return filas.map((f) => this.aDominio(f));
   }
@@ -36,7 +39,7 @@ export class PrismaMatriculaRepository implements MatriculaRepository {
     if (aulaIds.length === 0) return {};
     const grupos = await this.prisma.matricula.groupBy({
       by: ['aulaId'],
-      where: { aulaId: { in: aulaIds }, estado: 'ACTIVA' },
+      where: { aulaId: { in: aulaIds.filter(esUuid) }, estado: 'ACTIVA' },
       _count: { _all: true },
     });
     return Object.fromEntries(grupos.map((g) => [g.aulaId, g._count._all]));

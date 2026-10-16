@@ -1,4 +1,4 @@
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { AlmacenExportaciones } from '../../application/ports/exportaciones';
 import { Exportacion, FormatoExportacion } from '../../domain/entities/exportacion';
 
@@ -13,6 +13,7 @@ export class PrismaAlmacenExportaciones implements AlmacenExportaciones {
   }
 
   async buscar(id: string): Promise<Exportacion | null> {
+    if (!esUuid(id)) return null;
     const fila = await this.prisma.exportacion.findUnique({
       where: { id },
       select: { id: true, perfilId: true, solicitadaPor: true, creadaEn: true, expiraEn: true },
@@ -21,6 +22,7 @@ export class PrismaAlmacenExportaciones implements AlmacenExportaciones {
   }
 
   async archivo(id: string, formato: FormatoExportacion): Promise<Buffer | null> {
+    if (!esUuid(id)) return null;
     if (formato === 'json') {
       const fila = await this.prisma.exportacion.findUnique({ where: { id }, select: { archivoJson: true } });
       return fila ? Buffer.from(fila.archivoJson) : null;

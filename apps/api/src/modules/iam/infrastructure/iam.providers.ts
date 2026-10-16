@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { Provider } from '@nestjs/common';
 
 import {
@@ -9,6 +8,7 @@ import {
   RECOLECTOR_DATOS,
   RecolectorDatosEstudiante,
   ResolutorContextoAula,
+  uuidV7,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_IAM, CasosUsoIam } from '../application/casos-uso-iam';
 import { IamFacade } from '../application/iam.facade';
@@ -76,7 +76,7 @@ export function crearCasosUsoIam(
 ): CasosUsoIam {
   const config = configuracion();
   const ahora = () => new Date();
-  const generarId = () => randomUUID();
+  const generarId = () => uuidV7();
 
   const cuentas = new PrismaCuentaRepository(prisma);
   const perfiles = new PrismaPerfilEstudianteRepository(prisma);
