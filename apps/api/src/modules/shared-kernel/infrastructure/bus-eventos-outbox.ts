@@ -4,9 +4,10 @@ import { BusEventos, ManejadorEvento } from '../application/bus-eventos';
 import { EventoDominio } from '../domain/events/domain-event';
 import { PrismaService } from './prisma.service';
 import { redactar } from './redaccion';
+import { uuidV7 } from './uuid';
 
 /**
- * Adaptador: BusEventosOutbox — persiste cada evento en `OutboxEvento` y lo despacha en proceso.
+ * Adaptador: BusEventosOutbox — persiste cada evento en `admin.outbox_evento` y lo despacha en proceso.
  * Si un manejador falla, el evento queda sin `publicadoEn` para reintentarse o auditarse.
  */
 @Injectable()
@@ -26,6 +27,7 @@ export class BusEventosOutbox implements BusEventos {
     for (const evento of eventos) {
       const fila = await this.prisma.outboxEvento.create({
         data: {
+          id: uuidV7(evento.ocurreEn.getTime()),
           tipo: evento.nombreEvento,
           agregadoId: evento.agregadoId,
           ocurrioEn: evento.ocurreEn,

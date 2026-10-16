@@ -32,12 +32,18 @@ export async function crearApp(opciones: { conLogs?: boolean } = {}): Promise<Ap
   };
 }
 
-/** Deja todas las tablas vacías (excepto el historial de migraciones). */
+/** Schemas de los bounded contexts (SRS §7). */
+const SCHEMAS = ['iam', 'escuela', 'contenido', 'aventura', 'diagnostico', 'lectura', 'progreso', 'gamificacion', 'asistente', 'admin'];
+/** Datos de catálogo que carga la migración (los 5 mundos y los parámetros de gamificación). */
+const CATALOGO = ['aventura.mundo', 'gamificacion.parametro_gamificacion'];
+
+/** Deja vacías todas las tablas de los módulos, salvo el catálogo y el historial de migraciones. */
 export async function vaciarBase(prisma: PrismaService): Promise<void> {
-  const tablas = await prisma.$queryRaw<{ tablename: string }[]>`
-    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
-  if (tablas.length > 0) {
-    await prisma.$executeRawUnsafe(`TRUNCATE ${tablas.map((t) => `"${t.tablename}"`).join(', ')} CASCADE`);
+  const tablas = await prisma.$queryRaw<{ schemaname: string; tablename: string }[]>`
+    SELECT schemaname, tablename FROM pg_tables WHERE schemaname = ANY(${SCHEMAS})`;
+  const aVaciar = tablas.filter((t) => !CATALOGO.includes(`${t.schemaname}.${t.tablename}`));
+  if (aVaciar.length > 0) {
+    await prisma.$executeRawUnsafe(`TRUNCATE ${aVaciar.map((t) => `"${t.schemaname}"."${t.tablename}"`).join(', ')}`);
   }
 }
 

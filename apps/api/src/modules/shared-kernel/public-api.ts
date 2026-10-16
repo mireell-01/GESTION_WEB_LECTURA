@@ -9,6 +9,7 @@ export * from './application/contexto-aula';
 export * from './application/recolector-datos';
 export * from './infrastructure/prisma.service';
 export * from './infrastructure/redaccion';
+export * from './infrastructure/uuid';
 export * from './interface/autorizacion';
 export * from './interface/filtro-errores';
 export * from './interface/id-peticion';

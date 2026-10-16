@@ -1,4 +1,4 @@
-import { randomInt, randomUUID } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { Inject, Injectable, OnModuleInit, Provider } from '@nestjs/common';
 
 import { EVENTOS_IAM, IamFacade } from '../../iam/public-api';
@@ -10,6 +10,7 @@ import {
   RECOLECTOR_DATOS,
   RecolectorDatosEstudiante,
   RegistroContextoAula,
+  uuidV7,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_ESCUELA, CasosUsoEscuela } from '../application/casos-uso-escuela';
 import { EscuelaFacade } from '../application/escuela.facade';
@@ -25,7 +26,7 @@ import { PrismaMatriculaRepository } from './persistence/prisma-matricula-reposi
 /** Composition root de Escuela. */
 export function crearCasosUsoEscuela(prisma: PrismaService, bus: BusEventos, iam: IamFacade): CasosUsoEscuela {
   const ahora = () => new Date();
-  const generarId = () => randomUUID();
+  const generarId = () => uuidV7();
   const aleatorio = (n: number) => randomInt(n);
 
   const aulas = new PrismaAulaRepository(prisma);

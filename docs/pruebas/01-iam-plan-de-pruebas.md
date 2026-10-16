@@ -105,7 +105,7 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | El evento del outbox se escribe después del agregado, no en la misma transacción | Inconsistencia si el proceso cae entre ambos | Unit of Work con `prisma.$transaction` en los casos de uso |
 | Límite de tasa en memoria | Con varias instancias (RNF-013) cada una cuenta por separado | Mover el contador a Redis (ADR-004) |
 | Exportación síncrona | El PDF se genera dentro de la petición (rápido hoy; podría crecer con el progreso de otros módulos) | Moverla a un worker BullMQ (ADR-009); el SRS admite ≤ 24 h |
-| Un solo esquema de base de datos | ADR-004 pide un esquema por módulo (`iam`, `escuela`…) | `previewFeatures = ["multiSchema"]` de Prisma cuando haya más módulos |
+| ~~Un solo esquema de base de datos~~ | **Resuelto el 16/10/2026:** la base sigue el SRS §7 con 11 schemas, 52 tablas, UUID v7 y TIMESTAMPTZ (ver [`docs/datos/modelo-de-datos.md`](../datos/modelo-de-datos.md)) | — |
 | Sin creación de cuentas de backoffice | RF-011 solo se prueba en Nivel 1 porque crear editores/administradores es RF-076 | Se cubrirá con el módulo de Administración |
 | El registro responde 409 si el correo ya existe | Permite saber si un correo está registrado (el SRS solo exige anti-enumeración en la recuperación) | Responder 201 genérico y avisar por correo |
 | `packages/contracts` no refleja los endpoints reales | La web declara sus tipos a mano (contradice DRY del SRS) | Generar `openapi.yaml` desde los DTO de NestJS |

@@ -1,6 +1,6 @@
 import type { PerfilEstudiante as PerfilFila } from '@prisma/client';
 
-import { PrismaService } from '../../../shared-kernel/public-api';
+import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
 import { PerfilEstudianteRepository } from '../../application/ports/perfil-estudiante.repository';
 import { PerfilEstudiante } from '../../domain/entities/perfil-estudiante';
 import { AnioMesNacimiento } from '../../domain/value-objects/anio-mes-nacimiento';
@@ -32,12 +32,12 @@ export class PrismaPerfilEstudianteRepository implements PerfilEstudianteReposit
   }
 
   async buscarPorId(id: string): Promise<PerfilEstudiante | null> {
-    const fila = await this.prisma.perfilEstudiante.findUnique({ where: { id } });
+    const fila = esUuid(id) ? await this.prisma.perfilEstudiante.findUnique({ where: { id } }) : null;
     return fila ? this.aDominio(fila) : null;
   }
 
   async buscarPorIds(ids: string[]): Promise<PerfilEstudiante[]> {
-    const filas = await this.prisma.perfilEstudiante.findMany({ where: { id: { in: ids } } });
+    const filas = await this.prisma.perfilEstudiante.findMany({ where: { id: { in: ids.filter(esUuid) } } });
     return filas.map((f) => this.aDominio(f));
   }
 

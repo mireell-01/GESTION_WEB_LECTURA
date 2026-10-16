@@ -18,6 +18,17 @@ import { vaciarBase } from '../setup/app';
 /** Nivel 2 — Adaptadores Prisma de IAM contra PostgreSQL real (traducción ORM ↔ dominio). */
 const prisma = new PrismaService();
 const AHORA = new Date('2026-10-15T15:00:00Z');
+/** Las columnas de identificadores son UUID (SRS §7). */
+const C1 = '0190f0aa-0000-7000-8000-0000000000c1';
+const C2 = '0190f0aa-0000-7000-8000-0000000000c2';
+const P1 = '0190f0aa-0000-7000-8000-0000000000a1';
+const P2 = '0190f0aa-0000-7000-8000-0000000000a2';
+const K1 = '0190f0aa-0000-7000-8000-0000000000b1';
+const S1 = '0190f0aa-0000-7000-8000-0000000000d1';
+const S2 = '0190f0aa-0000-7000-8000-0000000000d2';
+const S3 = '0190f0aa-0000-7000-8000-0000000000d3';
+const V1 = '0190f0aa-0000-7000-8000-0000000000e1';
+
 
 function cuenta(id: string, email: string, nombre = 'Ana Ríos') {
   return Cuenta.registrar({
@@ -42,7 +53,7 @@ describe('PrismaCuentaRepository', () => {
   const repo = new PrismaCuentaRepository(prisma);
 
   it('guarda y reconstruye la cuenta con sus value objects y estado MFA', async () => {
-    const c = cuenta('c1', 'ana@lectoaventura.test');
+    const c = cuenta(C1, 'ana@lectoaventura.test');
     c.verificar();
     c.iniciarMfa('PENDIENTE');
     await repo.guardar(c);
@@ -54,65 +65,65 @@ describe('PrismaCuentaRepository', () => {
   });
 
   it('upsert: guardar dos veces actualiza, no duplica', async () => {
-    const c = cuenta('c1', 'ana@lectoaventura.test');
+    const c = cuenta(C1, 'ana@lectoaventura.test');
     await repo.guardar(c);
     c.suspender();
     await repo.guardar(c);
     expect(await prisma.cuenta.count()).toBe(1);
-    expect((await repo.buscarPorId('c1'))?.estaSuspendida()).toBe(true);
+    expect((await repo.buscarPorId(C1))?.estaSuspendida()).toBe(true);
   });
 
   it('listar filtra por texto sin distinguir mayúsculas en nombre o correo', async () => {
-    await repo.guardar(cuenta('c1', 'ana@lectoaventura.test', 'Ana Ríos'));
-    await repo.guardar(cuenta('c2', 'luis@colegio.pe', 'Luis Paz'));
-    expect((await repo.listar({ texto: 'RÍOS' })).map((c) => c.id)).toEqual(['c1']);
-    expect((await repo.listar({ texto: 'COLEGIO' })).map((c) => c.id)).toEqual(['c2']);
+    await repo.guardar(cuenta(C1, 'ana@lectoaventura.test', 'Ana Ríos'));
+    await repo.guardar(cuenta(C2, 'luis@colegio.pe', 'Luis Paz'));
+    expect((await repo.listar({ texto: 'RÍOS' })).map((c) => c.id)).toEqual([C1]);
+    expect((await repo.listar({ texto: 'COLEGIO' })).map((c) => c.id)).toEqual([C2]);
   });
 
   it('el correo es único a nivel de base de datos', async () => {
-    await repo.guardar(cuenta('c1', 'ana@lectoaventura.test'));
-    await expect(repo.guardar(cuenta('c2', 'ana@lectoaventura.test'))).rejects.toThrow();
+    await repo.guardar(cuenta(C1, 'ana@lectoaventura.test'));
+    await expect(repo.guardar(cuenta(C2, 'ana@lectoaventura.test'))).rejects.toThrow();
   });
 });
 
 describe('PrismaPerfilEstudianteRepository y PrismaSesionRepository', () => {
   it('listarPorResponsable excluye perfiles eliminados', async () => {
-    await new PrismaCuentaRepository(prisma).guardar(cuenta('c1', 'ana@lectoaventura.test'));
+    await new PrismaCuentaRepository(prisma).guardar(cuenta(C1, 'ana@lectoaventura.test'));
     const repo = new PrismaPerfilEstudianteRepository(prisma);
     const nuevo = (id: string, alias: string) =>
       PerfilEstudiante.crear({
-        id, cuentaResponsableId: 'c1', consentimientoId: 'k1', alias,
+        id, cuentaResponsableId: C1, consentimientoId: K1, alias,
         anioMesNacimiento: AnioMesNacimiento.de(2018, 5, AHORA), avatar: 'zorro', hashPin: 'h', ahora: AHORA,
       });
-    const borrado = nuevo('p2', 'Beto');
+    const borrado = nuevo(P2, 'Beto');
     borrado.anonimizar(AHORA);
-    await repo.guardar(nuevo('p1', 'Ana'));
+    await repo.guardar(nuevo(P1, 'Ana'));
     await repo.guardar(borrado);
 
-    expect((await repo.listarPorResponsable('c1')).map((p) => p.id)).toEqual(['p1']);
-    expect((await repo.buscarPorIds(['p1', 'p2'])).length).toBe(2);
+    expect((await repo.listarPorResponsable(C1)).map((p) => p.id)).toEqual([P1]);
+    expect((await repo.buscarPorIds([P1, P2])).length).toBe(2);
   });
 
   it('revocarTodasDe revoca solo las sesiones vivas de ese sujeto', async () => {
     const repo = new PrismaSesionRepository(prisma);
     const abrir = (id: string, sujetoId: string) =>
       Sesion.abrir({ id, sujetoId, rol: 'FAMILIAR', mfa: false, hashRefreshToken: `h-${id}`, ahora: AHORA });
-    await repo.guardar(abrir('s1', 'c1'));
-    await repo.guardar(abrir('s2', 'c1'));
-    await repo.guardar(abrir('s3', 'c2'));
+    await repo.guardar(abrir(S1, C1));
+    await repo.guardar(abrir(S2, C1));
+    await repo.guardar(abrir(S3, C2));
 
-    await repo.revocarTodasDe('c1', AHORA);
-    expect((await repo.buscarPorId('s1'))?.revocadaEn).toEqual(AHORA);
-    expect((await repo.buscarPorId('s3'))?.revocadaEn).toBeNull();
-    expect((await repo.buscarPorHashRefreshToken('h-s2'))?.id).toBe('s2');
+    await repo.revocarTodasDe(C1, AHORA);
+    expect((await repo.buscarPorId(S1))?.revocadaEn).toEqual(AHORA);
+    expect((await repo.buscarPorId(S3))?.revocadaEn).toBeNull();
+    expect((await repo.buscarPorHashRefreshToken(`h-${S2}`))?.id).toBe(S2);
   });
 });
 
 describe('PrismaVerificacionRepository', () => {
   it('no confunde un enlace de verificación con uno de recuperación', async () => {
-    await new PrismaCuentaRepository(prisma).guardar(cuenta('c1', 'ana@lectoaventura.test'));
+    await new PrismaCuentaRepository(prisma).guardar(cuenta(C1, 'ana@lectoaventura.test'));
     const repo = new PrismaVerificacionRepository(prisma);
-    const v = VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella-1', ahora: AHORA });
+    const v = VerificacionCorreo.paraVerificacionCorreo({ id: V1, cuentaId: C1, codigo: 'huella-1', ahora: AHORA });
     await repo.guardar(v);
 
     expect(await repo.buscarPorCodigo('huella-1', 'RECUPERACION_CONTRASENA')).toBeNull();
