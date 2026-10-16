@@ -34,7 +34,7 @@ export function VerificarCorreo() {
   if (estado === 'cargando') return <Cargando texto="Verificando tu correo…" />;
 
   return (
-    <Tarjeta titulo={estado === 'ok' ? '¡Correo verificado! 🎉' : 'No pudimos verificar'}>
+    <Tarjeta titulo={estado === 'ok' ? '¡Correo verificado! 🎉' : 'No pudimos verificar'} nivel={1}>
       {estado === 'ok' ? (
         <p>Tu cuenta ya está activa. Ahora puedes ingresar.</p>
       ) : (

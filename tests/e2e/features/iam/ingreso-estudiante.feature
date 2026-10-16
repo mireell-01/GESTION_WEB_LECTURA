@@ -14,7 +14,7 @@ Característica: Ingreso del estudiante con avatar y PIN
   Escenario: Entro con mi avatar y mi PIN
     Cuando toco mi avatar "Lucía"
     Y escribo el PIN "3691"
-    Entonces llego a mi área de lectura con el saludo "¡Hola, Lucía!"
+    Entonces llego a mi área de lectura con el saludo "Hola, Lucía"
 
   @RF-008 @negativo
   Escenario: Un PIN equivocado me avisa cuántos intentos me quedan
@@ -33,12 +33,12 @@ Característica: Ingreso del estudiante con avatar y PIN
     Cuando toco mi avatar "Lucía"
     Y escribo el PIN "3691"
     Y intento abrir el panel familiar
-    Entonces vuelvo a mi área de lectura con el saludo "¡Hola, Lucía!"
+    Entonces vuelvo a mi área de lectura con el saludo "Hola, Lucía"
 
   @RF-010 @R-02 @reloj
   Escenario: Si dejo la tablet sin usar 10 minutos, se cierra mi sesión
     Cuando toco mi avatar "Lucía"
     Y escribo el PIN "3691"
-    Y llego a mi área de lectura con el saludo "¡Hola, Lucía!"
+    Y llego a mi área de lectura con el saludo "Hola, Lucía"
     Y nadie toca la tablet durante 10 minutos
     Entonces vuelvo a la pantalla de ingreso con el aviso "no hubo actividad por un rato"

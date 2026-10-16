@@ -34,10 +34,13 @@ describe('Límite de tasa (RNF-019)', () => {
     await intento('198.51.100.20').expect(401);
   });
 
-  it('ingreso del estudiante: 30 intentos por minuto por código de aula, aunque cambie la IP', async () => {
-    const ingreso = (i: number) =>
-      t.http().post(`${API}/acceso-estudiante/login`).set('X-Forwarded-For', `10.0.0.${i}`).send({ codigoAula: 'ZZZZZZ', perfilId: 'x', pin: '2580' });
-    for (let i = 1; i <= 30; i++) await ingreso(i).expect(404);
+  it('ingreso del estudiante: 30 intentos por minuto por tablet, aunque cambie la IP', async () => {
+    const tablet = 'token-de-una-tablet-que-no-existe-0001';
+    const ingreso = (i: number, token = tablet) =>
+      t.http().post(`${API}/acceso-estudiante/login`).set('X-Forwarded-For', `10.0.0.${i}`).send({ tokenDispositivo: token, perfilId: 'x', pin: '2580' });
+    for (let i = 1; i <= 30; i++) await ingreso(i).expect(403);
     await ingreso(99).expect(429);
+    // Otra tablet desde la misma IP sigue pudiendo intentarlo.
+    await ingreso(99, 'token-de-otra-tablet-que-no-existe-0002').expect(403);
   });
 });

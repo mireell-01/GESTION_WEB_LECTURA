@@ -10,7 +10,7 @@ import { MarcoRol } from '@/shared/ui';
 export default function BackofficeLayout({ children }: { children: ReactNode }) {
   return (
     <RequiereRol roles={['EDITOR', 'REVISOR', 'ADMIN_PLATAFORMA']} permiteSinMfa>
-      <MarcoRol titulo="Backoffice" icono="🛠️" color="#264653" menu={[{ href: '/backoffice', texto: 'Inicio' }]}>
+      <MarcoRol titulo="Backoffice" icono="escudo" menu={[{ href: '/backoffice', texto: 'Inicio', icono: 'inicio' }]}>
         {children}
       </MarcoRol>
     </RequiereRol>

@@ -9,7 +9,7 @@ export default function BackofficeHomePage() {
   const { usuario } = useSesion();
   return (
     <RequiereRol roles={['EDITOR', 'REVISOR', 'ADMIN_PLATAFORMA']}>
-      <Tarjeta titulo={`Hola, ${usuario?.nombre ?? ''}`}>
+      <Tarjeta titulo={`Hola, ${usuario?.nombre ?? ''}`} nivel={1}>
         <p className="texto-suave">Gestiona contenido, revisión, usuarios, configuración y auditoría.</p>
       </Tarjeta>
     </RequiereRol>

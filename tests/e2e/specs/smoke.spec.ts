@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-/** Humo: la portada ofrece las dos puertas de entrada (estudiante y adulto). */
+/** Humo: la portada abierta ofrece los caminos de adulto (empezar / ya tengo cuenta) y de estudiante. */
 test.describe('Portada', () => {
-  test('muestra la marca y los accesos de estudiante y adulto', async ({ page }) => {
+  test('muestra la propuesta y los accesos de adulto y de estudiante', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'LectoAventura', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'La aventura de leer, comprender y crecer', level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Empezar' })).toHaveAttribute('href', '/registro');
+    await expect(page.getByRole('link', { name: 'Ya tengo una cuenta' })).toHaveAttribute('href', '/ingresar');
+    await expect(page.getByRole('link', { name: 'Ingresar', exact: true })).toHaveAttribute('href', '/ingresar');
     await expect(page.getByRole('link', { name: '¡A leer!' })).toHaveAttribute('href', '/ingresar/estudiante');
-    await expect(page.getByRole('link', { name: 'Ingresar' })).toHaveAttribute('href', '/ingresar');
-    await expect(page.getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/registro');
   });
 
   test('no hay desplazamiento horizontal (RNF-022)', async ({ page }) => {

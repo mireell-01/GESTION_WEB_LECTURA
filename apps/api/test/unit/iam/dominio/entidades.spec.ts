@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Consentimiento } from '../../../../src/modules/iam/domain/entities/consentimiento';
 import { Cuenta } from '../../../../src/modules/iam/domain/entities/cuenta';
-import { DispositivoFamiliar } from '../../../../src/modules/iam/domain/entities/dispositivo-familiar';
+import { DispositivoIngreso } from '../../../../src/modules/iam/domain/entities/dispositivo-ingreso';
 import {
   DURACION_BLOQUEO_MIN,
   MAX_INTENTOS_PIN,
@@ -192,7 +192,7 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
   });
 });
 
-describe('Consentimiento y DispositivoFamiliar', () => {
+describe('Consentimiento y DispositivoIngreso', () => {
   it('el consentimiento institucional exige aula (RN-01)', () => {
     expect(() =>
       Consentimiento.otorgar({
@@ -203,10 +203,20 @@ describe('Consentimiento y DispositivoFamiliar', () => {
   });
 
   it('el dispositivo vence a los 30 días o al revocarse (RN-04)', () => {
-    const d = DispositivoFamiliar.vincular({ id: 'd1', cuentaId: 'c1', nombre: 'Tablet', hashToken: 'h', ahora: T0 });
+    const d = DispositivoIngreso.activar({ id: 'd1', cuentaId: 'c1', contexto: { tipo: 'FAMILIA' }, nombre: 'Tablet', hashToken: 'h', ahora: T0 });
     expect(d.estaVigente(masMin(30 * 24 * 60 - 1))).toBe(true);
     expect(d.estaVigente(masMin(30 * 24 * 60))).toBe(false);
     d.revocar(T0);
     expect(d.estaVigente(T0)).toBe(false);
+  });
+
+  it('la tablet del aula recuerda su aula y recibe un nombre por defecto (CR-01)', () => {
+    const aula = DispositivoIngreso.activar({ id: 'd2', cuentaId: 'docente', contexto: { tipo: 'AULA', aulaId: 'a1' }, nombre: '  ', hashToken: 'h', ahora: T0 });
+    const casa = DispositivoIngreso.activar({ id: 'd3', cuentaId: 'familia', contexto: { tipo: 'FAMILIA' }, nombre: '', hashToken: 'h2', ahora: T0 });
+    expect(aula.contexto).toEqual({ tipo: 'AULA', aulaId: 'a1' });
+    expect(aula.propsSnapshot.nombre).toBe('Tablet del aula');
+    expect(casa.contexto).toEqual({ tipo: 'FAMILIA' });
+    expect(casa.propsSnapshot.nombre).toBe('Dispositivo familiar');
+    expect(casa.propsSnapshot.aulaId).toBeNull();
   });
 });

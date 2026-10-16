@@ -33,6 +33,7 @@ export function BandejaDesarrollo() {
   return (
     <Tarjeta
       titulo="📬 Bandeja de desarrollo"
+      nivel={1}
       acciones={
         <Boton variante="fantasma" tamano="pequeno" onClick={cargar}>
           Actualizar

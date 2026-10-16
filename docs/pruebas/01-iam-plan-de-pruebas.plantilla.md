@@ -1,18 +1,21 @@
 # Plan Maestro de Pruebas — Módulo 1: IAM (Identidad, Consentimiento y Acceso)
 
 > **Proyecto:** LectoAventura · **Módulo:** `apps/api/src/modules/iam` + pantallas web de acceso y panel familiar
-> **Requisitos cubiertos:** RF-001 a RF-013, RF-071, RN-01 a RN-04, RN-17, RNF-001, RNF-008, RNF-017, RNF-019, RNF-020, RNF-022, RNF-031, ADR-005, convenciones del API (SRS §7) y caso UAT-05 del SRS
-> **Fecha de ejecución:** 16/10/2026 · **Resultado global:** ✅ 200 pruebas automatizadas en verde en los 4 niveles
+> **Requisitos cubiertos:** RF-001 a RF-013, RF-071, RN-01 a RN-04, RN-17, RNF-001, RNF-005, RNF-008, RNF-017, RNF-019, RNF-020, RNF-022, RNF-023, RNF-031, ADR-005, convenciones del API (SRS §7), caso UAT-05 del SRS y el cambio aprobado **CR-01** (tablet sin código de aula)
+> **Fecha de ejecución:** 16/10/2026 (actualizado con CR-01 y el diseño responsivo) · **Resultado global:** ✅ 235 pruebas automatizadas en verde en los 4 niveles
 
 | Nivel | Pruebas | Resultado | Tiempo |
 | :--- | ---: | :--- | ---: |
-| 1 · Unitarias (Vitest) | 136 | ✅ 136/136 · cobertura 93,1 % líneas / 92,5 % ramas | 16 s |
-| 2 · Integración (Supertest + PostgreSQL real) | 33 | ✅ 33/33 | 28 s |
-| 3 · Sistema E2E (Playwright, escritorio + tablet) | 20 | ✅ 20/20 | 2,8 min |
-| 3 · Carga (RNF-008 / RNF-001) | 2 escenarios | ✅ 0 % errores · p95 277 ms (ingreso) · p95 62 ms (lectura) | 1 min |
-| 4 · Aceptación (Gherkin en español) | 11 escenarios | ✅ 11/11 · informe para el Product Owner | 2,9 min |
+| 1 · Unitarias (Vitest) | 141 | ✅ 141/141 · cobertura 93,2 % líneas / 93,0 % ramas | 27 s |
+| 2 · Integración (Supertest + PostgreSQL real) | 33 | ✅ 33/33 | 31 s |
+| 3 · Sistema E2E (Playwright: computadora 1280 px, tablet 820 px y celular 390 px) | 48 | ✅ 48/48 | 11,6 min |
+| 3 · Carga (RNF-008 / RNF-001) | 2 escenarios | ✅ 0 % errores · p95 187 ms (ingreso) · p95 51 ms (lectura) | 1 min |
+| 3 · Peso de la web (RNF-005) | 14 rutas | ✅ 110–115 kB de JS inicial por ruta (límite 250 kB) | — |
+| 4 · Aceptación (Gherkin en español) | 13 escenarios | ✅ 13/13 · informe para el Product Owner | 4,2 min |
 
-**Defectos encontrados por las pruebas y corregidos:** 9 · **Brechas con el SRS detectadas en la auditoría y cerradas:** 6 (detalle en §1.3).
+**Defectos encontrados por las pruebas y corregidos:** 12 · **Brechas con el SRS detectadas en la auditoría y cerradas:** 6 · **Cambios de requisitos aprobados:** 1 (CR-01, detalle en [`docs/cambios/CR-01-tablet-sin-codigo-de-aula.md`](../cambios/CR-01-tablet-sin-codigo-de-aula.md)).
+
+> **Actualización — diseño responsivo y CR-01.** Se aplicó la identidad visual aprobada (violeta, amarillo, tipografía Fredoka + Nunito, botones "3D") en cuatro tamaños de pantalla: celular (< 768 px, barra inferior), tablet vertical (768–1023 px, barra inferior), tablet horizontal y equipos girados (riel de íconos) y computadora (≥ 1181 px, barra lateral con letrero). El niño ya no escribe códigos: la docente o la familia activa la tablet una vez y la app abre directo en los avatares.
 
 ---
 
@@ -69,13 +72,16 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | :--- | :--- | :--- | :--- |
 | D-1 | Se aceptaban contraseñas basadas en el nombre (`Rosa123456`) | 1 · `seguridad.spec.ts` | Regla: nombre + solo dígitos/símbolos ⇒ rechazada |
 | D-2 | Argon2 usaba parámetros por defecto (64 MiB, t=3, p=4) y no los del **RNF-017** (19 MiB, t=2, p=1) | Análisis estático vs SRS | `PARAMETROS_ARGON2` + prueba que lee los parámetros del hash |
-| D-3 | **RNF-019** (límite de tasa) no estaba implementado: se podía probar contraseñas y PIN sin límite | Análisis estático vs SRS | `LimiteTasaGuard` global: 10/min por IP (adulto), 30/min por código de aula (PIN) |
+| D-3 | **RNF-019** (límite de tasa) no estaba implementado: se podía probar contraseñas y PIN sin límite | Análisis estático vs SRS | `LimiteTasaGuard` global: 10/min por IP (adulto), 30/min por tablet (PIN, CR-01) |
 | D-4 | "Salir" llevaba al adulto a la pantalla de ingreso en lugar de la portada (condición de carrera del guard de rutas) | 3 · `seguridad.spec.ts` | `salir(destino)` recarga la app (además limpia la memoria en tablets compartidas, riesgo R-02) |
 | D-5 | Código muerto `PoliticaMfa` | 1 · cobertura (0 %) | Eliminado |
 | D-6 | El lint de arquitectura del proyecto no funcionaba (regla `boundaries/dependencies` inexistente): la regla de dependencias del SRS no se verificaba | Configuración de CI | Reescrito con `boundaries/element-types`; verificado con violaciones intencionales |
 | D-7 | Caracteres invisibles (BOM, espacio no separable) escritos literalmente dentro de expresiones regulares | Lint | Reemplazados por su secuencia de escape Unicode |
-| D-8 | **Matricular estudiantes respondía 500 siempre**: `Matricula.crear` copiaba el parámetro `ahora` a las propiedades y Prisma lo rechazaba | 2 · `iam-http.int-spec.ts` (ingreso con código de aula) | Propiedades construidas campo por campo |
+| D-8 | **Matricular estudiantes respondía 500 siempre**: `Matricula.crear` copiaba el parámetro `ahora` a las propiedades y Prisma lo rechazaba | 2 · `iam-http.int-spec.ts` (ingreso por aula, hoy tablet del aula) | Propiedades construidas campo por campo |
 | D-9 | Pruebas E2E con aserción débil: `/\/estudiante$/` también acepta `/ingresar/estudiante`, así que daban por bueno el ingreso del niño sin verificarlo | 3 · prueba de inactividad con `page.clock` | `esperarAreaEstudiante()`: URL exacta + contenido propio del área |
+| D-10 | **RNF-023** incumplido: botones de 44 px y 36 px y enlaces de texto de 23–26 px de alto (el SRS pide ≥ 48 × 48 px) | Análisis vs SRS + 3 · `responsivo.spec.ts` | Token `--la-target-min: 48px`; enlaces de tarjetas y formularios con altura táctil |
+| D-11 | Las páginas de ingreso, registro, recuperación y verificación no tenían título principal `h1` (un lector de pantalla no anunciaba de qué trataba la página) | 3 · `responsivo.spec.ts` | `Tarjeta` acepta `nivel={1}` cuando es el contenido principal |
+| D-12 | Las secciones "Muy pronto" del estudiante estaban marcadas como deshabilitadas (`aria-disabled`) aunque al tocarlas muestran un aviso: semántica engañosa | 3 · `responsivo.spec.ts` | Botón normal que se anuncia como ", muy pronto" |
 
 **Brechas con el SRS detectadas en la auditoría del módulo y cerradas (todas con pruebas):**
 
@@ -102,6 +108,9 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | El registro responde 409 si el correo ya existe | Permite saber si un correo está registrado (el SRS solo exige anti-enumeración en la recuperación) | Responder 201 genérico y avisar por correo |
 | `packages/contracts` no refleja los endpoints reales | La web declara sus tipos a mano (contradice DRY del SRS) | Generar `openapi.yaml` desde los DTO de NestJS |
 | Sin Docker en el equipo local | Testcontainers solo corre en CI | Local usa la base efímera `lectoaventura_test` (recreada en cada ejecución) |
+| En local, la API en modo `watch` puede reiniciarse a mitad de una corrida E2E/UAT si cambia algún archivo | Falsos negativos (se observó una vez: 4 escenarios fallaron con 500 durante el reinicio y pasaron 13/13 al repetir) | CI usa la compilación de producción; en local, correr las pruebas sin editar archivos |
+| Las ilustraciones son versiones SVG simplificadas provisionales | Menos detalle que el diseño aprobado | Reemplazar los componentes de `Ilustraciones.tsx` por las ilustraciones finales (sin tocar las pantallas) |
+| Las tarjetas de acceso (RF-017) aún devuelven el código de aula | Dato que ya no se usa para ingresar (CR-01) | Se ajusta en el Módulo 2 (Escuela) junto con el PDF de tarjetas |
 
 ---
 
@@ -148,7 +157,7 @@ G.W_PROYECTO/
 │   │   ├── playwright.config.ts          # Nivel 3 (escritorio + tablet)
 │   │   ├── playwright.uat.config.ts      # Nivel 4 (playwright-bdd)
 │   │   ├── support/{iam,limpieza}.ts     # Helpers y limpieza de datos e2e
-│   │   ├── specs/{smoke.spec.ts, iam/{flujo-familia,seguridad,ingreso-aula-e-inactividad}.spec.ts}
+│   │   ├── specs/{smoke.spec.ts, diseno/responsivo.spec.ts, iam/{flujo-familia,seguridad,ingreso-tablet-aula-e-inactividad}.spec.ts}
 │   │   ├── features/iam/*.feature        # Gherkin en español
 │   │   └── steps/{fixtures,iam.steps}.ts # Step definitions
 │   └── load/scenarios/iam-sesiones.js    # k6
@@ -195,7 +204,7 @@ Prueba unitaria del guard de límite de tasa, RNF-019 (`apps/api/test/unit/iam/i
 - Lo que queda **guardado**: contraseña y PIN en Argon2id con los parámetros del RNF-017, enlaces solo como huella SHA-256, rotación de la huella del refresh token y su registro como usada, `bloqueadoHasta`, eventos del outbox con `publicadoEn`.
 - Cookies (`HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`; cookie de sesión para estudiantes), **reutilización de un refresh token → sesión revocada**, RBAC entre módulos (familiar/estudiante → `/api/v1/aulas` = 403), RN-17 (404 a otra familia), límite de tasa con proxy de confianza.
 - **Exportación**: descarga real de JSON y PDF por enlace firmado sin sesión; firma o formato alterados → 403.
-- **Ingreso con código de aula de punta a punta** con Escuela: el docente crea el aula y matricula; el niño ve solo su aula, entra con el PIN de su tarjeta; un ajeno es rechazado; un aula archivada ya no sirve.
+- **Tablet del aula de punta a punta** con Escuela (CR-01): la docente crea el aula, matricula y activa la tablet; el niño ve solo su aula y entra con el PIN de su tarjeta sin escribir códigos; un ajeno es rechazado (403); la familia u otra docente no activan el aula (403/404); al archivarla, la tablet deja de servir.
 - **RNF-031 verificado**: se captura toda la salida de logs de un recorrido completo y se comprueba que no aparece ninguna contraseña, PIN, token, código, firma ni hash.
 - Adaptadores Prisma: upsert sin duplicar, unicidad de correo, filtros, revocación masiva.
 
@@ -230,7 +239,8 @@ Prueba de integración del límite de tasa (`apps/api/test/integration/iam/limit
 
 ## 6.1 Qué se evalúa
 - Recorrido real de una familia en la interfaz (el "E2E Familia" del SRS): registro → correo → verificación → ingreso → consentimiento → perfil → **exportar datos y descargar el PDF** → vínculo del dispositivo → ingreso del niño con avatar y PIN.
-- **Ingreso con código de aula** usando la tarjeta que genera el docente (código erróneo → mensaje claro).
+- **Tablet del aula (CR-01)**: la docente la activa desde "Mis aulas", la deja lista para los niños y la niña entra con su avatar y el PIN de su tarjeta, sin códigos.
+- **Diseño responsivo (RNF-022, RNF-023)** en computadora (1280 px), tablet (820 px) y celular (390 px): sin desplazamiento lateral, objetivos táctiles ≥ 48 px y la navegación de cada dispositivo.
 - **Cierre por inactividad** a los 10 minutos con el reloj simulado de Playwright (`page.clock`), sin esperar minutos reales.
 - Seguridad desde la UI: credenciales incorrectas, rutas protegidas, contexto obligatorio (RN-04), intentos de PIN restantes, separación de roles, sesión que sobrevive a recargar y cierre real.
 - Ambos dispositivos del SRS: escritorio 1280×800 y **tablet táctil 820×1180** (RNF-022), sin desplazamiento horizontal.
@@ -278,9 +288,13 @@ npm run test:load
 
 <<archivo:tests/e2e/specs/iam/flujo-familia.spec.ts>>
 
-`tests/e2e/specs/iam/ingreso-aula-e-inactividad.spec.ts`:
+`tests/e2e/specs/iam/ingreso-tablet-aula-e-inactividad.spec.ts`:
 
-<<archivo:tests/e2e/specs/iam/ingreso-aula-e-inactividad.spec.ts>>
+<<archivo:tests/e2e/specs/iam/ingreso-tablet-aula-e-inactividad.spec.ts>>
+
+`tests/e2e/specs/diseno/responsivo.spec.ts`:
+
+<<archivo:tests/e2e/specs/diseno/responsivo.spec.ts>>
 
 `tests/load/scenarios/iam-sesiones.js`:
 
@@ -291,7 +305,9 @@ npm run test:load
 # 7. NIVEL 4: PRUEBAS DE ACEPTACIÓN (UAT / BDD)
 
 ## 7.1 Escenarios de negocio en Gherkin
-11 escenarios en 3 características (`tests/e2e/features/iam/`). Los etiquetados `@UAT-05` corresponden al caso de aceptación UAT-05 del propio SRS (consentimiento parental obligatorio).
+13 escenarios en 4 características (`tests/e2e/features/iam/`). Los etiquetados `@UAT-05` corresponden al caso de aceptación UAT-05 del propio SRS (consentimiento parental obligatorio) y los `@CR-01`, al cambio aprobado "tablet del aula sin códigos".
+
+<<archivo:tests/e2e/features/iam/tablet-del-aula.feature>>
 
 <<archivo:tests/e2e/features/iam/ingreso-estudiante.feature>>
 
@@ -314,7 +330,8 @@ npm run test:load
 | ☐ | Escribir 5 PIN equivocados | El perfil se bloquea y el adulto puede restablecer el PIN |
 | ☐ | "Descargar datos" del perfil | Aparecen los enlaces PDF y JSON con su fecha de vencimiento (72 h); el PDF se abre y es legible |
 | ☐ | Dejar al niño 10 minutos sin tocar la tablet | La sesión se cierra sola y el ingreso explica por qué |
-| ☐ | Como docente, crear un aula y matricular a un estudiante; entrar con el código de la tarjeta | El niño ve solo su aula y entra con el PIN de la tarjeta |
+| ☐ | Como docente, en "Mis aulas" tocar "Activar esta tablet" y luego "Dejar la tablet lista para los niños" | La tablet muestra los avatares del aula; el niño entra con su PIN sin escribir códigos |
+| ☐ | Abrir la app en celular, tablet (vertical y horizontal) y computadora | Todo se lee sin hacer zoom ni desplazarse a los lados; los botones se tocan con facilidad |
 | ☐ | Configurar la verificación en dos pasos desde `/familia` o `/docente` | La app autenticadora pide el código en el siguiente ingreso |
 | ☐ | Eliminar el perfil | Desaparece de la lista y del ingreso de la tablet |
 
@@ -392,7 +409,8 @@ Archivo: `.github/workflows/calidad.yml`. Orden: estático → unitarias (umbral
 | IAM-U-19 | `LimiteTasaGuard` (RNF-019) | Unit | Borde | Intento 11 → `LIMITE` + `Retry-After`; reglas por IP y por aula | `npm run test:unit` |
 | IAM-U-20 | `RenovarSesionUseCase` (ADR-005) | Unit | Negativo | Reutilizar un refresh rotado revoca la sesión y publica el evento | `npm run test:unit` |
 | IAM-U-21 | `Sesion.estaViva` (ADR-005) | Unit | Borde | Estudiante muere a las 8 h aunque haya actividad; adulto no | `npm run test:unit` |
-| IAM-U-22 | `ContextoIngresoUseCase` (RN-04) | Unit | Negativo | Código inexistente o aula archivada → sin avatares | `npm run test:unit` |
+| IAM-U-22 | `ContextoIngresoUseCase` (RN-04, CR-01) | Unit | Negativo | Sin tablet, tablet desconocida, vencida o de un aula archivada → sin avatares | `npm run test:unit` |
+| IAM-U-27 | `VincularDispositivoUseCase` (RN-04, CR-01) | Unit | Pos./Neg. | La docente activa solo sus aulas activas; la familia no activa aulas; solo se guarda la huella | `npm run test:unit` |
 | IAM-U-23 | `Solicitar/DescargarExportacion` (RF-012) | Unit | Borde | Vence a las 72 h exactas; firma/formato/fecha alterados → rechazo | `npm run test:unit` |
 | IAM-U-24 | `redactar` (RNF-031) | Unit | Negativo | Enmascara contraseñas, PIN, códigos, cookies, JWT, hashes y huellas | `npm run test:unit` |
 | IAM-U-25 | `FiltroErrores` (SRS §7) | Unit | Positivo | Problem Details RFC 9457; 500 sin filtrar el error interno | `npm run test:unit` |
@@ -407,12 +425,13 @@ Archivo: `.github/workflows/calidad.yml`. Orden: estático → unitarias (umbral
 | IAM-I-08 | Exportación (RF-012) | Int | Positivo | JSON y PDF por enlace firmado; alterado → 403 | `npm run test:int` |
 | IAM-I-09 | RN-17 | Int | Negativo | Otra familia → 404 | `npm run test:int` |
 | IAM-I-10 | Eliminación (RF-013) | Int | Positivo | Alias "Perfil eliminado", PIN vacío, sesiones revocadas, fuera del dispositivo | `npm run test:int` |
-| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; 31.º por código de aula → 429 | `npm run test:int` |
+| IAM-I-11 | Límite de tasa con proxy (RNF-019) | Int | Borde | 11.º intento por IP → 429; 31.º por tablet → 429 (otra tablet sigue) | `npm run test:int` |
 | IAM-I-12 | Contrato del API (SRS §7) | Int | Positivo | `/api/v1`, `X-Request-Id`, Problem Details | `npm run test:int` |
-| IAM-I-13 | Ingreso con código de aula + Escuela (RF-007, RF-015, RF-020) | Int | Pos./Neg. | Entra el matriculado; ajeno 403; aula archivada 404 | `npm run test:int` |
+| IAM-I-13 | Tablet del aula + Escuela (RF-007, RF-015, RF-020, CR-01) | Int | Pos./Neg. | Entra el matriculado; ajeno 403; familia 403; otra docente 404; aula archivada 403 | `npm run test:int` |
 | IAM-I-14 | Logs sin secretos (RNF-031) | Int | Negativo | 0 apariciones de contraseña, PIN, tokens, códigos, firmas o hashes | `npm run test:int` |
 | IAM-S-01 | Recorrido familia completo + exportar PDF | Sys | Positivo | Del registro al niño leyendo, con descarga del PDF, en escritorio y tablet | `npm run test:e2e` |
-| IAM-S-08 | Ingreso con código de aula | Sys | Pos./Neg. | Código erróneo avisa; con la tarjeta, el niño entra a su área | `npm run test:e2e` |
+| IAM-S-08 | Tablet del aula (CR-01) | Sys | Pos./Neg. | Sin activar no hay avatares ni campos; activada, el niño entra sin códigos | `npm run test:e2e` |
+| IAM-S-10 | Diseño responsivo (RNF-022, RNF-023) | Sys | Borde | 0 px de desborde y objetivos ≥ 48 px en 1280, 820 y 390 px; barra lateral o inferior según el dispositivo | `npm run test:e2e` |
 | IAM-S-09 | Cierre por inactividad (RF-010) | Sys | Borde | Con 9 min sigue dentro; pasados 10 min vuelve al ingreso con aviso | `npm run test:e2e` |
 | IAM-S-02 | Ingreso con credenciales erradas | Sys | Negativo | Mensaje claro, sigue en `/ingresar` | `npm run test:e2e` |
 | IAM-S-03 | Rutas protegidas sin sesión | Sys | Negativo | Redirige al ingreso correcto según el rol | `npm run test:e2e` |
@@ -420,7 +439,7 @@ Archivo: `.github/workflows/calidad.yml`. Orden: estático → unitarias (umbral
 | IAM-S-05 | Recarga y "Salir" | Sys | Positivo | Sesión persiste; "Salir" lleva a la portada y cierra | `npm run test:e2e` |
 | IAM-S-06 | Diseño sin desbordes (RNF-022) | Sys | Borde | Sin scroll horizontal en 820 px | `npm run test:e2e` |
 | IAM-S-07 | Carga RNF-008 / RNF-001 | Sys | Rendimiento | 0 % errores; p95 277 ms y 62 ms | `npm run test:load` |
-| IAM-A-01..11 | 11 escenarios Gherkin (incluye UAT-05 del SRS y la inactividad) | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
+| IAM-A-01..13 | 13 escenarios Gherkin (incluye UAT-05 del SRS, la inactividad y la tablet del aula de CR-01) | UAT | Pos./Neg./Borde | Ver §7.1 | `npm run test:uat` |
 
 ---
 

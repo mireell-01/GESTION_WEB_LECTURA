@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Boton, Campo, Cargando, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, Boton, Campo, Cargando, Icono, Tarjeta } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 import { guardarTokenDispositivo, leerTokenDispositivo } from '@/shared/auth/dispositivo';
@@ -79,11 +79,11 @@ function VincularDispositivo() {
     setOcupado(true);
     setError(null);
     try {
-      const r = await api<{ tokenDispositivo: string }>('/familia/dispositivos', {
+      const r = await api<{ tokenDispositivo: string; contexto: { nombre: string } }>('/familia/dispositivos', {
         metodo: 'POST',
         cuerpo: { nombre: navigator.userAgent.includes('Mobile') ? 'Celular o tablet' : 'Computadora' },
       });
-      guardarTokenDispositivo(r.tokenDispositivo);
+      guardarTokenDispositivo(r.tokenDispositivo, r.contexto.nombre);
       setVinculado(true);
     } catch (err) {
       setError(mensajeDeError(err));
@@ -93,14 +93,21 @@ function VincularDispositivo() {
   };
 
   return (
-    <Tarjeta titulo="📱 Ingreso de los niños en este dispositivo">
+    <Tarjeta
+      titulo={
+        <span className="titulo-con-icono">
+          <Icono nombre="tablet" tamano={28} />
+          Ingreso de los niños en este dispositivo
+        </span>
+      }
+    >
       {error ? <Alerta tipo="error">{error}</Alerta> : null}
       {vinculado ? (
         <Alerta tipo="exito">
           Este dispositivo está vinculado por 30 días. Tus hijos entran en <strong>“Soy estudiante”</strong> con su avatar y PIN.
         </Alerta>
       ) : (
-        <p>Vincúlalo una vez y tus hijos podrán entrar solos con su avatar y su PIN, sin tu contraseña.</p>
+        <p>Vincúlalo una vez y tus hijos podrán entrar solos con su avatar y su PIN, sin tu contraseña ni códigos.</p>
       )}
       <Boton variante={vinculado ? 'fantasma' : 'primario'} onClick={vincular} cargando={ocupado}>
         {vinculado ? 'Renovar vínculo' : 'Vincular este dispositivo'}
@@ -145,12 +152,10 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
 
   return (
     <div className="pila">
-      <div>
+      <header className="saludo-adulto">
         <h1>Hola, {usuario?.nombre?.split(' ')[0]} 👋</h1>
-        <p className="texto-suave" style={{ margin: 0 }}>
-          Acompaña la aventura lectora de tus hijos desde casa.
-        </p>
-      </div>
+        <p className="texto-suave">Acompaña la aventura lectora de tus hijos desde casa.</p>
+      </header>
 
       {!consentimiento.vigente ? (
         <FormularioConsentimiento onListo={cargar} />
@@ -182,7 +187,14 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
         </>
       )}
 
-      <Tarjeta titulo="🔐 Seguridad de tu cuenta">
+      <Tarjeta
+        titulo={
+          <span className="titulo-con-icono">
+            <Icono nombre="escudo" tamano={28} />
+            Seguridad de tu cuenta
+          </span>
+        }
+      >
         {usuario?.mfaHabilitado ? (
           <Alerta tipo="exito">La verificación en dos pasos está activa.</Alerta>
         ) : (

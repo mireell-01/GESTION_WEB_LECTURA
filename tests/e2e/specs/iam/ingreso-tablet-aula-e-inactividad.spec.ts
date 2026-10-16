@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  activarTabletDelAula,
   aulaConEstudiante,
   cuentaVerificada,
   escribirPin,
@@ -8,27 +9,32 @@ import {
   ingresarComoAdulto,
   ipSimulada,
   prepararFamilia,
+  salirDelPanel,
   URL_AREA_ESTUDIANTE,
 } from '../../support/iam';
 
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
-/** Nivel 3 — Ingreso con código de aula (RF-007, RN-04) y cierre por inactividad (RF-010, R-02). */
-test.describe('IAM — aula e inactividad', () => {
-  test('el estudiante entra con el código de su aula, su avatar y el PIN de su tarjeta', async ({ page, request }) => {
+/** Nivel 3 — Tablet del aula sin código (RF-007, RN-04, CR-01) y cierre por inactividad (RF-010, R-02). */
+test.describe('IAM — tablet del aula e inactividad', () => {
+  test('la docente activa la tablet y el niño entra con su avatar y el PIN de su tarjeta, sin escribir códigos', async ({ page, request }) => {
     const tarjeta = await aulaConEstudiante(request, { alias: 'Sofía', avatar: 'buho' });
 
-    await page.goto('/ingresar/estudiante');
-    await page.getByLabel('Código de tu aula').fill('ZZZZZZ');
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: /No encontramos un aula con ese código/ })).toBeVisible();
+    await activarTabletDelAula(page, tarjeta.docente, tarjeta.aula);
+    await expect(page.getByText('Aula 3.° B')).toBeVisible();
+    await expect(page.getByRole('textbox')).toHaveCount(0);
 
-    await page.getByLabel('Código de tu aula').fill(tarjeta.codigoAula.toLowerCase());
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.getByRole('heading', { name: 'Aula: 3.° B' })).toBeVisible();
     await page.getByRole('button', { name: 'Sofía' }).click();
+    await expect(page.getByRole('heading', { name: '¡Hola, Sofía!' })).toBeVisible();
     await escribirPin(page, tarjeta.pin);
     await esperarAreaEstudiante(page, 'Sofía');
+
+    // Al salir, la tablet vuelve sola a los avatares del aula para el siguiente niño.
+    await page.getByRole('button', { name: 'Salir' }).click();
+    await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
+    await expect(page.getByRole('button', { name: 'Sofía' })).toBeVisible();
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
   });
 
   test('si nadie toca la tablet por 10 minutos, la sesión del niño se cierra sola', async ({ page, request }) => {
@@ -36,8 +42,7 @@ test.describe('IAM — aula e inactividad', () => {
     const { email, contrasena } = await cuentaVerificada(request);
     await ingresarComoAdulto(page, email, contrasena);
     await prepararFamilia(page, { alias: 'Nico', avatar: 'Koala', pin: '3691' });
-    await page.getByRole('button', { name: 'Salir' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await salirDelPanel(page);
 
     await page.goto('/ingresar/estudiante');
     await page.getByRole('button', { name: 'Nico' }).click();

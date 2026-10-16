@@ -4,3 +4,5 @@
  */
 export * from '@lectoaventura/ui';
 export * from './MarcoRol';
+export * from './MarcoEstudiante';
+export * from './MarcoPublico';

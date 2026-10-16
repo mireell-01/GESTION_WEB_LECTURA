@@ -49,10 +49,10 @@ test('una familia se registra, crea el perfil de su hijo y el niño entra con av
   const [descarga] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Descargar PDF' }).click()]);
   expect(descarga.suggestedFilename()).toMatch(/^lectoaventura-datos-\d{4}-\d{2}-\d{2}\.pdf$/);
 
-  // RF-007: el niño entra con su avatar y su PIN.
+  // RF-007 / CR-01: al salir, la tablet vinculada se abre directo en los avatares; el niño entra con su PIN.
   await page.getByRole('button', { name: 'Salir' }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await page.goto('/ingresar/estudiante');
+  await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
+  await expect(page.getByRole('heading', { name: '¿Quién va a leer hoy?' })).toBeVisible();
   await page.getByRole('button', { name: 'Mateo' }).click();
   await expect(page.getByRole('heading', { name: '¡Hola, Mateo!' })).toBeVisible();
   await escribirPin(page, '2580');

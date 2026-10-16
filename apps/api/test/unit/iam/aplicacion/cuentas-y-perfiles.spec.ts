@@ -225,26 +225,72 @@ describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071
     const familia = await cuentaActiva(e);
     const perfil = await perfilEstudiante(e, familia.id);
     const actualizar = new ActualizarPerfilUseCase(e.perfiles, e.sesiones, e.bus, e.reloj.ahora);
-    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.tokens, e.bus, e.generarId, e.reloj.ahora);
+    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.contextoAula, e.tokens, e.bus, e.generarId, e.reloj.ahora);
     const contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
-    const { tokenDispositivo } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
+    const { tokenDispositivo, contexto: activado } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
+    const alumnos = async () => (await contexto.deDispositivo(tokenDispositivo)).estudiantes;
 
-    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(1);
+    expect(activado).toEqual({ tipo: 'FAMILIA', nombre: 'Tu familia' });
+    expect(await alumnos()).toHaveLength(1);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: false });
-    expect(await contexto.deDispositivo(tokenDispositivo)).toHaveLength(0);
+    expect(await alumnos()).toHaveLength(0);
     await actualizar.ejecutar({ cuentaId: familia.id, perfilId: perfil.id, activo: true, avatar: 'panda' });
-    expect(await contexto.deDispositivo(tokenDispositivo)).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
-    await expect(contexto.deDispositivo('token-desconocido')).rejects.toThrow(ProhibidoError);
-    await expect(contexto.deDispositivo(undefined)).rejects.toThrow(ProhibidoError);
+    expect(await alumnos()).toEqual([{ id: perfil.id, alias: 'Lucía', avatar: 'panda' }]);
     // RN-04: el vínculo vence a los 30 días.
     e.reloj.avanzarMin(30 * 24 * 60);
     await expect(contexto.deDispositivo(tokenDispositivo)).rejects.toThrow(ProhibidoError);
   });
 
-  it('solo una cuenta familiar puede vincular un dispositivo', async () => {
-    const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
-    const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.tokens, e.bus, e.generarId, e.reloj.ahora);
-    await expect(vincular.ejecutar({ cuentaId: docente.id, nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+  describe('Activar la tablet (RN-04, CR-01)', () => {
+    const crearCaso = () =>
+      new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.contextoAula, e.tokens, e.bus, e.generarId, e.reloj.ahora);
+
+    it('la docente activa la tablet de su aula: guarda solo la huella del token y publica el evento', async () => {
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('aula-1', { docenteId: docente.id, nombre: '2.° A' });
+
+      const r = await crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'Tablet 3', aulaId: 'aula-1' });
+
+      expect(r.contexto).toEqual({ tipo: 'AULA', nombre: '2.° A' });
+      const [guardado] = [...e.dispositivos.filas.values()];
+      expect(guardado.contexto).toEqual({ tipo: 'AULA', aulaId: 'aula-1' });
+      expect(guardado.propsSnapshot.hashToken).toBe(e.tokens.huella(r.tokenDispositivo));
+      expect(guardado.propsSnapshot.hashToken).not.toBe(r.tokenDispositivo);
+      expect(e.bus.publicados.at(-1)).toMatchObject({
+        nombreEvento: EVENTOS_IAM.DISPOSITIVO_VINCULADO,
+        datos: { actorId: docente.id, tipo: 'AULA', aulaId: 'aula-1' },
+      });
+    });
+
+    it('no deja activar el aula de otra docente, un aula archivada ni un aula inexistente', async () => {
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      const otra = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('ajena', { docenteId: otra.id });
+      e.contextoAula.agregarAula('vieja', { docenteId: docente.id, activa: false });
+
+      for (const aulaId of ['ajena', 'vieja', 'no-existe']) {
+        await expect(crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'Tablet', aulaId })).rejects.toThrow(
+          /No encontramos esa aula/,
+        );
+      }
+      expect(e.dispositivos.filas.size).toBe(0);
+    });
+
+    it('la familia no activa aulas y la docente debe elegir un aula', async () => {
+      const familia = await cuentaActiva(e);
+      const docente = await cuentaActiva(e, { rol: 'DOCENTE' });
+      e.contextoAula.agregarAula('aula-1', { docenteId: familia.id });
+
+      await expect(crearCaso().ejecutar({ cuentaId: familia.id, nombre: 'PC', aulaId: 'aula-1' })).rejects.toThrow(/No encontramos/);
+      await expect(crearCaso().ejecutar({ cuentaId: docente.id, nombre: 'PC' })).rejects.toThrow(/Elige el aula/);
+    });
+
+    it('una cuenta inexistente o suspendida no activa dispositivos', async () => {
+      await expect(crearCaso().ejecutar({ cuentaId: 'nadie', nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+      const familia = await cuentaActiva(e);
+      familia.suspender();
+      await expect(crearCaso().ejecutar({ cuentaId: familia.id, nombre: 'PC' })).rejects.toThrow(ProhibidoError);
+    });
   });
 
   describe('Exportación de datos (RF-012)', () => {

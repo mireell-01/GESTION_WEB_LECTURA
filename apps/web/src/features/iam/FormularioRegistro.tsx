@@ -39,7 +39,7 @@ export function FormularioRegistro() {
 
   if (registrado) {
     return (
-      <Tarjeta titulo="¡Revisa tu correo! 📬">
+      <Tarjeta titulo="¡Revisa tu correo! 📬" nivel={1}>
         <p>
           Enviamos un enlace a <strong>{email}</strong> para activar tu cuenta. Vence en 24 horas.
         </p>
@@ -52,7 +52,7 @@ export function FormularioRegistro() {
   }
 
   return (
-    <Tarjeta titulo="Crear una cuenta">
+    <Tarjeta titulo="Crear una cuenta" nivel={1}>
       <form onSubmit={enviar} noValidate>
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
         <fieldset style={{ border: 'none', padding: 0, margin: '0 0 var(--la-espacio-3)' }}>

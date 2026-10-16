@@ -3,7 +3,6 @@ import { Reloj } from '../dto/iam.dto';
 import { DispositivoRepository } from '../ports/dispositivo.repository';
 import { PerfilEstudianteRepository } from '../ports/perfil-estudiante.repository';
 import { TokenService } from '../ports/token.service';
-import { CodigoAulaInvalidoError } from '../../domain/errors/errores-iam';
 
 export interface AvatarIngreso {
   id: string;
@@ -11,9 +10,16 @@ export interface AvatarIngreso {
   avatar: string;
 }
 
+export interface ContextoDeIngreso {
+  contexto: { tipo: 'FAMILIA' | 'AULA'; nombre: string };
+  estudiantes: AvatarIngreso[];
+}
+
+const SIN_ACTIVAR = 'Esta tablet no está activada. Pide a tu profe o a tu familia que la active.';
+
 /**
- * Use Case: ContextoIngreso (RF-007, RN-04). Sin contexto válido no se muestran avatares;
- * con él, solo alias y avatar de los estudiantes activos del aula o de la familia.
+ * Use Case: ContextoIngreso (RF-007, RN-04, CR-01). Sin dispositivo activado no se muestran
+ * avatares; con él, solo alias y avatar de los niños activos de esa familia o de esa aula.
  */
 export class ContextoIngresoUseCase {
   constructor(
@@ -24,21 +30,27 @@ export class ContextoIngresoUseCase {
     private readonly ahora: Reloj,
   ) {}
 
-  async deAula(codigo: string): Promise<{ aula: { nombre: string }; estudiantes: AvatarIngreso[] }> {
-    const aula = await this.contextoAula.aulaActivaPorCodigo(codigo.trim().toUpperCase());
-    if (!aula) throw new CodigoAulaInvalidoError();
-    const perfiles = await this.perfiles.buscarPorIds(await this.contextoAula.estudiantesActivos(aula.aulaId));
-    return { aula: { nombre: aula.nombre }, estudiantes: this.avatares(perfiles) };
-  }
-
-  async deDispositivo(tokenDispositivo: string | undefined): Promise<AvatarIngreso[]> {
+  async deDispositivo(tokenDispositivo: string | undefined): Promise<ContextoDeIngreso> {
     const dispositivo = tokenDispositivo
       ? await this.dispositivos.buscarPorHashToken(this.tokens.huella(tokenDispositivo))
       : null;
     if (!dispositivo || !dispositivo.estaVigente(this.ahora())) {
-      throw new ProhibidoError('Este dispositivo no está vinculado. Pide a un adulto que lo vincule.');
+      throw new ProhibidoError(SIN_ACTIVAR);
     }
-    return this.avatares(await this.perfiles.listarPorResponsable(dispositivo.cuentaId));
+
+    const contexto = dispositivo.contexto;
+    if (contexto.tipo === 'FAMILIA') {
+      return {
+        contexto: { tipo: 'FAMILIA', nombre: 'Tu familia' },
+        estudiantes: this.avatares(await this.perfiles.listarPorResponsable(dispositivo.cuentaId)),
+      };
+    }
+
+    // Un aula archivada deja de mostrar avatares aunque la tablet siga activada.
+    const aula = await this.contextoAula.aulaActiva(contexto.aulaId);
+    if (!aula) throw new ProhibidoError(SIN_ACTIVAR);
+    const perfiles = await this.perfiles.buscarPorIds(await this.contextoAula.estudiantesActivos(aula.aulaId));
+    return { contexto: { tipo: 'AULA', nombre: aula.nombre }, estudiantes: this.avatares(perfiles) };
   }
 
   private avatares(perfiles: { id: string; alias: string; avatar: string; activo: boolean }[]): AvatarIngreso[] {

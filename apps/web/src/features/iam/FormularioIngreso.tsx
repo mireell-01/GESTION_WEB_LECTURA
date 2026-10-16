@@ -45,7 +45,7 @@ export function FormularioIngreso() {
   };
 
   return (
-    <Tarjeta titulo="Ingresar">
+    <Tarjeta titulo="Ingresar" nivel={1}>
       <form onSubmit={enviar} noValidate>
         {parametros.get('motivo') === 'inactividad' ? (
           <Alerta tipo="info">Cerramos tu sesión por inactividad para proteger tus datos. Vuelve a ingresar.</Alerta>

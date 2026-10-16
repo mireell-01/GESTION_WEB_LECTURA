@@ -6,6 +6,8 @@ import { ipSimulada } from '../support/iam';
 export interface Mundo {
   email?: string;
   contrasena?: string;
+  /** Tarjeta de acceso de la estudiante de un aula (CR-01). */
+  tarjeta?: { docente: { email: string; contrasena: string }; aula: string; alias: string; pin: string };
 }
 
 /**

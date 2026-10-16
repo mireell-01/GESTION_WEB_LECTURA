@@ -6,10 +6,8 @@ export const metadata = { title: '¡A leer!' };
 
 export default function IngresoEstudiantePage() {
   return (
-    <div className="publico__panel publico__panel--ancho">
-      <Suspense>
-        <IngresoEstudiante />
-      </Suspense>
-    </div>
+    <Suspense>
+      <IngresoEstudiante />
+    </Suspense>
   );
 }

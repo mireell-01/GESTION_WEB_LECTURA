@@ -27,7 +27,8 @@ async function cuentaConSesion(email: string, rol: 'FAMILIAR' | 'DOCENTE' = 'FAM
   const enlace = correos.find((c) => c.para === email)?.enlace as string;
   await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: new URL(enlace).searchParams.get('codigo') }).expect(200);
   const login = await t.http().post(`${API}/auth/login`).send({ email, contrasena: CONTRASENA }).expect(200);
-  return { token: login.body.accessToken as string, cookie: cookieRefresh(login) as string, enlace };
+  const { id } = await t.prisma.cuenta.findUniqueOrThrow({ where: { email } });
+  return { id, token: login.body.accessToken as string, cookie: cookieRefresh(login) as string, enlace };
 }
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -134,7 +135,7 @@ describe('Sesión con refresh token rotativo (RF-003, RF-010, ADR-005)', () => {
 });
 
 describe('Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-009, RF-071)', () => {
-  let familia: { token: string };
+  let familia: { id: string; token: string };
   let perfilId: string;
   let tokenDispositivo: string;
   const auth = () => bearer(familia.token);
@@ -167,14 +168,21 @@ describe('Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-
 
   it('el dispositivo vinculado muestra solo alias y avatar; sin él, 403', async () => {
     await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).expect(403);
-    tokenDispositivo = (await t.http().post(`${API}/familia/dispositivos`).set(auth()).send({ nombre: 'Tablet' }).expect(201)).body.tokenDispositivo;
+    const vinculo = await t.http().post(`${API}/familia/dispositivos`).set(auth()).send({ nombre: 'Tablet' }).expect(201);
+    tokenDispositivo = vinculo.body.tokenDispositivo;
+    expect(vinculo.body.contexto).toEqual({ tipo: 'FAMILIA', nombre: 'Tu familia' });
+    const fila = await t.prisma.dispositivoIngreso.findFirstOrThrow({ where: { cuentaId: familia.id } });
+    expect(fila.aulaId).toBeNull();
+    expect(fila.hashToken).not.toBe(tokenDispositivo);
+
     const r = await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tokenDispositivo).expect(200);
-    expect(r.body).toEqual([{ id: perfilId, alias: 'Mateo', avatar: 'tigre' }]);
+    expect(r.body).toEqual({ contexto: { tipo: 'FAMILIA', nombre: 'Tu familia' }, estudiantes: [{ id: perfilId, alias: 'Mateo', avatar: 'tigre' }] });
   });
 
-  it('el login exige exactamente un contexto', async () => {
+  it('CR-01: el login exige la tablet activada y ya no acepta código de aula', async () => {
     await t.http().post(`${API}/acceso-estudiante/login`).send({ perfilId, pin: '2580' }).expect(400);
     await t.http().post(`${API}/acceso-estudiante/login`).send({ perfilId, pin: '2580', tokenDispositivo, codigoAula: 'ABC234' }).expect(400);
+    await t.http().get(`${API}/acceso-estudiante/contexto/ABC234`).expect(404);
   });
 
   it('5 PIN incorrectos → 423 con hora de desbloqueo, guardado en la base y en el outbox', async () => {
@@ -244,12 +252,13 @@ describe('Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-
     expect(fila).toMatchObject({ alias: 'Perfil eliminado', hashPin: '', activo: false });
     expect(await t.prisma.sesion.count({ where: { sujetoId: perfilId, revocadaEn: null } })).toBe(0);
     expect((await t.http().get(`${API}/familia/estudiantes`).set(auth()).expect(200)).body).toEqual([]);
-    expect((await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tokenDispositivo)).body).toEqual([]);
+    const contexto = await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tokenDispositivo);
+    expect(contexto.body.estudiantes).toEqual([]);
   });
 });
 
-describe('Ingreso con código de aula, integrado con Escuela (RF-007, RN-04, RF-015)', () => {
-  it('docente crea aula y matricula; el niño ve solo su aula y entra con el código', async () => {
+describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007, RN-04, RF-015, RF-020, CR-01)', () => {
+  it('la docente activa la tablet; el niño ve solo su aula y entra sin escribir ningún código', async () => {
     const docente = await cuentaConSesion('docente@lectoaventura.test', 'DOCENTE');
     const aula = await t.http().post(`${API}/aulas`).set(bearer(docente.token)).send({
       nombre: '3.° A', grado: '3', anioLectivo: new Date().getFullYear(), institucion: 'IE Paucar del Sara Sara',
@@ -258,27 +267,41 @@ describe('Ingreso con código de aula, integrado con Escuela (RF-007, RN-04, RF-
     const tarjeta = await t.http().post(`${API}/aulas/${aula.body.id}/matriculas`).set(bearer(docente.token)).send({
       alias: 'Sofía', anioNacimiento: 2017, mesNacimiento: 3, avatar: 'buho',
     }).expect(201);
-    expect(tarjeta.body).toMatchObject({ alias: 'Sofía', codigoAula: aula.body.codigo });
     expect(tarjeta.body.pin).toMatch(/^\d{4}$/);
 
-    await t.http().get(`${API}/acceso-estudiante/contexto/ZZZZZZ`).expect(404);
-    const contexto = await t.http().get(`${API}/acceso-estudiante/contexto/${aula.body.codigo.toLowerCase()}`).expect(200);
-    expect(contexto.body).toEqual({ aula: { nombre: '3.° A' }, estudiantes: [{ id: tarjeta.body.estudianteId, alias: 'Sofía', avatar: 'buho' }] });
+    const activacion = await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(docente.token)).send({ nombre: 'Tablet 1' }).expect(201);
+    expect(activacion.body.contexto).toEqual({ tipo: 'AULA', nombre: '3.° A' });
+    const tablet = activacion.body.tokenDispositivo as string;
+    expect(await t.prisma.dispositivoIngreso.findFirstOrThrow({ where: { aulaId: aula.body.id } })).toMatchObject({ cuentaId: docente.id });
 
+    const contexto = await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tablet).expect(200);
+    expect(contexto.body).toEqual({
+      contexto: { tipo: 'AULA', nombre: '3.° A' },
+      estudiantes: [{ id: tarjeta.body.estudianteId, alias: 'Sofía', avatar: 'buho' }],
+    });
     const ingreso = await t.http().post(`${API}/acceso-estudiante/login`).send({
-      codigoAula: aula.body.codigo, perfilId: tarjeta.body.estudianteId, pin: tarjeta.body.pin,
+      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: tarjeta.body.pin,
     }).expect(200);
     expect(ingreso.body.rol).toBe('ESTUDIANTE');
 
-    // Un estudiante de otra familia no entra con este código aunque conozca su id.
+    // Un estudiante de otra familia no entra desde la tablet del aula aunque conozca su id.
     const familia = await cuentaConSesion('familia2@lectoaventura.test');
     await t.http().post(`${API}/consentimientos`).set(bearer(familia.token)).send({ otorganteNombre: 'Ana Ríos', aceptaPolitica: true }).expect(201);
     const ajeno = await t.http().post(`${API}/estudiantes`).set(bearer(familia.token)).send({ alias: 'Leo', anioNacimiento: 2018, mesNacimiento: 1, avatar: 'koala', pin: '5820' }).expect(201);
-    await t.http().post(`${API}/acceso-estudiante/login`).send({ codigoAula: aula.body.codigo, perfilId: ajeno.body.id, pin: '5820' }).expect(403);
+    await t.http().post(`${API}/acceso-estudiante/login`).send({ tokenDispositivo: tablet, perfilId: ajeno.body.id, pin: '5820' }).expect(403);
 
-    // RF-020: archivada el aula, su código deja de servir para entrar.
+    // RF-009 / RN-17: la familia no activa aulas; otra docente tampoco activa un aula ajena.
+    await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(familia.token)).send({ nombre: 'PC' }).expect(403);
+    const otraDocente = await cuentaConSesion('docente2@lectoaventura.test', 'DOCENTE');
+    await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(otraDocente.token)).send({ nombre: 'PC' }).expect(404);
+
+    // RF-020: archivada el aula, su tablet deja de mostrar avatares y de dejar entrar.
     await t.http().post(`${API}/aulas/${aula.body.id}/archivar`).set(bearer(docente.token)).expect(200);
-    await t.http().get(`${API}/acceso-estudiante/contexto/${aula.body.codigo}`).expect(404);
+    await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tablet).expect(403);
+    await t.http().post(`${API}/acceso-estudiante/login`).send({
+      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: tarjeta.body.pin,
+    }).expect(403);
+    await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(docente.token)).send({ nombre: 'Tablet 2' }).expect(404);
   });
 });
 

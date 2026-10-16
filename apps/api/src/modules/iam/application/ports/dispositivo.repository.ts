@@ -1,7 +1,7 @@
-import { DispositivoFamiliar } from '../../domain/entities/dispositivo-familiar';
+import { DispositivoIngreso } from '../../domain/entities/dispositivo-ingreso';
 
-/** Puerto de salida: dispositivos familiares vinculados (RN-04). */
+/** Puerto de salida: dispositivos de ingreso activados por familias o docentes (RN-04). */
 export interface DispositivoRepository {
-  guardar(dispositivo: DispositivoFamiliar): Promise<void>;
-  buscarPorHashToken(hashToken: string): Promise<DispositivoFamiliar | null>;
+  guardar(dispositivo: DispositivoIngreso): Promise<void>;
+  buscarPorHashToken(hashToken: string): Promise<DispositivoIngreso | null>;
 }

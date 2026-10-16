@@ -133,7 +133,7 @@ export function crearCasosUsoIam(
     ),
     descargarExportacion: new DescargarExportacionUseCase(exportaciones, firmador, ahora),
     solicitarEliminacion: new SolicitarEliminacionUseCase(perfiles, sesiones, bus, ahora),
-    vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, tokens, bus, generarId, ahora),
+    vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, contextoAula, tokens, bus, generarId, ahora),
     contextoIngreso: new ContextoIngresoUseCase(perfiles, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
     facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, ahora),

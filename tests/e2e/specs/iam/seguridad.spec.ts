@@ -7,6 +7,7 @@ import {
   ingresarComoAdulto,
   ipSimulada,
   prepararFamilia,
+  salirDelPanel,
   URL_AREA_ESTUDIANTE,
 } from '../../support/iam';
 
@@ -26,21 +27,23 @@ test.describe('IAM — seguridad de acceso', () => {
     await expect(page).toHaveURL(/\/ingresar\?volver=%2Ffamilia/);
     await page.goto('/estudiante');
     await expect(page).toHaveURL(/\/ingresar\/estudiante$/);
-    await expect(page.getByRole('heading', { name: /Entra a tu aula/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Esta tablet aún no está activada' })).toBeVisible();
   });
 
-  test('sin dispositivo vinculado no se muestran avatares, solo el código de aula (RN-04)', async ({ page }) => {
+  test('sin tablet activada no se muestran avatares ni se pide ningún código (RN-04, CR-01)', async ({ page }) => {
     await page.goto('/ingresar/estudiante');
-    await expect(page.getByRole('heading', { name: /Entra a tu aula/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(page.getByRole('heading', { name: 'Esta tablet aún no está activada' })).toBeVisible();
+    // Ni campo para códigos ni avatares: solo la explicación para los adultos.
+    await expect(page.getByRole('textbox')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '¿Quién va a leer hoy?' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Soy un adulto: ingresar', exact: true })).toHaveAttribute('href', '/ingresar');
   });
 
   test('PIN incorrecto avisa los intentos restantes; el niño no puede abrir el panel familiar (RF-008, RF-009)', async ({ page, request }) => {
     const { email, contrasena } = await cuentaVerificada(request);
     await ingresarComoAdulto(page, email, contrasena);
     await prepararFamilia(page, { alias: 'Lucía', avatar: 'Zorro', pin: '3691' });
-    await page.getByRole('button', { name: 'Salir' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await salirDelPanel(page);
 
     await page.goto('/ingresar/estudiante');
     await page.getByRole('button', { name: 'Lucía' }).click();

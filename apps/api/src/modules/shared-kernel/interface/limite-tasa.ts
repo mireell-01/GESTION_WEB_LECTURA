@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { CanActivate, ExecutionContext, Injectable, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
@@ -6,7 +8,7 @@ import { ErrorDeNegocio } from '../domain/errors/error-de-negocio';
 
 /**
  * RNF-019: limitación de tasa por ventana de 1 minuto.
- * `por` define qué se cuenta: la IP del cliente o un campo del cuerpo (p. ej. el código de aula);
+ * `por` define qué se cuenta: la IP del cliente o un campo del cuerpo (p. ej. el token de la tablet);
  * si el campo no viene en la petición, esa regla no aplica.
  */
 export interface ReglaLimiteTasa {
@@ -19,6 +21,15 @@ export const LIMITE_TASA = 'la:limite-tasa';
 export const LimiteTasa = (...reglas: ReglaLimiteTasa[]) => SetMetadata(LIMITE_TASA, reglas);
 
 const VENTANA_MS = 60_000;
+
+/**
+ * El campo puede ser un secreto (el token de la tablet, CR-01): en memoria solo queda su huella.
+ * Vacío si el campo no viene, para que esa regla no aplique.
+ */
+function huellaDeCampo(cuerpo: unknown, campo: string): string {
+  const valor = String((cuerpo as Record<string, unknown> | undefined)?.[campo] ?? '').trim();
+  return valor ? createHash('sha256').update(valor).digest('base64url') : '';
+}
 
 /**
  * Guard global de límite de tasa en memoria (una instancia de API). Con varias instancias,
@@ -43,10 +54,7 @@ export class LimiteTasaGuard implements CanActivate {
     // Primero se comprueban todas las reglas; solo si ninguna se excede se cuenta el intento.
     const claves: { clave: string; maximo: number }[] = [];
     for (const regla of reglas) {
-      const sujeto =
-        regla.por === 'ip'
-          ? (req.ip ?? 'desconocida')
-          : String((req.body as Record<string, unknown> | undefined)?.[regla.por.campoCuerpo] ?? '').trim().toUpperCase();
+      const sujeto = regla.por === 'ip' ? (req.ip ?? 'desconocida') : huellaDeCampo(req.body, regla.por.campoCuerpo);
       if (!sujeto) continue;
       const clave = `${regla.nombre}:${sujeto}`;
       const maximo = regla.maximoPorMinuto * factor;

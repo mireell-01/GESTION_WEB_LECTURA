@@ -94,4 +94,15 @@ export class EstudiantesController {
   vincularDispositivo(@UsuarioActual() u: UsuarioAutenticado, @Body() dto: VincularDispositivoRequestDto) {
     return this.iam.vincularDispositivo.ejecutar({ cuentaId: u.sub, nombre: dto.nombre });
   }
+
+  /** RN-04 / CR-01: la docente activa la tablet del aula por 30 días; los niños ya no usan código. */
+  @Roles('DOCENTE')
+  @Post('aulas/:aulaId/dispositivos')
+  activarTabletAula(
+    @UsuarioActual() u: UsuarioAutenticado,
+    @Param('aulaId') aulaId: string,
+    @Body() dto: VincularDispositivoRequestDto,
+  ) {
+    return this.iam.vincularDispositivo.ejecutar({ cuentaId: u.sub, nombre: dto.nombre, aulaId });
+  }
 }

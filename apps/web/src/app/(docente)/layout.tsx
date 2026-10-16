@@ -7,7 +7,7 @@ import { MarcoRol } from '@/shared/ui';
 export default function DocenteLayout({ children }: { children: ReactNode }) {
   return (
     <RequiereRol roles={['DOCENTE']}>
-      <MarcoRol titulo="Modo escuela" icono="🍎" color="#6a4c93" menu={[{ href: '/docente', texto: 'Mis aulas' }]}>
+      <MarcoRol titulo="Modo escuela" icono="aula" menu={[{ href: '/docente', texto: 'Mis aulas', icono: 'aula' }]}>
         {children}
       </MarcoRol>
     </RequiereRol>

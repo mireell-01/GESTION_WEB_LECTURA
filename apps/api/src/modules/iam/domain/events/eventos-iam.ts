@@ -14,7 +14,7 @@ export const EVENTOS_IAM = {
   DATOS_EXPORTADOS: 'iam.DatosEstudianteExportados',
   PERFIL_ELIMINADO: 'iam.PerfilEstudianteEliminado',
   MFA_CONFIGURADO: 'iam.MfaConfigurado',
-  DISPOSITIVO_VINCULADO: 'iam.DispositivoFamiliarVinculado',
+  DISPOSITIVO_VINCULADO: 'iam.DispositivoVinculado',
   /** ADR-005: se presentó un refresh token ya rotado (posible robo); la sesión se revoca. */
   REUTILIZACION_REFRESH: 'iam.ReutilizacionRefreshDetectada',
 } as const;

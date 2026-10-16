@@ -18,7 +18,6 @@ import { CrearAulaUseCase } from '../application/use-cases/crear-aula.use-case';
 import { GenerarTarjetasUseCase } from '../application/use-cases/generar-tarjetas.use-case';
 import { ArchivarAulaUseCase, RetirarEstudianteUseCase } from '../application/use-cases/gestionar-aula.use-case';
 import { MatricularEstudiantesUseCase } from '../application/use-cases/matricular-estudiantes.use-case';
-import { CodigoAula } from '../domain/value-objects/codigo-aula';
 import { ServicioIdentidadIam } from './identidad/servicio-identidad-iam';
 import { PrismaAulaRepository } from './persistence/prisma-aula-repository';
 import { PrismaMatriculaRepository } from './persistence/prisma-matricula-repository';
@@ -63,12 +62,11 @@ export class EscuelaSuscripciones implements OnModuleInit {
   onModuleInit(): void {
     const { aulas, matriculas } = this.casos;
 
-    // RF-007 / RN-04: IAM valida códigos de aula y matrículas a través de este resolutor.
+    // RF-007 / RN-04 / CR-01: IAM valida la tablet del aula (aula activa, su docente y matrículas).
     this.contextoAula.registrar({
-      aulaActivaPorCodigo: async (texto) => {
-        const codigo = CodigoAula.intentar(texto);
-        const aula = codigo ? await aulas.buscarPorCodigo(codigo.value) : null;
-        return aula && aula.estaActiva ? { aulaId: aula.id, nombre: aula.nombre } : null;
+      aulaActiva: async (aulaId) => {
+        const aula = await aulas.buscarPorId(aulaId);
+        return aula && aula.estaActiva ? { aulaId: aula.id, nombre: aula.nombre, docenteId: aula.docenteId } : null;
       },
       estudiantesActivos: async (aulaId) => (await matriculas.listarActivasPorAula(aulaId)).map((m) => m.estudianteId),
       estaMatriculado: async (aulaId, estudianteId) => !!(await matriculas.buscar(aulaId, estudianteId))?.activa,

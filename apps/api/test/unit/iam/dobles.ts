@@ -26,7 +26,7 @@ import type { VerificacionRepository } from '../../../src/modules/iam/applicatio
 import { EmisorSesiones } from '../../../src/modules/iam/application/services/emisor-sesiones';
 import { Consentimiento } from '../../../src/modules/iam/domain/entities/consentimiento';
 import { Cuenta } from '../../../src/modules/iam/domain/entities/cuenta';
-import { DispositivoFamiliar } from '../../../src/modules/iam/domain/entities/dispositivo-familiar';
+import { DispositivoIngreso } from '../../../src/modules/iam/domain/entities/dispositivo-ingreso';
 import { PerfilEstudiante } from '../../../src/modules/iam/domain/entities/perfil-estudiante';
 import { Sesion } from '../../../src/modules/iam/domain/entities/sesion';
 import { TipoVerificacion, VerificacionCorreo } from '../../../src/modules/iam/domain/entities/verificacion-correo';
@@ -89,15 +89,19 @@ export class SesionesEnMemoria implements SesionRepository {
 
 /** Aulas y matrículas simuladas (las aporta Escuela en la aplicación real). */
 export class ContextoAulaFalso implements ResolutorContextoAula {
-  readonly aulas = new Map<string, { aulaId: string; nombre: string; activa: boolean }>();
+  readonly aulas = new Map<string, { nombre: string; docenteId: string; activa: boolean }>();
   readonly matriculas = new Map<string, Set<string>>();
-  agregarAula(codigo: string, aulaId: string, estudiantes: string[] = [], activa = true) {
-    this.aulas.set(codigo, { aulaId, nombre: `Aula ${codigo}`, activa });
-    this.matriculas.set(aulaId, new Set(estudiantes));
+  agregarAula(aulaId: string, datos: { docenteId: string; estudiantes?: string[]; activa?: boolean; nombre?: string }) {
+    this.aulas.set(aulaId, { nombre: datos.nombre ?? '3.° B', docenteId: datos.docenteId, activa: datos.activa ?? true });
+    this.matriculas.set(aulaId, new Set(datos.estudiantes ?? []));
   }
-  async aulaActivaPorCodigo(codigo: string) {
-    const aula = this.aulas.get(codigo);
-    return aula && aula.activa ? { aulaId: aula.aulaId, nombre: aula.nombre } : null;
+  archivar(aulaId: string) {
+    const aula = this.aulas.get(aulaId);
+    if (aula) aula.activa = false;
+  }
+  async aulaActiva(aulaId: string) {
+    const aula = this.aulas.get(aulaId);
+    return aula && aula.activa ? { aulaId, nombre: aula.nombre, docenteId: aula.docenteId } : null;
   }
   async estudiantesActivos(aulaId: string) { return [...(this.matriculas.get(aulaId) ?? [])]; }
   async estaMatriculado(aulaId: string, estudianteId: string) { return this.matriculas.get(aulaId)?.has(estudianteId) ?? false; }
@@ -124,8 +128,8 @@ export class PdfFalso implements GeneradorPdfExportacion {
 }
 
 export class DispositivosEnMemoria implements DispositivoRepository {
-  readonly filas = new Map<string, DispositivoFamiliar>();
-  async guardar(d: DispositivoFamiliar) { this.filas.set(d.id, d); }
+  readonly filas = new Map<string, DispositivoIngreso>();
+  async guardar(d: DispositivoIngreso) { this.filas.set(d.id, d); }
   async buscarPorHashToken(hash: string) {
     return [...this.filas.values()].find((d) => d.propsSnapshot.hashToken === hash) ?? null;
   }

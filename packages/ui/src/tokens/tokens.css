@@ -1,35 +1,43 @@
 /**
- * Design tokens del design system infantil accesible.
- * Paleta de alto contraste (texto ≥ 4.5:1), tipografía redondeada y objetivos táctiles grandes.
+ * Design tokens del design system infantil de LectoAventura (identidad visual aprobada: violeta,
+ * amarillo, crema y verde; tipografía redondeada; botones "3D" grandes como en Duolingo).
+ * Contraste de texto ≥ 4.5:1 verificado (WCAG 2.1 AA) y objetivos táctiles ≥ 48 px (RNF-023).
  */
 :root {
   /* Color */
-  --la-color-primario: #2f6df6;
-  --la-color-primario-fuerte: #1e4fd0;
-  --la-color-primario-suave: #e3ecff;
-  --la-color-secundario: #ffb703;
-  --la-color-secundario-suave: #fff3d1;
-  --la-color-exito: #2a9d8f;
-  --la-color-exito-fuerte: #1d7a6f;
-  --la-color-exito-suave: #dcf5f1;
-  --la-color-exito-texto: #135a51;
-  --la-color-error: #e63946;
-  --la-color-error-fuerte: #c1121f;
-  --la-color-error-suave: #fde3e5;
-  --la-color-fondo: #f7fbff;
-  --la-color-fondo-alterno: #eef2f8;
+  --la-color-primario: #5b3fd9;
+  --la-color-primario-fuerte: #3d2a9e;
+  --la-color-primario-suave: #ede8ff;
+  --la-color-primario-borde: #d9d1ff;
+  --la-color-secundario: #ffc83d;
+  --la-color-secundario-fuerte: #dda200;
+  --la-color-secundario-suave: #fff6dc;
+  --la-color-exito: #2bb673;
+  --la-color-exito-fuerte: #0f7a48;
+  --la-color-exito-suave: #ddf7ea;
+  --la-color-exito-texto: #0f6b43;
+  --la-color-error: #e5484d;
+  --la-color-error-fuerte: #c42b3a;
+  --la-color-error-suave: #fde7e9;
+  --la-color-rosa: #c42b67;
+  --la-color-nombre: #ffd23f;
+  --la-color-fondo: #f5f3ff;
+  --la-color-fondo-alterno: #eeeafb;
   --la-color-superficie: #ffffff;
-  --la-color-borde: #d5ddea;
-  --la-color-texto: #14213d;
-  --la-color-texto-suave: #4f5a6e;
+  --la-color-borde: #dad5f0;
+  --la-color-texto: #1e1a4d;
+  --la-color-texto-suave: #4b4778;
+  --la-color-sobre-violeta: #e0daff;
 
-  /* Tipografía */
-  --la-font-redondeada: 'Nunito', 'Baloo 2', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
-  --la-texto-sm: 0.875rem;
-  --la-texto-base: 1rem;
+  /* Tipografía: Fredoka (títulos y botones) + Nunito (texto). Las carga next/font en la web. */
+  --la-font-titulo: var(--la-fuente-fredoka, 'Fredoka'), 'Baloo 2', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
+  --la-font-redondeada: var(--la-fuente-nunito, 'Nunito'), 'Segoe UI', system-ui, sans-serif;
+  --la-texto-sm: 0.9375rem;
+  --la-texto-base: 1.0625rem;
   --la-texto-lg: 1.25rem;
   --la-texto-xl: 1.5rem;
   --la-texto-2xl: 2rem;
+  --la-texto-3xl: 2.75rem;
 
   /* Espaciado */
   --la-espacio-1: 0.25rem;
@@ -40,12 +48,14 @@
   --la-espacio-6: 3rem;
 
   /* Radios y sombras */
-  --la-radio: 1rem;
-  --la-sombra: 0 4px 14px rgba(20, 33, 61, 0.12);
+  --la-radio-sm: 14px;
+  --la-radio: 20px;
+  --la-radio-lg: 28px;
+  --la-sombra: 0 4px 0 rgba(61, 42, 158, 0.07), 0 12px 28px rgba(61, 42, 158, 0.1);
 
-  /* Accesibilidad: objetivo táctil mínimo 44px (WCAG 2.2 2.5.5) */
-  --la-target-min: 44px;
+  /* Accesibilidad: objetivo táctil mínimo 48 × 48 px (RNF-023) */
+  --la-target-min: 48px;
 
-  /* Foco visible consistente */
-  --la-foco: 0 0 0 3px #ffb703;
+  /* Foco visible consistente: contorno oscuro + halo amarillo (se ve sobre blanco y sobre violeta) */
+  --la-foco: 0 0 0 3px #ffffff, 0 0 0 6px #1e1a4d, 0 0 0 9px #ffc83d;
 }

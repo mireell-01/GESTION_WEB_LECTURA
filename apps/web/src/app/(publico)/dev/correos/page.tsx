@@ -1,11 +1,12 @@
 import { BandejaDesarrollo } from '@/features/iam/BandejaDesarrollo';
+import { MarcoPublico } from '@/shared/ui';
 
 export const metadata = { title: 'Correos de desarrollo' };
 
 export default function CorreosDesarrolloPage() {
   return (
-    <div className="publico__panel publico__panel--ancho">
+    <MarcoPublico ancho>
       <BandejaDesarrollo />
-    </div>
+    </MarcoPublico>
   );
 }

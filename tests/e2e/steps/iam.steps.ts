@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 
 import {
+  activarTabletDelAula,
+  aulaConEstudiante,
   CONTRASENA_E2E,
   correoUnico,
   cuentaVerificada,
@@ -8,6 +10,7 @@ import {
   escribirPin,
   ingresarComoAdulto,
   prepararFamilia,
+  salirDelPanel,
   URL_AREA_ESTUDIANTE,
 } from '../support/iam';
 import { Cuando, Dado, Entonces } from './fixtures';
@@ -137,11 +140,44 @@ Dado(
     const { email, contrasena } = await cuentaVerificada(request, { prefijo: 'uat' });
     await ingresarComoAdulto(page, email, contrasena);
     await prepararFamilia(page, { alias, avatar, pin });
-    await page.getByRole('button', { name: 'Salir' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await salirDelPanel(page);
     await page.goto('/ingresar/estudiante');
   },
 );
+
+// ── Tablet del aula sin códigos (CR-01) ───────────────────────────────────
+
+Dado('que soy docente del aula {string} con la estudiante {string}', async ({ request, mundo }, aula: string, alias: string) => {
+  mundo.tarjeta = await aulaConEstudiante(request, { alias, avatar: 'buho' });
+  expect(mundo.tarjeta.aula).toBe(aula);
+});
+
+Cuando('activo esta tablet para el aula {string} y la dejo lista para los niños', async ({ page, mundo }, aula: string) => {
+  await activarTabletDelAula(page, mundo.tarjeta!.docente, aula);
+});
+
+Entonces('la tablet muestra los avatares del {string} sin pedir ningún código', async ({ page, mundo }, contexto: string) => {
+  await expect(page.getByText(contexto)).toBeVisible();
+  await expect(page.getByRole('button', { name: mundo.tarjeta!.alias })).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+});
+
+Cuando('escribo el PIN de su tarjeta', async ({ page, mundo }) => {
+  await escribirPin(page, mundo.tarjeta!.pin);
+});
+
+Dado('que abro la app en una tablet que nadie activó', async ({ page }) => {
+  await page.goto('/ingresar/estudiante');
+});
+
+Entonces('veo el título {string}', async ({ page }, titulo: string) => {
+  await expect(page.getByRole('heading', { name: titulo, level: 1 })).toBeVisible();
+});
+
+Entonces('no aparece ningún avatar ni campo para escribir códigos', async ({ page }) => {
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '¿Quién va a leer hoy?' })).toHaveCount(0);
+});
 
 Cuando('toco mi avatar {string}', async ({ page }, alias: string) => {
   await page.getByRole('button', { name: alias }).click();

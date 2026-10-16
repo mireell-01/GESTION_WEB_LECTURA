@@ -1,11 +1,12 @@
 import { FormularioRegistro } from '@/features/iam/FormularioRegistro';
+import { MarcoPublico } from '@/shared/ui';
 
 export const metadata = { title: 'Crear cuenta' };
 
 export default function RegistroPage() {
   return (
-    <div className="publico__panel">
+    <MarcoPublico>
       <FormularioRegistro />
-    </div>
+    </MarcoPublico>
   );
 }
