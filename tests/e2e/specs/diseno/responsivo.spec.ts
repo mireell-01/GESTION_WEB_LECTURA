@@ -1,8 +1,14 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, Page, test as base } from '@playwright/test';
 
-import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ipSimulada } from '../../support/iam';
+import { abrirAula, docenteConAula, sembrarCatalogoE2E, sesionApi } from '../../support/escuela';
+import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 
-test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
+/** Cada prueba es un dispositivo distinto (IP simulada) para que el límite por IP (RNF-019) no las mezcle. */
+const test = base.extend({
+  extraHTTPHeaders: async ({}, use) => {
+    await use({ 'X-Forwarded-For': ipSimulada() });
+  },
+});
 
 /**
  * Nivel 3 — Diseño responsivo (RNF-022, RNF-023). Se ejecuta en los tres proyectos
@@ -11,7 +17,9 @@ test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
  */
 async function revisarPantalla(page: Page): Promise<void> {
   const resultado = await page.evaluate(() => {
-    const visibles = [...document.querySelectorAll<HTMLElement>('button, a, input:not([type="checkbox"]), select')].filter((e) => {
+    // Casillas, opciones y "elegir archivo" se tocan por su etiqueta, que es la que mide 48 px.
+    const tocables = 'button, a, select, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), label.casilla, label.subir-archivo';
+    const visibles = [...document.querySelectorAll<HTMLElement>(tocables)].filter((e) => {
       const r = e.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
     });
@@ -79,5 +87,40 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Mundos llegará muy pronto' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
+  });
+  test('los paneles del modo escuela se adaptan: docente y familia vinculada (RF-014 a RF-019)', async ({ page, request }) => {
+    await sembrarCatalogoE2E();
+    const aula = await docenteConAula(request, [
+      { alias: 'Mateo', avatar: 'leon' },
+      { alias: 'Ana', avatar: 'buho' },
+    ]);
+    await abrirAula(page, aula);
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: 'Invitar a la familia de Mateo' }).click();
+    const caja = page.getByRole('region', { name: 'Código de invitación para la familia de Mateo' });
+    const codigo = (await caja.locator('.invitacion__codigo').innerText()).trim();
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: '+ Nueva asignación' }).click();
+    await page.getByRole('radio', { name: 'Solo algunos estudiantes' }).check();
+    await expect(page.getByRole('checkbox', { name: 'Ana', exact: true })).toBeVisible();
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: 'Varios con CSV' }).click();
+    await revisarPantalla(page);
+
+    await page.getByRole('link', { name: 'Mis aulas' }).first().click();
+    await expect(page.getByRole('link', { name: 'Abrir 3.° B' })).toBeVisible();
+    await revisarPantalla(page);
+    await salirDelPanel(page);
+
+    // La familia que canjeó el código ve al niño "Desde su aula".
+    const familia = await cuentaVerificada(request, { prefijo: 'diseno-familia' });
+    const vinculo = await request.post('/api/v1/familia/vincular', { headers: await sesionApi(request, familia), data: { codigo } });
+    expect(vinculo.status(), await vinculo.text()).toBe(201);
+    await ingresarComoAdulto(page, familia.email, familia.contrasena);
+    await expect(page.getByRole('heading', { name: 'Desde su aula (1)' })).toBeVisible();
+    await revisarPantalla(page);
   });
 });

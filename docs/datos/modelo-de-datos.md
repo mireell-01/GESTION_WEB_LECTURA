@@ -7,8 +7,8 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 
 | Schema | Módulo | Tablas | Estado |
 | :--- | :--- | :--- | :--- |
-| `iam` | 1 · Identidad, consentimiento y acceso | 10 | ✅ En uso |
-| `escuela` | 2 · Escuela (aulas y asignaciones) | 6 | `aula` y `matricula` en uso; el resto, lista para el Módulo 2 |
+| `iam` | 1 · Identidad, consentimiento y acceso | 10 | ✅ En uso (`vinculo_responsable` desde el Módulo 2) |
+| `escuela` | 2 · Escuela (aulas y asignaciones) | 6 | ✅ En uso: `aula`, `matricula`, `asignacion`, `asignacion_destinatario` e `invitacion_familiar`; `institucion`, lista para el registro de instituciones (RF-076) |
 | `contenido` | 3 · Biblioteca y gestión de contenido | 9 | Lista |
 | `aventura` | 4 · Mapa, mundos y misiones | 5 | Lista, con los 5 mundos cargados |
 | `diagnostico` | 5 · Diagnóstico | 3 | Lista |
@@ -16,7 +16,7 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `progreso` | 7 · Perfil lector y recomendaciones | 3 | Lista |
 | `gamificacion` | 8 · Gamificación | 6 | Lista, con los parámetros por defecto cargados |
 | `asistente` | 11 · Asistente inteligente | 2 | Lista |
-| `admin` | 12 · Administración | 2 | `outbox_evento` en uso; `auditoria`, lista |
+| `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; el resto de RF-077 llega con el Módulo 12) |
 | `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 vistas materializadas | Lista |
 
 **Total: 52 tablas y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
@@ -131,7 +131,10 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
 | `iam.refresh_token` | `iam.refresh_token` + `iam.refresh_token_usado` | Detección de reutilización de tokens (ADR-005) |
 | — | `iam.verificacion_correo`, `iam.exportacion` | Enlaces de un solo uso (RF-002, RF-004) y descargas de datos (RF-012) |
 | `iam.vinculo_responsable` | Solo familiares **adicionales** | El responsable principal ya está en `perfil_estudiante.cuenta_responsable_id` (exactamente uno) |
-| `escuela.aula.institucion_id` | Columna nueva y opcional | El Módulo 2 la completará al registrar instituciones (RF-076) |
+| `escuela.aula.institucion_id` | Columna nueva y opcional | Se completará al registrar instituciones (RF-076, Módulo 12); hoy el aula guarda el nombre de la institución |
+| `escuela.asignacion.estado` | Se guarda y se actualiza al consultar | Las asignaciones pasan de PROGRAMADA a ACTIVA y a VENCIDA por el paso del tiempo (hora de Lima): al listarlas, la API guarda el estado vigente; CERRADA lo pone la docente o el archivo del aula |
+| `escuela.invitacion_familiar.hash_codigo` | Huella SHA-256 del código | El código de 8 caracteres se muestra una sola vez a la docente; el canje marca `usada_en` con una sentencia condicional, así que dos canjes simultáneos no pueden usarlo dos veces |
+| `GET /aulas/{id}/tarjetas-acceso.pdf` (SRS §7) | `POST /aulas/{id}/tarjetas-acceso.pdf` | Generar tarjetas asigna PIN nuevos; un GET podría dispararse solo (vista previa de enlaces, reintentos) e invalidar tarjetas ya entregadas |
 | `admin.auditoria` particionada por mes | Tabla normal con índice por fecha | La herramienta de migraciones (Prisma) aún no gestiona tablas particionadas; se particionará cuando el volumen lo pida (riesgo documentado en el SRS) |
 
 ## Respaldo

@@ -3,9 +3,11 @@ import { MedioConsentimiento } from '../domain/entities/consentimiento';
 import { PerfilEstudianteVista, Reloj } from './dto/iam.dto';
 import { CuentaRepository } from './ports/cuenta.repository';
 import { PerfilEstudianteRepository } from './ports/perfil-estudiante.repository';
+import { VinculoRepository } from './ports/vinculo.repository';
 import { CrearPerfilEstudianteUseCase } from './use-cases/crear-perfil-estudiante.use-case';
 import { RegistrarConsentimientoUseCase } from './use-cases/registrar-consentimiento.use-case';
 import { RestablecerPinUseCase } from './use-cases/restablecer-pin.use-case';
+import { VincularFamiliarUseCase } from './use-cases/vincular-familiar.use-case';
 import { vistaPerfil } from './services/perfiles';
 
 export interface ResumenEstudiante {
@@ -16,6 +18,8 @@ export interface ResumenEstudiante {
   activo: boolean;
   bloqueado: boolean;
   cuentaResponsableId: string;
+  /** RF-019: familiares adicionales vinculados (máximo 2). */
+  familiaresVinculados: number;
 }
 
 export interface ResumenCuenta {
@@ -36,6 +40,8 @@ export class IamFacade {
     private readonly registrarConsentimiento: RegistrarConsentimientoUseCase,
     private readonly crearPerfil: CrearPerfilEstudianteUseCase,
     private readonly restablecerPinUseCase: RestablecerPinUseCase,
+    private readonly vincularFamiliarUseCase: VincularFamiliarUseCase,
+    private readonly vinculos: VinculoRepository,
     private readonly ahora: Reloj,
   ) {}
 
@@ -89,6 +95,7 @@ export class IamFacade {
     if (ids.length === 0) return [];
     const ahora = this.ahora();
     const perfiles = await this.perfiles.buscarPorIds(ids);
+    const vinculados = await this.vinculos.contarVigentesPorPerfiles(perfiles.map((p) => p.id));
     return perfiles.map((p) => ({
       id: p.id,
       alias: p.alias,
@@ -97,7 +104,22 @@ export class IamFacade {
       activo: p.activo,
       bloqueado: p.estaBloqueado(ahora),
       cuentaResponsableId: p.cuentaResponsableId,
+      familiaresVinculados: vinculados[p.id] ?? 0,
     }));
+  }
+
+  /** RF-019: comprueba que el familiar puede vincularse, sin guardar nada. */
+  async validarVinculoFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void> {
+    await this.vincularFamiliarUseCase.validar({ perfilId: params.perfilId, cuentaId: params.cuentaFamiliarId });
+  }
+
+  /** RF-019: el familiar pasa a acompañar al estudiante (lo invoca Escuela al canjear la invitación). */
+  vincularFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<PerfilEstudianteVista> {
+    return this.vincularFamiliarUseCase.ejecutar({
+      perfilId: params.perfilId,
+      cuentaId: params.cuentaFamiliarId,
+      origen: 'INVITACION_DOCENTE',
+    });
   }
 
   async estudiante(id: string): Promise<ResumenEstudiante> {

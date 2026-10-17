@@ -2,6 +2,7 @@
 
 import { AVATARES, EscenaMundo, Icono, Mascota, Paisaje, TonoMundo } from '@lectoaventura/ui';
 
+import { MisionesDelDocente } from '@/features/escuela/MisionesDelDocente';
 import { useSesion } from '@/shared/auth/sesion';
 
 /** Los 5 mundos del mapa de aventuras (SRS §1, RF-030). Se desbloquean con el módulo Aventura. */
@@ -15,7 +16,8 @@ const MUNDOS: { nombre: string; tono: TonoMundo }[] = [
 
 /**
  * Inicio del estudiante con la identidad aprobada. Solo muestra datos reales: alias y avatar.
- * La racha, las monedas y las misiones aparecerán cuando existan los módulos que las generan.
+ * Las misiones que deja la docente aparecen como "Misión del docente" (RF-018); la racha y las
+ * monedas aparecerán cuando existan los módulos que las generan.
  */
 export default function EstudianteHomePage() {
   const { usuario } = useSesion();
@@ -36,6 +38,8 @@ export default function EstudianteHomePage() {
         </p>
         <Paisaje className="est-heroe__paisaje" />
       </section>
+
+      <MisionesDelDocente />
 
       <section className="est-preparando">
         <Mascota tamano={96} flota />

@@ -92,8 +92,8 @@ describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-
 
   beforeEach(() => {
     e = crearEntorno();
-    caso = new AutenticarEstudianteUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.hash, e.tokens, e.emisor, e.bus, e.reloj.ahora);
-    contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
+    caso = new AutenticarEstudianteUseCase(e.perfiles, e.vinculos, e.dispositivos, e.contextoAula, e.hash, e.tokens, e.emisor, e.bus, e.reloj.ahora);
+    contexto = new ContextoIngresoUseCase(e.perfiles, e.vinculos, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
   });
 
   /** Tablet activada por un adulto: de su familia o, con aulaId, de su aula (CR-01). */

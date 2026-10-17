@@ -22,6 +22,7 @@ export class ServicioIdentidadIam implements ServicioIdentidad {
       rangoEdad: e.rangoEdad,
       activo: e.activo,
       bloqueado: e.bloqueado,
+      familiaresVinculados: e.familiaresVinculados,
     }));
   }
 
@@ -31,5 +32,13 @@ export class ServicioIdentidadIam implements ServicioIdentidad {
 
   avatares(): readonly string[] {
     return AVATARES;
+  }
+
+  async validarVinculoFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void> {
+    await this.iam.validarVinculoFamiliar(params);
+  }
+
+  async vincularFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void> {
+    await this.iam.vincularFamiliar(params);
   }
 }

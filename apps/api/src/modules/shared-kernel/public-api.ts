@@ -5,6 +5,7 @@ export * from './domain/errors/error-de-negocio';
 export * from './domain/ids';
 export * from './domain/value-objects';
 export * from './application/bus-eventos';
+export * from './application/catalogo-asignable';
 export * from './application/contexto-aula';
 export * from './application/recolector-datos';
 export * from './infrastructure/prisma.service';

@@ -32,7 +32,7 @@ Se compararon dos alternativas con la Product Owner:
 | `POST /acceso-estudiante/login` | `codigoAula` **o** `tokenDispositivo` | Solo `tokenDispositivo` |
 | `GET /acceso-estudiante/contexto-dispositivo` | Lista de avatares | `{ contexto: { tipo, nombre }, estudiantes }` |
 | RNF-019 | 30 intentos/min por código de aula | 30 intentos/min **por tablet** (y por IP) |
-| RF-017 (tarjetas, Módulo 2) | Código de aula + avatar + PIN | Avatar + alias + PIN (se ajusta en el Módulo 2) |
+| RF-017 (tarjetas, Módulo 2) | Código de aula + avatar + PIN | Nombre del aula + avatar + alias + PIN, sin código. **Hecho en el Módulo 2:** PDF A4 de 8 tarjetas; el PIN solo aparece en la tarjeta impresa (ni la matrícula ni la pantalla lo muestran) |
 
 **Lo que no cambia** (y protege a los niños):
 

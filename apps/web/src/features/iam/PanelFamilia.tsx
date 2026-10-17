@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Boton, Campo, Cargando, Icono, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, Avatar, Boton, Campo, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 import { guardarTokenDispositivo, leerTokenDispositivo } from '@/shared/auth/dispositivo';
@@ -11,7 +11,7 @@ import { useSesion } from '@/shared/auth/sesion';
 import { ConfigurarMfa } from './ConfigurarMfa';
 import { DatosPerfilNuevo, FormularioPerfil } from './FormularioPerfil';
 import { TarjetaPerfil } from './TarjetaPerfil';
-import { PerfilEstudiante } from './tipos';
+import { NOMBRE_RANGO, PerfilEstudiante } from './tipos';
 
 const MAX_PERFILES = 6;
 
@@ -116,6 +116,87 @@ function VincularDispositivo() {
   );
 }
 
+/**
+ * RF-019: la familia escribe el código que le dio la docente y pasa a acompañar a su hija o hijo
+ * del aula (sin crear otro perfil). No hace falta el consentimiento parental: el perfil ya existe
+ * bajo el consentimiento institucional del aula.
+ */
+function VincularConCodigo({ onVinculado }: { onVinculado: () => void }) {
+  const [codigo, setCodigo] = useState('');
+  const [mensaje, setMensaje] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  const enviar = async (e: FormEvent) => {
+    e.preventDefault();
+    setEnviando(true);
+    setMensaje(null);
+    try {
+      const r = await api<{ estudiante: { alias: string }; aula: string }>('/familia/vincular', { metodo: 'POST', cuerpo: { codigo } });
+      setCodigo('');
+      setMensaje({ tipo: 'exito', texto: `¡Listo! Ahora acompañas a ${r.estudiante.alias} (${r.aula}) desde tu cuenta.` });
+      onVinculado();
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: mensajeDeError(err) });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Tarjeta
+      titulo={
+        <span className="titulo-con-icono">
+          <Icono nombre="aula" tamano={28} />
+          Tengo un código del aula
+        </span>
+      }
+    >
+      <form onSubmit={enviar} className="pila-sm">
+        {mensaje ? <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta> : null}
+        <p className="texto-suave" style={{ margin: 0 }}>
+          Si la docente de tu hija o hijo te dio un código, escríbelo aquí para acompañarle desde casa. Sirve una sola vez.
+        </p>
+        <Campo
+          etiqueta="Código de la docente"
+          placeholder="ABCD-2345"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          maxLength={20}
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+        />
+        <div>
+          <Boton type="submit" cargando={enviando} disabled={codigo.replace(/[\s-]/g, '').length < 8}>
+            Usar el código
+          </Boton>
+        </div>
+      </form>
+    </Tarjeta>
+  );
+}
+
+/** RN-17: un estudiante del aula que la familia acompaña; su perfil y PIN los gestiona su docente. */
+function TarjetaVinculado({ perfil }: { perfil: PerfilEstudiante }) {
+  return (
+    <article className="la-tarjeta pila-sm">
+      <div className="fila">
+        <Avatar clave={perfil.avatar} tamano={56} decorativo />
+        <div style={{ flex: 1 }}>
+          <h3 style={{ margin: 0 }}>{perfil.alias}</h3>
+          <div className="fila" style={{ gap: 'var(--la-espacio-1)' }}>
+            <Chip tipo="info">{NOMBRE_RANGO[perfil.rangoEdad]}</Chip>
+            <Chip tipo="exito">Desde su aula</Chip>
+          </div>
+        </div>
+      </div>
+      <p className="texto-suave" style={{ margin: 0 }}>
+        Su docente gestiona su perfil y su PIN. Puede entrar en este dispositivo si lo vinculas.
+      </p>
+    </article>
+  );
+}
+
 /** Panel familiar: hijos, consentimiento, dispositivo y seguridad de la cuenta. */
 export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfil: PerfilEstudiante) => ReactNode }) {
   const { usuario } = useSesion();
@@ -149,6 +230,8 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
 
   if (error) return <Alerta tipo="error">{error}</Alerta>;
   if (!consentimiento || !perfiles) return <Cargando />;
+  const propios = perfiles.filter((p) => p.relacion !== 'VINCULADO');
+  const vinculados = perfiles.filter((p) => p.relacion === 'VINCULADO');
 
   return (
     <div className="pila">
@@ -162,9 +245,9 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
       ) : (
         <>
           <Tarjeta
-            titulo={`Mis hijos (${perfiles.length}/${MAX_PERFILES})`}
+            titulo={`Mis hijos (${propios.length}/${MAX_PERFILES})`}
             acciones={
-              !creando && perfiles.length < MAX_PERFILES ? (
+              !creando && propios.length < MAX_PERFILES ? (
                 <Boton tamano="pequeno" onClick={() => setCreando(true)}>
                   + Agregar perfil
                 </Boton>
@@ -173,19 +256,30 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
           >
             {creando ? (
               <FormularioPerfil onGuardar={crear} onCancelar={() => setCreando(false)} />
-            ) : perfiles.length === 0 ? (
+            ) : propios.length === 0 ? (
               <Alerta tipo="info">Crea el primer perfil para que tu hija o hijo empiece su aventura.</Alerta>
             ) : (
               <div className="rejilla">
-                {perfiles.map((p) => (
+                {propios.map((p) => (
                   <TarjetaPerfil key={p.id} perfil={p} onCambio={cargar} extra={renderExtraPerfil?.(p)} />
                 ))}
               </div>
             )}
           </Tarjeta>
-          {perfiles.length > 0 ? <VincularDispositivo /> : null}
         </>
       )}
+
+      {vinculados.length > 0 ? (
+        <Tarjeta titulo={`Desde su aula (${vinculados.length})`}>
+          <div className="rejilla">
+            {vinculados.map((p) => (
+              <TarjetaVinculado key={p.id} perfil={p} />
+            ))}
+          </div>
+        </Tarjeta>
+      ) : null}
+      <VincularConCodigo onVinculado={cargar} />
+      {propios.length + vinculados.length > 0 ? <VincularDispositivo /> : null}
 
       <Tarjeta
         titulo={

@@ -58,7 +58,12 @@ export async function aulaConEstudiante(
   });
   expect(tarjeta.status(), await tarjeta.text()).toBe(201);
   const t = await tarjeta.json();
-  return { docente: { email, contrasena }, aula: '3.° B', alias: t.alias, pin: t.pin };
+  // RF-017: la matrícula no devuelve el PIN (solo va en la tarjeta impresa); como responsable,
+  // la docente fija uno conocido para la prueba (RN-03).
+  const pin = '4826';
+  const restablecido = await request.post(`/api/v1/estudiantes/${t.estudianteId}/pin/restablecer`, { headers, data: { pinNuevo: pin } });
+  expect(restablecido.status(), await restablecido.text()).toBe(200);
+  return { docente: { email, contrasena }, aula: '3.° B', alias: t.alias, pin };
 }
 
 /**

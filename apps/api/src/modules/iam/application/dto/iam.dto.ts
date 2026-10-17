@@ -56,6 +56,14 @@ export interface PerfilEstudianteVista {
   creadoEn: string;
 }
 
+/**
+ * Perfil en el panel familiar (RF-071, RN-17): los que la cuenta creó (RESPONSABLE) y los que
+ * acompaña por invitación de su docente (VINCULADO, RF-019), que solo puede consultar.
+ */
+export interface PerfilFamiliaVista extends PerfilEstudianteVista {
+  relacion: 'RESPONSABLE' | 'VINCULADO';
+}
+
 export interface UsuarioActualVista {
   id: string;
   rol: string;

@@ -59,7 +59,8 @@ interface Opciones {
   cabeceras?: Record<string, string>;
 }
 
-export async function api<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
+/** Hace la petición, renueva la sesión una vez ante un 401 y convierte los errores en ErrorApi. */
+async function solicitar(ruta: string, opciones: Opciones): Promise<Response> {
   const ejecutar = () =>
     fetch(`${BASE_API}${ruta}`, {
       method: opciones.metodo ?? 'GET',
@@ -88,10 +89,24 @@ export async function api<T>(ruta: string, opciones: Opciones = {}): Promise<T> 
     }
     throw new ErrorApi(res.status, problema.detail ?? 'No pudimos completar la acción. Inténtalo de nuevo.', problema);
   }
+  return res;
+}
 
+export async function api<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
+  const res = await solicitar(ruta, opciones);
   if (res.status === 204) return undefined as T;
   const texto = await res.text();
   return (texto ? JSON.parse(texto) : undefined) as T;
+}
+
+/**
+ * Descarga un archivo generado por la API (p. ej. las tarjetas en PDF, RF-017) con la misma sesión.
+ * El nombre sale de Content-Disposition.
+ */
+export async function apiArchivo(ruta: string, opciones: Opciones = {}): Promise<{ archivo: Blob; nombre: string }> {
+  const res = await solicitar(ruta, opciones);
+  const nombre = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'archivo';
+  return { archivo: await res.blob(), nombre };
 }
 
 /** Mensaje legible de cualquier error capturado. */

@@ -313,7 +313,7 @@ describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071
     const perfil = await perfilEstudiante(e, familia.id);
     const actualizar = new ActualizarPerfilUseCase(e.perfiles, e.sesiones, e.bus, e.reloj.ahora);
     const vincular = new VincularDispositivoUseCase(e.cuentas, e.dispositivos, e.contextoAula, e.tokens, e.bus, e.generarId, e.reloj.ahora);
-    const contexto = new ContextoIngresoUseCase(e.perfiles, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
+    const contexto = new ContextoIngresoUseCase(e.perfiles, e.vinculos, e.dispositivos, e.contextoAula, e.tokens, e.reloj.ahora);
     const { tokenDispositivo, contexto: activado } = await vincular.ejecutar({ cuentaId: familia.id, nombre: 'Tablet' });
     const alumnos = async () => (await contexto.deDispositivo(tokenDispositivo)).estudiantes;
 

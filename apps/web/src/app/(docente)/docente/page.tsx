@@ -2,6 +2,7 @@
 
 import { Alerta, Icono, Tarjeta } from '@lectoaventura/ui';
 
+import { MisAulas } from '@/features/escuela/MisAulas';
 import { ActivarTabletAula } from '@/features/iam/ActivarTabletAula';
 import { ConfigurarMfa } from '@/features/iam/ConfigurarMfa';
 import { useSesion } from '@/shared/auth/sesion';
@@ -12,8 +13,10 @@ export default function DocenteHomePage() {
     <div className="pila">
       <header className="saludo-adulto">
         <h1>Hola, {usuario?.nombre?.split(' ')[0] ?? ''} 👋</h1>
-        <p className="texto-suave">Aquí administrarás tus aulas, estudiantes y asignaciones.</p>
+        <p className="texto-suave">Administra tus aulas, estudiantes y asignaciones.</p>
       </header>
+
+      <MisAulas />
 
       <ActivarTabletAula />
 

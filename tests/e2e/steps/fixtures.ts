@@ -1,5 +1,6 @@
 import { createBdd, test as base } from 'playwright-bdd';
 
+import type { AulaPreparada } from '../support/escuela';
 import { ipSimulada } from '../support/iam';
 
 /** Estado compartido entre los pasos de un mismo escenario. */
@@ -8,6 +9,11 @@ export interface Mundo {
   contrasena?: string;
   /** Tarjeta de acceso de la estudiante de un aula (CR-01). */
   tarjeta?: { docente: { email: string; contrasena: string }; aula: string; alias: string; pin: string };
+  /** Modo escuela (RF-014 a RF-020). */
+  aula?: AulaPreparada;
+  pines?: string[];
+  lectura?: string;
+  codigo?: string;
 }
 
 /**

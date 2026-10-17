@@ -23,6 +23,7 @@ import type { SesionRepository } from '../../../src/modules/iam/application/port
 import type { DatosAccessToken, TokenService } from '../../../src/modules/iam/application/ports/token.service';
 import type { TotpService } from '../../../src/modules/iam/application/ports/totp.service';
 import type { VerificacionRepository } from '../../../src/modules/iam/application/ports/verificacion.repository';
+import type { VinculoFamiliar, VinculoRepository } from '../../../src/modules/iam/application/ports/vinculo.repository';
 import { EmisorSesiones } from '../../../src/modules/iam/application/services/emisor-sesiones';
 import { Consentimiento } from '../../../src/modules/iam/domain/entities/consentimiento';
 import { Cuenta } from '../../../src/modules/iam/domain/entities/cuenta';
@@ -51,6 +52,20 @@ export class PerfilesEnMemoria implements PerfilEstudianteRepository {
   async buscarPorIds(ids: string[]) { return ids.map((id) => this.filas.get(id)).filter((p): p is PerfilEstudiante => !!p); }
   async listarPorResponsable(cuentaId: string) {
     return [...this.filas.values()].filter((p) => p.cuentaResponsableId === cuentaId && !p.propsSnapshot.eliminadoEn);
+  }
+}
+
+/** Vínculos de familiares adicionales (RF-019). */
+export class VinculosEnMemoria implements VinculoRepository {
+  readonly filas: VinculoFamiliar[] = [];
+  async agregar(v: VinculoFamiliar & { id: string }) {
+    const { id: _id, ...vinculo } = v;
+    this.filas.push(vinculo);
+  }
+  async vigentesDePerfil(perfilId: string) { return this.filas.filter((v) => v.perfilId === perfilId); }
+  async perfilesVinculadosA(cuentaId: string) { return this.filas.filter((v) => v.cuentaId === cuentaId).map((v) => v.perfilId); }
+  async contarVigentesPorPerfiles(ids: string[]) {
+    return Object.fromEntries(ids.map((id) => [id, this.filas.filter((v) => v.perfilId === id).length]).filter(([, n]) => n));
   }
 }
 
@@ -209,6 +224,7 @@ export function crearEntorno() {
     generarId,
     cuentas: new CuentasEnMemoria(),
     perfiles: new PerfilesEnMemoria(),
+    vinculos: new VinculosEnMemoria(),
     consentimientos: new ConsentimientosEnMemoria(),
     verificaciones: new VerificacionesEnMemoria(),
     sesiones,

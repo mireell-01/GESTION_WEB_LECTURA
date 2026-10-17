@@ -36,6 +36,8 @@ a:focus-visible,
 button:focus-visible,
 select:focus-visible,
 input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+.subir-archivo:focus-within,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow: var(--la-foco);
@@ -1076,6 +1078,331 @@ p {
   overflow-x: auto;
 }
 
+.tabla caption {
+  padding-bottom: 6px;
+  text-align: left;
+}
+
+/* ── Modo escuela: aulas, estudiantes, asignaciones (RF-014 a RF-020) ──── */
+.fila--compacta {
+  gap: 6px;
+}
+
+.form-columnas {
+  display: grid;
+  gap: 0 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+/* Casillas y opciones con objetivo táctil de 48 px (RNF-023). */
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--la-target-min);
+  cursor: pointer;
+}
+
+.casilla input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  accent-color: var(--la-color-primario);
+}
+
+.casilla--sola {
+  justify-content: center;
+  min-width: var(--la-target-min);
+}
+
+.grupo-avatares,
+.grupo-opciones {
+  min-width: 0;
+  margin: 0 0 var(--la-espacio-3);
+  padding: 0;
+  border: 0;
+}
+
+.selector-modo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--la-espacio-3);
+}
+
+.subir-archivo {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: var(--la-target-min);
+  text-decoration: none;
+}
+
+.volver__icono {
+  transform: rotate(180deg);
+}
+
+.aulas,
+.alumnos,
+.asignaciones {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aula-enlace {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--la-target-min);
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid var(--la-color-fondo-alterno);
+  background: #fbfaff;
+  color: var(--la-color-texto);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.aula-enlace:hover {
+  border-color: var(--la-color-primario-borde);
+}
+
+.aula-enlace__datos {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-weight: 400;
+}
+
+.aula-enlace__datos strong {
+  font: 600 var(--la-texto-lg) var(--la-font-titulo);
+}
+
+.aula-enlace__flecha {
+  color: var(--la-color-primario);
+}
+
+.cabecera-aula {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.cabecera-aula h1,
+.cabecera-aula p {
+  margin: 0;
+}
+
+.cabecera-aula__icono {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario);
+}
+
+.barra-tarjetas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-bottom: var(--la-espacio-3);
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--la-color-secundario-suave);
+}
+
+.barra-tarjetas__nota {
+  flex-basis: 100%;
+  margin: 0 0 6px;
+  font-size: var(--la-texto-sm);
+}
+
+.alumno,
+.asignacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 2px solid var(--la-color-fondo-alterno);
+  background: #fbfaff;
+}
+
+.alumno__datos,
+.asignacion__datos {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.alumno__datos strong,
+.asignacion__datos strong {
+  font: 600 var(--la-texto-lg) / 1.2 var(--la-font-titulo);
+}
+
+.alumno__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 100%;
+}
+
+.asignacion__icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+
+.asignacion__icono--lectura {
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario);
+}
+
+.asignacion__icono--mision {
+  background: var(--la-color-secundario-suave);
+  color: #8a5a00;
+}
+
+.asignacion__fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--la-texto-sm);
+}
+
+.destinatarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0 12px;
+  padding-left: 34px;
+}
+
+/* RF-019: el código se lee y se dicta con facilidad; se muestra una sola vez. */
+.invitacion {
+  display: grid;
+  gap: 6px;
+  margin-bottom: var(--la-espacio-3);
+  padding: 16px;
+  border-radius: 20px;
+  border: 3px dashed var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+.invitacion p {
+  margin: 0;
+}
+
+.invitacion__codigo {
+  font: 700 clamp(2rem, 1.6rem + 2vw, 2.75rem) / 1.1 var(--la-font-titulo);
+  letter-spacing: 0.12em;
+  color: var(--la-color-primario-fuerte);
+}
+
+.la-tarjeta.zona-cuidado {
+  border: 2px dashed var(--la-color-borde);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* RF-018: "Misión del docente" en el inicio del estudiante. */
+.est-misiones {
+  display: grid;
+  gap: 12px;
+}
+
+.est-misiones__lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.est-mision {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 3px solid var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+  box-shadow: var(--la-sombra);
+}
+
+.est-mision__icono {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.est-mision__icono--lectura {
+  background: var(--la-color-primario);
+  color: #fff;
+}
+
+.est-mision__icono--mision {
+  background: var(--la-color-secundario);
+  color: var(--la-color-texto);
+}
+
+.est-mision__texto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.est-mision__sello {
+  width: fit-content;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--la-color-primario);
+  color: #fff;
+  font: 700 0.8125rem var(--la-font-redondeada);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.est-mision__titulo {
+  font: 700 1.375rem / 1.15 var(--la-font-titulo);
+}
+
+.est-mision__fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--la-texto-base) var(--la-font-titulo);
+  color: var(--la-color-texto-suave);
+}
+
+@container est (min-width: 640px) {
+  .est-misiones__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ── Tablet vertical (768–1023 px) ─────────────────────────────────────── */
 @media (min-width: 768px) {
   .portada-heroe__ilustracion {
@@ -1129,6 +1456,10 @@ p {
 
   .lista-aulas__fila .la-boton {
     grid-column: auto;
+  }
+
+  .alumno__acciones {
+    flex: 0 0 auto;
   }
 }
 

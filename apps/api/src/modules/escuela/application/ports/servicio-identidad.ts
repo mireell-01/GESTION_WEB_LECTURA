@@ -8,6 +8,8 @@ export interface EstudianteIdentidad {
   activo: boolean;
   /** Bloqueado temporalmente por PIN incorrectos (lo ve el docente para ayudar). */
   bloqueado?: boolean;
+  /** RF-019: familiares adicionales vinculados. */
+  familiaresVinculados?: number;
 }
 
 /**
@@ -32,4 +34,7 @@ export interface ServicioIdentidad {
   estudiantes(ids: string[]): Promise<EstudianteIdentidad[]>;
   restablecerPin(params: { responsableId: string; perfilId: string; pinNuevo: string }): Promise<void>;
   avatares(): readonly string[];
+  /** RF-019: lanza el error de negocio si el familiar no puede vincularse (sin guardar nada). */
+  validarVinculoFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void>;
+  vincularFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void>;
 }

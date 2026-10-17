@@ -6,4 +6,7 @@ export const EVENTOS_ESCUELA = {
   TARJETAS_GENERADAS: 'escuela.TarjetasGeneradas',
   AULA_ARCHIVADA: 'escuela.AulaArchivada',
   ASIGNACION_CREADA: 'escuela.AsignacionCreada',
+  ASIGNACION_CERRADA: 'escuela.AsignacionCerrada',
+  INVITACION_FAMILIAR_GENERADA: 'escuela.InvitacionFamiliarGenerada',
+  FAMILIAR_VINCULADO: 'escuela.FamiliarVinculado',
 } as const;

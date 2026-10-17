@@ -9,6 +9,8 @@ export interface PerfilEstudiante {
   activo: boolean;
   bloqueadoHasta: string | null;
   creadoEn: string;
+  /** RF-019: RESPONSABLE si la familia lo creó; VINCULADO si lo acompaña por invitación de su docente. */
+  relacion?: 'RESPONSABLE' | 'VINCULADO';
 }
 
 export const NOMBRE_RANGO: Record<PerfilEstudiante['rangoEdad'], string> = {
