@@ -1177,6 +1177,12 @@ p {
   border-color: var(--la-color-primario-borde);
 }
 
+/* Dentro de una tarjeta, la regla de enlaces táctiles los vuelve inline-flex: las fichas son bloques. */
+.la-tarjeta a.aula-enlace,
+.la-tarjeta a.ficha {
+  display: grid;
+}
+
 .aula-enlace__datos {
   display: grid;
   gap: 4px;
@@ -1321,6 +1327,280 @@ p {
   border: 2px dashed var(--la-color-borde);
   background: transparent;
   box-shadow: none;
+}
+
+/* ── Contenido: backoffice y biblioteca (RF-021 a RF-029) ──────────────── */
+.casillas-en-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+
+.lista-simple {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.oraciones,
+.recursos,
+.fichas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.oracion {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #fbfaff;
+  border: 2px solid var(--la-color-fondo-alterno);
+}
+
+.oracion__numero {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+  font-weight: 700;
+}
+
+.oracion__acciones,
+.cortes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.corte {
+  min-height: var(--la-target-min);
+  padding: 0 12px;
+  border: 2px dashed var(--la-color-primario-borde);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--la-color-texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.corte:hover {
+  border-color: var(--la-color-primario);
+}
+
+.recurso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 2px solid var(--la-color-fondo-alterno);
+}
+
+.recurso__imagen {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.recurso__audio {
+  max-width: 100%;
+}
+
+.recurso__datos {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 160px;
+}
+
+.archivo-cargando {
+  display: inline-block;
+  width: 96px;
+  height: 72px;
+  border-radius: 12px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.subir-archivo--inactivo {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.momento {
+  display: grid;
+  gap: 12px;
+  margin-bottom: var(--la-espacio-4);
+}
+
+.momento h3,
+.actividad h4 {
+  margin: 0;
+}
+
+.momento > .la-boton {
+  justify-self: start;
+}
+
+.actividad {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid var(--la-color-primario-borde);
+  background: #fdfcff;
+}
+
+.item-editor {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--la-color-fondo);
+}
+
+.item-editor p {
+  margin: 0 0 4px;
+}
+
+.lista-textos__fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.lista-textos__fila .la-campo {
+  margin-bottom: 0;
+}
+
+.lista-textos__numero {
+  display: grid;
+  place-items: center;
+  min-width: var(--la-target-min);
+  min-height: var(--la-target-min);
+  font-weight: 700;
+  color: var(--la-color-texto-suave);
+}
+
+.evidencias {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.barra-guardar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 4px;
+  background: linear-gradient(transparent, var(--la-color-superficie) 30%);
+}
+
+.filtros {
+  display: grid;
+  gap: 8px;
+}
+
+.filtros--infantil {
+  padding: 14px;
+  border-radius: 24px;
+  background: var(--la-color-secundario-suave);
+}
+
+.fichas {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+
+.ficha {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  height: 100%;
+  padding: 16px;
+  border-radius: 22px;
+  border: 2px solid var(--la-color-primario-borde);
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+  text-decoration: none;
+  box-shadow: var(--la-sombra);
+  font-weight: 400;
+}
+
+.ficha:hover {
+  border-color: var(--la-color-primario);
+}
+
+.ficha__icono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario);
+}
+
+.ficha__titulo {
+  font: 700 1.25rem / 1.2 var(--la-font-titulo);
+}
+
+.ficha__resumen {
+  color: var(--la-color-texto-suave);
+}
+
+.biblioteca--infantil .ficha {
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 26px;
+}
+
+.lectura {
+  display: grid;
+  gap: 12px;
+}
+
+.lectura h1 {
+  margin: 0;
+}
+
+.lectura--infantil {
+  padding: 20px;
+  border-radius: 28px;
+  background: var(--la-color-superficie);
+  box-shadow: var(--la-sombra);
+}
+
+.lectura__imagen {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 20px;
+  background: var(--la-color-fondo);
+}
+
+.lectura__texto p {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.lectura--infantil .lectura__texto p {
+  font: 600 clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem) / 1.7 var(--la-font-redondeada);
+}
+
+.lectura__pronto {
+  margin: 0;
+  font: 600 var(--la-texto-lg) var(--la-font-titulo);
+  color: var(--la-color-primario);
 }
 
 /* RF-018: "Misión del docente" en el inicio del estudiante. */

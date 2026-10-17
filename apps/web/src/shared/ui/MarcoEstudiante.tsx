@@ -18,7 +18,8 @@ interface Seccion {
 /** Las secciones futuras se muestran con candado, como los mundos aún no desbloqueados. */
 const SECCIONES: Seccion[] = [
   { texto: 'Inicio', icono: 'inicio', href: '/estudiante' },
-  { texto: 'Mundos', icono: 'libro' },
+  { texto: 'Biblioteca', icono: 'libro', href: '/estudiante/biblioteca' },
+  { texto: 'Mundos', icono: 'globo' },
   { texto: 'Progreso', icono: 'progreso' },
   { texto: 'Mi perfil', icono: 'perfil' },
 ];
@@ -69,7 +70,11 @@ export function MarcoEstudiante({ children }: { children: ReactNode }) {
           {SECCIONES.map((s) => (
             <li key={s.texto}>
               {s.href ? (
-                <Link href={s.href} className="est-nav__item" aria-current={ruta === s.href ? 'page' : undefined}>
+                <Link
+                  href={s.href}
+                  className="est-nav__item"
+                  aria-current={ruta === s.href || (s.href !== '/estudiante' && ruta.startsWith(s.href)) ? 'page' : undefined}
+                >
                   <span className="est-nav__icono">
                     <Icono nombre={s.icono} tamano={28} />
                   </span>

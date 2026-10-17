@@ -1,3 +1,6 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { inject } from 'vitest';
 
 /**
@@ -11,3 +14,5 @@ process.env['NODE_ENV'] = 'test';
 // Todas las pruebas salen de 127.0.0.1: se amplía el límite de tasa salvo en la prueba que lo verifica.
 process.env['LIMITE_TASA_FACTOR'] = '100';
 delete process.env['SMTP_HOST'];
+// RF-023: los archivos subidos en las pruebas van a una carpeta temporal, no a la del proyecto.
+process.env['ALMACEN_DIR'] = join(tmpdir(), 'lectoaventura-almacen-pruebas');

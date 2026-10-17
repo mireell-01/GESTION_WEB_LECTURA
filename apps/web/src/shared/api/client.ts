@@ -56,6 +56,8 @@ export function renovarSesion(): Promise<RespuestaSesion | null> {
 interface Opciones {
   metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   cuerpo?: unknown;
+  /** Archivo binario (p. ej. una imagen para su URL de subida firmada, RF-023). */
+  binario?: Blob;
   cabeceras?: Record<string, string>;
 }
 
@@ -67,10 +69,11 @@ async function solicitar(ruta: string, opciones: Opciones): Promise<Response> {
       credentials: 'same-origin',
       headers: {
         ...(opciones.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(opciones.binario ? { 'Content-Type': 'application/octet-stream' } : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...opciones.cabeceras,
       },
-      body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
+      body: opciones.binario ?? (opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined),
     });
 
   let res = await ejecutar();

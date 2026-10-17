@@ -29,6 +29,8 @@ export default async function limpieza(): Promise<void> {
     await prisma.sesion.deleteMany({ where: { sujetoId: { in: sujetos } } });
     await prisma.exportacion.deleteMany({ where: { perfilId: { in: idsPerfiles } } });
     await prisma.aula.deleteMany({ where: { docenteId: { in: idsCuentas } } });
+    // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).
+    await prisma.lectura.deleteMany({ where: { autorId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });
     await borrarCatalogoE2E(prisma);
   } finally {

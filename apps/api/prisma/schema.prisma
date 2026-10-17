@@ -348,6 +348,8 @@ model VersionLectura {
   autorId             String    @map("autor_id") @db.Uuid
   revisorId           String?   @map("revisor_id") @db.Uuid
   esRamificada        Boolean   @default(false) @map("es_ramificada")
+  /// RF-026: motivo del último rechazo del revisor (se limpia al volver a enviar).
+  comentarioRevision  String?   @map("comentario_revision")
   creadaEn            DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
   enviadaRevisionEn   DateTime? @map("enviada_revision_en") @db.Timestamptz(3)
   publicadaEn         DateTime? @map("publicada_en") @db.Timestamptz(3)

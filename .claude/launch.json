@@ -12,6 +12,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace", "@lectoaventura/web", "--", "-p", "3002"],
       "port": 3002
+    },
+    {
+      "name": "api-compilada",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--workspace", "@lectoaventura/api"],
+      "port": 3001
+    },
+    {
+      "name": "web-compilada",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--workspace", "@lectoaventura/web", "--", "-p", "3002"],
+      "port": 3002
     }
   ]
 }

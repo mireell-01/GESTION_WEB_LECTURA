@@ -11,9 +11,14 @@ export function correoUnico(prefijo: string): string {
   return `${prefijo}.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}@${DOMINIO_E2E}`;
 }
 
-/** IP simulada por prueba: cada prueba se comporta como un dispositivo distinto (RNF-019). */
+/**
+ * IP simulada por prueba: cada prueba se comporta como un dispositivo distinto (RNF-019).
+ * Se usa el prefijo IPv6 de documentación (2001:db8::/32, RFC 3849) con 32 bits al azar: con solo
+ * 250 direcciones IPv4, dos pruebas del mismo minuto llegaban a compartir IP y sumaban sus ingresos.
+ */
 export function ipSimulada(): string {
-  return `198.51.100.${Math.floor(Math.random() * 250) + 1}`;
+  const grupo = () => Math.floor(Math.random() * 0x10000).toString(16);
+  return `2001:db8::${grupo()}:${grupo()}`;
 }
 
 /** Crea y verifica una cuenta por la API (usando la bandeja de correos de desarrollo). */
