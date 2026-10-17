@@ -45,6 +45,7 @@ export class DetalleAulaUseCase {
               rangoEdad: e.rangoEdad,
               activo: e.activo,
               bloqueado: e.bloqueado ?? false,
+              familiaresVinculados: e.familiaresVinculados ?? 0,
               matriculadoEn: m.propsSnapshot.creadaEn.toISOString(),
             }
           : null;

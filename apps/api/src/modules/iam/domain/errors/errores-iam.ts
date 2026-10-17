@@ -82,3 +82,17 @@ export class DatoInvalidoError extends ErrorDeNegocio {
     super(mensaje, 'VALIDACION');
   }
 }
+
+/** RF-019: el familiar ya acompaña a ese estudiante (como responsable o vinculado). */
+export class YaVinculadoError extends ErrorDeNegocio {
+  constructor(alias: string) {
+    super(`Ya acompañas a ${alias} desde tu cuenta`, 'CONFLICTO');
+  }
+}
+
+/** SRS §7: cada estudiante tiene 1 responsable principal y hasta 2 familiares vinculados. */
+export class LimiteFamiliaresError extends ErrorDeNegocio {
+  constructor(alias: string, maximo: number) {
+    super(`${alias} ya tiene ${maximo} familiares vinculados. Si hace falta un cambio, habla con su docente.`, 'CONFLICTO');
+  }
+}

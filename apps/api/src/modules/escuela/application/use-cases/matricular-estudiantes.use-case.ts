@@ -2,7 +2,7 @@ import { BusEventos, crearEvento, ErrorDeNegocio } from '../../../shared-kernel/
 import { Matricula } from '../../domain/entities/matricula';
 import { EVENTOS_ESCUELA } from '../../domain/events/eventos-escuela';
 import { generarPinTarjeta, PoliticaMatricula } from '../../domain/services/politica-matricula';
-import { Aleatorio, GeneradorId, Reloj, TarjetaAcceso } from '../dto/escuela.dto';
+import { Aleatorio, EstudianteMatriculado, GeneradorId, Reloj } from '../dto/escuela.dto';
 import { AulaRepository } from '../ports/aula.repository';
 import { MatriculaRepository } from '../ports/matricula.repository';
 import { ServicioIdentidad } from '../ports/servicio-identidad';
@@ -25,8 +25,8 @@ export const MAX_FILAS_CSV = 60;
 
 /**
  * Use Case: MatricularEstudiantes (RF-015, RF-016).
- * Crea cada perfil bajo el consentimiento institucional del aula, con un PIN aleatorio que solo
- * se devuelve aquí para imprimir la tarjeta de acceso (RF-017).
+ * Crea cada perfil bajo el consentimiento institucional del aula con un PIN aleatorio que nadie ve:
+ * el PIN que usará el niño se asigna al imprimir su tarjeta de acceso (RF-017), y solo existe en ella.
  */
 export class MatricularEstudiantesUseCase {
   constructor(
@@ -40,17 +40,17 @@ export class MatricularEstudiantesUseCase {
   ) {}
 
   /** RF-015: registro individual. */
-  async uno(entrada: { docenteId: string; aulaId: string } & DatosEstudianteNuevo): Promise<TarjetaAcceso> {
-    const { tarjetas, rechazadas } = await this.varios(entrada.docenteId, entrada.aulaId, [entrada]);
-    const tarjeta = tarjetas[0];
-    if (!tarjeta) {
+  async uno(entrada: { docenteId: string; aulaId: string } & DatosEstudianteNuevo): Promise<EstudianteMatriculado> {
+    const { matriculados, rechazadas } = await this.varios(entrada.docenteId, entrada.aulaId, [entrada]);
+    const matriculado = matriculados[0];
+    if (!matriculado) {
       throw new ErrorDeNegocio(rechazadas[0]?.motivo ?? 'No se pudo registrar al estudiante', 'VALIDACION');
     }
-    return tarjeta;
+    return matriculado;
   }
 
   /** RF-016: registro masivo desde CSV (alias, año, mes, avatar opcional), hasta 60 filas. */
-  async desdeCsv(entrada: { docenteId: string; aulaId: string; csv: string }): Promise<{ tarjetas: TarjetaAcceso[]; rechazadas: FilaRechazada[] }> {
+  async desdeCsv(entrada: { docenteId: string; aulaId: string; csv: string }): Promise<{ matriculados: EstudianteMatriculado[]; rechazadas: FilaRechazada[] }> {
     const lineas = entrada.csv
       .replace(/^\uFEFF/, '')
       .split(/\r?\n/)
@@ -86,14 +86,14 @@ export class MatricularEstudiantesUseCase {
     }
 
     const resultado = await this.varios(entrada.docenteId, entrada.aulaId, datos);
-    return { tarjetas: resultado.tarjetas, rechazadas: [...rechazadas, ...resultado.rechazadas].sort((a, b) => a.fila - b.fila) };
+    return { matriculados: resultado.matriculados, rechazadas: [...rechazadas, ...resultado.rechazadas].sort((a, b) => a.fila - b.fila) };
   }
 
   private async varios(
     docenteId: string,
     aulaId: string,
     lista: (DatosEstudianteNuevo & { fila?: number; contenido?: string })[],
-  ): Promise<{ tarjetas: TarjetaAcceso[]; rechazadas: FilaRechazada[] }> {
+  ): Promise<{ matriculados: EstudianteMatriculado[]; rechazadas: FilaRechazada[] }> {
     const aula = await cargarAulaPropia(this.aulas, aulaId, docenteId);
     aula.asegurarEditable();
 
@@ -105,7 +105,7 @@ export class MatricularEstudiantesUseCase {
     }));
 
     const ahora = this.ahora();
-    const tarjetas: TarjetaAcceso[] = [];
+    const matriculados: EstudianteMatriculado[] = [];
     const rechazadas: FilaRechazada[] = [];
     for (const [i, d] of lista.entries()) {
       try {
@@ -116,14 +116,7 @@ export class MatricularEstudiantesUseCase {
           Matricula.crear({ id: this.generarId(), aulaId: aula.id, estudianteId: estudiante.id, ahora }),
         );
         existentes.push({ alias: estudiante.alias, avatar: estudiante.avatar });
-        tarjetas.push({
-          estudianteId: estudiante.id,
-          alias: estudiante.alias,
-          avatar: estudiante.avatar,
-          codigoAula: aula.codigo.value,
-          nombreAula: aula.nombre,
-          pin,
-        });
+        matriculados.push({ estudianteId: estudiante.id, alias: estudiante.alias, avatar: estudiante.avatar });
         await this.bus.publicar([
           crearEvento(EVENTOS_ESCUELA.ESTUDIANTE_MATRICULADO, aula.id, { actorId: docenteId, estudianteId: estudiante.id }, ahora),
         ]);
@@ -132,6 +125,6 @@ export class MatricularEstudiantesUseCase {
         rechazadas.push({ fila: d.fila ?? i + 1, contenido: d.contenido ?? d.alias, motivo: error.message });
       }
     }
-    return { tarjetas, rechazadas };
+    return { matriculados, rechazadas };
   }
 }

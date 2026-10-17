@@ -36,6 +36,7 @@ import { SolicitarEliminacionUseCase } from '../application/use-cases/solicitar-
 import { ValidarAccesoUseCase } from '../application/use-cases/validar-acceso.use-case';
 import { VerificarCorreoUseCase } from '../application/use-cases/verificar-correo.use-case';
 import { VincularDispositivoUseCase } from '../application/use-cases/vincular-dispositivo.use-case';
+import { VincularFamiliarUseCase } from '../application/use-cases/vincular-familiar.use-case';
 import { ConsolaCorreoService, SmtpCorreoService } from './correo/correo.services';
 import { Argon2HashService } from './crypto/argon2-hash.service';
 import { HmacFirmador } from './crypto/hmac-firmador';
@@ -50,6 +51,7 @@ import { PrismaDispositivoRepository } from './persistence/prisma-dispositivo-re
 import { PrismaPerfilEstudianteRepository } from './persistence/prisma-perfil-estudiante-repository';
 import { PrismaSesionRepository } from './persistence/prisma-sesion-repository';
 import { PrismaVerificacionRepository } from './persistence/prisma-verificacion-repository';
+import { PrismaVinculoRepository } from './persistence/prisma-vinculo-repository';
 
 /** Lee la configuración de IAM del entorno (apps/api/.env). */
 function configuracion() {
@@ -84,6 +86,7 @@ export function crearCasosUsoIam(
   const verificaciones = new PrismaVerificacionRepository(prisma);
   const sesiones = new PrismaSesionRepository(prisma);
   const dispositivos = new PrismaDispositivoRepository(prisma);
+  const vinculos = new PrismaVinculoRepository(prisma);
 
   const hash = new Argon2HashService();
   const tokens = new JwtTokenService(config.jwtSecret);
@@ -104,8 +107,9 @@ export function crearCasosUsoIam(
 
   const registrarConsentimiento = new RegistrarConsentimientoUseCase(cuentas, consentimientos, bus, generarId, ahora);
   const crearPerfil = new CrearPerfilEstudianteUseCase(cuentas, perfiles, consentimientos, hash, bus, generarId, ahora);
-  const autenticarEstudiante = new AutenticarEstudianteUseCase(perfiles, dispositivos, contextoAula, hash, tokens, emisor, bus, ahora);
+  const autenticarEstudiante = new AutenticarEstudianteUseCase(perfiles, vinculos, dispositivos, contextoAula, hash, tokens, emisor, bus, ahora);
   const restablecerPin = new RestablecerPinUseCase(perfiles, sesiones, hash, bus, ahora);
+  const vincularFamiliar = new VincularFamiliarUseCase(cuentas, perfiles, vinculos, generarId, ahora);
 
   return {
     registrarCuenta: new RegistrarCuentaUseCase(
@@ -127,7 +131,7 @@ export function crearCasosUsoIam(
     registrarConsentimiento,
     consentimientos,
     crearPerfil,
-    listarPerfiles: new ListarPerfilesUseCase(perfiles, ahora),
+    listarPerfiles: new ListarPerfilesUseCase(perfiles, vinculos, ahora),
     actualizarPerfil: new ActualizarPerfilUseCase(perfiles, sesiones, bus, ahora),
     restablecerPin,
     solicitarExportacion: new SolicitarExportacionUseCase(
@@ -136,9 +140,10 @@ export function crearCasosUsoIam(
     descargarExportacion: new DescargarExportacionUseCase(exportaciones, firmador, ahora),
     solicitarEliminacion: new SolicitarEliminacionUseCase(perfiles, sesiones, bus, ahora),
     vincularDispositivo: new VincularDispositivoUseCase(cuentas, dispositivos, contextoAula, tokens, bus, generarId, ahora),
-    contextoIngreso: new ContextoIngresoUseCase(perfiles, dispositivos, contextoAula, tokens, ahora),
+    vincularFamiliar,
+    contextoIngreso: new ContextoIngresoUseCase(perfiles, vinculos, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
-    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, ahora),
+    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, vincularFamiliar, vinculos, ahora),
     bandejaDesarrollo,
   };
 }

@@ -1,5 +1,6 @@
 /**
  * Value Object: CodigoAula (RF-014) — 6 caracteres alfanuméricos sin ambiguos (0/O, 1/I/L).
+ * Desde CR-01 los niños ya no lo escriben (entran desde la tablet activada); identifica al aula.
  * La unicidad global la garantiza el repositorio (índice único) y el caso de uso (reintento).
  */
 export const ALFABETO_CODIGO_AULA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -15,16 +16,6 @@ export class CodigoAula {
       valor += ALFABETO_CODIGO_AULA[aleatorio(ALFABETO_CODIGO_AULA.length)];
     }
     return new CodigoAula(valor);
-  }
-
-  /** Normaliza lo que escribe el estudiante; devuelve null si no tiene forma de código. */
-  static intentar(valor: string): CodigoAula | null {
-    const limpio = valor.trim().toUpperCase();
-    if (limpio.length !== LONGITUD_CODIGO_AULA) return null;
-    for (const c of limpio) {
-      if (!ALFABETO_CODIGO_AULA.includes(c)) return null;
-    }
-    return new CodigoAula(limpio);
   }
 
   static desdePersistencia(valor: string): CodigoAula {

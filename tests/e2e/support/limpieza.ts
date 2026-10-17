@@ -2,11 +2,14 @@ import { resolve } from 'node:path';
 
 import { PrismaClient } from '@prisma/client';
 
+import { borrarCatalogoE2E } from './escuela';
 import { DOMINIO_E2E } from './iam';
 
 /**
  * Teardown global: borra las cuentas creadas por las pruebas (dominio e2e.lectoaventura.test)
- * y todo lo que depende de ellas, para no ensuciar la base del entorno.
+ * y todo lo que depende de ellas, para no ensuciar la base del entorno. Las aulas arrastran sus
+ * matrículas, asignaciones e invitaciones; las cuentas, sus vínculos familiares. La auditoría
+ * (admin.auditoria) no se borra: es de solo agregar por diseño (RF-077).
  */
 export default async function limpieza(): Promise<void> {
   try {
@@ -27,6 +30,7 @@ export default async function limpieza(): Promise<void> {
     await prisma.exportacion.deleteMany({ where: { perfilId: { in: idsPerfiles } } });
     await prisma.aula.deleteMany({ where: { docenteId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });
+    await borrarCatalogoE2E(prisma);
   } finally {
     await prisma.$disconnect();
   }

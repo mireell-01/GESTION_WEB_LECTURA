@@ -94,12 +94,13 @@ jobs:
         run: npm run test:e2e
       - name: 'Nivel 4: aceptación (Gherkin)'
         run: npm run test:uat
-      - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-008)'
+      - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'
         uses: grafana/setup-k6-action@v1
       - run: |
           npm run start --workspace @lectoaventura/api &
           npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
           k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
+          k6 run -e DURACION=30s tests/load/scenarios/escuela-panel.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1,6 +1,8 @@
 import { AulaProps } from '../domain/entities/aula';
+import { MisionDelDocenteVista } from './dto/escuela.dto';
 import { AulaRepository } from './ports/aula.repository';
 import { MatriculaRepository } from './ports/matricula.repository';
+import { MisionesDelDocenteUseCase } from './use-cases/consultar-asignaciones.use-case';
 
 export interface AulaResumen {
   id: string;
@@ -17,6 +19,7 @@ export class EscuelaFacade {
   constructor(
     private readonly aulas: AulaRepository,
     private readonly matriculas: MatriculaRepository,
+    private readonly misiones: MisionesDelDocenteUseCase,
   ) {}
 
   async aulasDeDocente(docenteId: string): Promise<AulaResumen[]> {
@@ -37,6 +40,11 @@ export class EscuelaFacade {
     const matriculas = (await this.matriculas.listarPorEstudiante(estudianteId)).filter((m) => m.activa);
     const aulas = await this.aulas.buscarPorIds(matriculas.map((m) => m.aulaId));
     return aulas.map((a) => this.resumen(a.propsSnapshot));
+  }
+
+  /** RF-018 / RN-20: asignaciones en curso del estudiante (aventura y recomendaciones). */
+  misionesDelDocente(estudianteId: string): Promise<MisionDelDocenteVista[]> {
+    return this.misiones.ejecutar(estudianteId);
   }
 
   /** RN-17: el docente accede a estudiantes matriculados en sus aulas activas o archivadas. */

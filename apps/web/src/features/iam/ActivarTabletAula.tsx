@@ -83,7 +83,7 @@ export function ActivarTabletAula() {
       {!aulas ? (
         error ? null : <Cargando />
       ) : aulas.length === 0 ? (
-        <Alerta tipo="info">Aún no tienes aulas activas. Podrás crearlas en el modo escuela.</Alerta>
+        <Alerta tipo="info">Aún no tienes aulas activas. Crea una en “Mis aulas”.</Alerta>
       ) : (
         <ul className="lista-aulas">
           {aulas.map((a) => (

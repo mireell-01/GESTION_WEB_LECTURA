@@ -3,6 +3,7 @@ import { Reloj } from '../dto/iam.dto';
 import { DispositivoRepository } from '../ports/dispositivo.repository';
 import { PerfilEstudianteRepository } from '../ports/perfil-estudiante.repository';
 import { TokenService } from '../ports/token.service';
+import { VinculoRepository } from '../ports/vinculo.repository';
 
 export interface AvatarIngreso {
   id: string;
@@ -24,6 +25,7 @@ const SIN_ACTIVAR = 'Esta tablet no está activada. Pide a tu profe o a tu famil
 export class ContextoIngresoUseCase {
   constructor(
     private readonly perfiles: PerfilEstudianteRepository,
+    private readonly vinculos: VinculoRepository,
     private readonly dispositivos: DispositivoRepository,
     private readonly contextoAula: ResolutorContextoAula,
     private readonly tokens: TokenService,
@@ -42,7 +44,11 @@ export class ContextoIngresoUseCase {
     if (contexto.tipo === 'FAMILIA') {
       return {
         contexto: { tipo: 'FAMILIA', nombre: 'Tu familia' },
-        estudiantes: this.avatares(await this.perfiles.listarPorResponsable(dispositivo.cuentaId)),
+        estudiantes: this.avatares([
+          ...(await this.perfiles.listarPorResponsable(dispositivo.cuentaId)),
+          // RF-019: también los niños que la familia acompaña por invitación de su docente.
+          ...(await this.perfiles.buscarPorIds(await this.vinculos.perfilesVinculadosA(dispositivo.cuentaId))),
+        ]),
       };
     }
 

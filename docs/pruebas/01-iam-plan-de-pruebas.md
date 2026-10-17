@@ -112,7 +112,7 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | Sin Docker en el equipo local | Testcontainers solo corre en CI | Local usa la base efímera `lectoaventura_test` (recreada en cada ejecución) |
 | En local, la API en modo `watch` puede reiniciarse a mitad de una corrida E2E/UAT si cambia algún archivo | Falsos negativos (se observó una vez: 4 escenarios fallaron con 500 durante el reinicio y pasaron 13/13 al repetir) | CI usa la compilación de producción; en local, correr las pruebas sin editar archivos |
 | Las ilustraciones son versiones SVG simplificadas provisionales | Menos detalle que el diseño aprobado | Reemplazar los componentes de `Ilustraciones.tsx` por las ilustraciones finales (sin tocar las pantallas) |
-| Las tarjetas de acceso (RF-017) aún devuelven el código de aula | Dato que ya no se usa para ingresar (CR-01) | Se ajusta en el Módulo 2 (Escuela) junto con el PDF de tarjetas |
+| ~~Las tarjetas de acceso (RF-017) aún devuelven el código de aula~~ | **Resuelto en el Módulo 2:** PDF A4 sin código de aula; el PIN solo va en la tarjeta impresa (ver [`02-escuela-plan-de-pruebas.md`](02-escuela-plan-de-pruebas.md)) | — |
 
 ---
 
@@ -659,6 +659,7 @@ Prueba automatizada de logs sin secretos, RNF-031 (`apps/api/test/integration/ia
 ```ts
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { pinesDelPdf } from '../../support/pdf-texto';
 import { AppDePrueba, cookieRefresh, crearApp, vaciarBase } from '../setup/app';
 
 /**
@@ -732,6 +733,37 @@ describe('Logs sin secretos (RNF-031)', () => {
     expect(salida.length).toBeGreaterThan(0);
     for (const secreto of secretos) {
       expect(salida.includes(secreto), `Un secreto apareció en los logs: ${secreto.slice(0, 6)}…`).toBe(false);
+    }
+  });
+
+  it('el modo escuela no deja en los logs los PIN de las tarjetas ni los códigos de invitación (RF-017, RF-019)', async () => {
+    const registrar = async (email: string, rol: 'DOCENTE' | 'FAMILIAR') => {
+      await t.http().post(`${API}/auth/registro`).send({ nombre: 'Ana Ríos', email, contrasena: CONTRASENA, rol }).expect(201);
+      const correo = ((await t.http().get(`${API}/dev/correos`)).body as { para: string; enlace: string }[]).find((c) => c.para === email);
+      await t.http().post(`${API}/auth/verificar-correo`).send({ codigo: new URL(correo?.enlace as string).searchParams.get('codigo') }).expect(200);
+      return { Authorization: `Bearer ${(await t.http().post(`${API}/auth/login`).send({ email, contrasena: CONTRASENA }).expect(200)).body.accessToken}` };
+    };
+    const docente = await registrar('docente.secretos@lectoaventura.test', 'DOCENTE');
+    const familia = await registrar('familia.secretos@lectoaventura.test', 'FAMILIAR');
+
+    const aula = (await t.http().post(`${API}/aulas`).set(docente).send({
+      nombre: '3.° B', grado: '3', anioLectivo: new Date().getFullYear(), institucion: 'IE 1234', autoridadConsentimiento: 'Dir. Ruiz', declaraConsentimiento: true,
+    }).expect(201)).body;
+    const leo = (await t.http().post(`${API}/aulas/${aula.id}/matriculas`).set(docente).send({ alias: 'Leo', anioNacimiento: 2017, mesNacimiento: 2, avatar: 'koala' }).expect(201)).body;
+    const pdf = await t.http().post(`${API}/aulas/${aula.id}/tarjetas-acceso.pdf`).set(docente).send({ estudianteIds: [leo.estudianteId] }).buffer(true)
+      .parse((res, listo) => {
+        const partes: Buffer[] = [];
+        res.on('data', (c: Buffer) => partes.push(c));
+        res.on('end', () => listo(null, Buffer.concat(partes)));
+      }).expect(200);
+    const [pin] = pinesDelPdf(pdf.body as Buffer);
+    const { codigo } = (await t.http().post(`${API}/estudiantes/${leo.estudianteId}/invitaciones-familiar`).set(docente).expect(201)).body;
+    await t.http().post(`${API}/familia/vincular`).set(familia).send({ codigo: 'ZZZZ-ZZZZ' }).expect(400);
+    await t.http().post(`${API}/familia/vincular`).set(familia).send({ codigo }).expect(201);
+
+    // El PIN tiene 4 cifras y podría aparecer por azar dentro de un id: se busca como dato ("4826" o pin=4826).
+    for (const secreto of [codigo, codigo.replace('-', ''), `"${pin}"`, `pin=${pin}`, `PIN ${pin}`]) {
+      expect(salida.includes(secreto as string), `Un secreto apareció en los logs: ${secreto}`).toBe(false);
     }
   });
 });
@@ -1260,11 +1292,17 @@ test.describe('IAM — verificación de correo', () => {
 `tests/e2e/specs/diseno/responsivo.spec.ts`:
 
 ```ts
-import { expect, Page, test } from '@playwright/test';
+import { expect, Page, test as base } from '@playwright/test';
 
-import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ipSimulada } from '../../support/iam';
+import { abrirAula, docenteConAula, sembrarCatalogoE2E, sesionApi } from '../../support/escuela';
+import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 
-test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
+/** Cada prueba es un dispositivo distinto (IP simulada) para que el límite por IP (RNF-019) no las mezcle. */
+const test = base.extend({
+  extraHTTPHeaders: async ({}, use) => {
+    await use({ 'X-Forwarded-For': ipSimulada() });
+  },
+});
 
 /**
  * Nivel 3 — Diseño responsivo (RNF-022, RNF-023). Se ejecuta en los tres proyectos
@@ -1273,7 +1311,9 @@ test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
  */
 async function revisarPantalla(page: Page): Promise<void> {
   const resultado = await page.evaluate(() => {
-    const visibles = [...document.querySelectorAll<HTMLElement>('button, a, input:not([type="checkbox"]), select')].filter((e) => {
+    // Casillas, opciones y "elegir archivo" se tocan por su etiqueta, que es la que mide 48 px.
+    const tocables = 'button, a, select, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), label.casilla, label.subir-archivo';
+    const visibles = [...document.querySelectorAll<HTMLElement>(tocables)].filter((e) => {
       const r = e.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
     });
@@ -1341,6 +1381,41 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Mundos llegará muy pronto' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
+  });
+  test('los paneles del modo escuela se adaptan: docente y familia vinculada (RF-014 a RF-019)', async ({ page, request }) => {
+    await sembrarCatalogoE2E();
+    const aula = await docenteConAula(request, [
+      { alias: 'Mateo', avatar: 'leon' },
+      { alias: 'Ana', avatar: 'buho' },
+    ]);
+    await abrirAula(page, aula);
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: 'Invitar a la familia de Mateo' }).click();
+    const caja = page.getByRole('region', { name: 'Código de invitación para la familia de Mateo' });
+    const codigo = (await caja.locator('.invitacion__codigo').innerText()).trim();
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: '+ Nueva asignación' }).click();
+    await page.getByRole('radio', { name: 'Solo algunos estudiantes' }).check();
+    await expect(page.getByRole('checkbox', { name: 'Ana', exact: true })).toBeVisible();
+    await revisarPantalla(page);
+
+    await page.getByRole('button', { name: 'Varios con CSV' }).click();
+    await revisarPantalla(page);
+
+    await page.getByRole('link', { name: 'Mis aulas' }).first().click();
+    await expect(page.getByRole('link', { name: 'Abrir 3.° B' })).toBeVisible();
+    await revisarPantalla(page);
+    await salirDelPanel(page);
+
+    // La familia que canjeó el código ve al niño "Desde su aula".
+    const familia = await cuentaVerificada(request, { prefijo: 'diseno-familia' });
+    const vinculo = await request.post('/api/v1/familia/vincular', { headers: await sesionApi(request, familia), data: { codigo } });
+    expect(vinculo.status(), await vinculo.text()).toBe(201);
+    await ingresarComoAdulto(page, familia.email, familia.contrasena);
+    await expect(page.getByRole('heading', { name: 'Desde su aula (1)' })).toBeVisible();
+    await revisarPantalla(page);
   });
 });
 ```
@@ -2034,12 +2109,13 @@ jobs:
         run: npm run test:e2e
       - name: 'Nivel 4: aceptación (Gherkin)'
         run: npm run test:uat
-      - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-008)'
+      - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'
         uses: grafana/setup-k6-action@v1
       - run: |
           npm run start --workspace @lectoaventura/api &
           npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
           k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
+          k6 run -e DURACION=30s tests/load/scenarios/escuela-panel.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

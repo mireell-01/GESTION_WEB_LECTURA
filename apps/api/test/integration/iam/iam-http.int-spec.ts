@@ -267,7 +267,9 @@ describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007
     const tarjeta = await t.http().post(`${API}/aulas/${aula.body.id}/matriculas`).set(bearer(docente.token)).send({
       alias: 'Sofía', anioNacimiento: 2017, mesNacimiento: 3, avatar: 'buho',
     }).expect(201);
-    expect(tarjeta.body.pin).toMatch(/^\d{4}$/);
+    // RF-017: la matrícula no devuelve el PIN; la docente puede fijarlo como responsable (RN-03).
+    expect(tarjeta.body).not.toHaveProperty('pin');
+    await t.http().post(`${API}/estudiantes/${tarjeta.body.estudianteId}/pin/restablecer`).set(bearer(docente.token)).send({ pinNuevo: '4826' }).expect(200);
 
     const activacion = await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(docente.token)).send({ nombre: 'Tablet 1' }).expect(201);
     expect(activacion.body.contexto).toEqual({ tipo: 'AULA', nombre: '3.° A' });
@@ -280,7 +282,7 @@ describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007
       estudiantes: [{ id: tarjeta.body.estudianteId, alias: 'Sofía', avatar: 'buho' }],
     });
     const ingreso = await t.http().post(`${API}/acceso-estudiante/login`).send({
-      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: tarjeta.body.pin,
+      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: '4826',
     }).expect(200);
     expect(ingreso.body.rol).toBe('ESTUDIANTE');
 
@@ -299,7 +301,7 @@ describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007
     await t.http().post(`${API}/aulas/${aula.body.id}/archivar`).set(bearer(docente.token)).expect(200);
     await t.http().get(`${API}/acceso-estudiante/contexto-dispositivo`).set('x-dispositivo', tablet).expect(403);
     await t.http().post(`${API}/acceso-estudiante/login`).send({
-      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: tarjeta.body.pin,
+      tokenDispositivo: tablet, perfilId: tarjeta.body.estudianteId, pin: '4826',
     }).expect(403);
     await t.http().post(`${API}/aulas/${aula.body.id}/dispositivos`).set(bearer(docente.token)).send({ nombre: 'Tablet 2' }).expect(404);
   });

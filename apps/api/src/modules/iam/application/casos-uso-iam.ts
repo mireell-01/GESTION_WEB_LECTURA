@@ -23,6 +23,7 @@ import { SolicitarExportacionUseCase } from './use-cases/solicitar-exportacion.u
 import { ValidarAccesoUseCase } from './use-cases/validar-acceso.use-case';
 import { VerificarCorreoUseCase } from './use-cases/verificar-correo.use-case';
 import { VincularDispositivoUseCase } from './use-cases/vincular-dispositivo.use-case';
+import { VincularFamiliarUseCase } from './use-cases/vincular-familiar.use-case';
 
 /** Correos retenidos en desarrollo cuando no hay SMTP configurado. */
 export interface BandejaDesarrollo {
@@ -53,6 +54,7 @@ export interface CasosUsoIam {
   descargarExportacion: DescargarExportacionUseCase;
   solicitarEliminacion: SolicitarEliminacionUseCase;
   vincularDispositivo: VincularDispositivoUseCase;
+  vincularFamiliar: VincularFamiliarUseCase;
   contextoIngreso: ContextoIngresoUseCase;
   autenticarEstudiante: AutenticarEstudianteUseCase;
   facade: IamFacade;

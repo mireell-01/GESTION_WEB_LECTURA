@@ -111,7 +111,7 @@ shared-kernel: ResolutorContextoAula (lo registra Escuela) · BusEventos+Outbox 
 | Sin Docker en el equipo local | Testcontainers solo corre en CI | Local usa la base efímera `lectoaventura_test` (recreada en cada ejecución) |
 | En local, la API en modo `watch` puede reiniciarse a mitad de una corrida E2E/UAT si cambia algún archivo | Falsos negativos (se observó una vez: 4 escenarios fallaron con 500 durante el reinicio y pasaron 13/13 al repetir) | CI usa la compilación de producción; en local, correr las pruebas sin editar archivos |
 | Las ilustraciones son versiones SVG simplificadas provisionales | Menos detalle que el diseño aprobado | Reemplazar los componentes de `Ilustraciones.tsx` por las ilustraciones finales (sin tocar las pantallas) |
-| Las tarjetas de acceso (RF-017) aún devuelven el código de aula | Dato que ya no se usa para ingresar (CR-01) | Se ajusta en el Módulo 2 (Escuela) junto con el PDF de tarjetas |
+| ~~Las tarjetas de acceso (RF-017) aún devuelven el código de aula~~ | **Resuelto en el Módulo 2:** PDF A4 sin código de aula; el PIN solo va en la tarjeta impresa (ver [`02-escuela-plan-de-pruebas.md`](02-escuela-plan-de-pruebas.md)) | — |
 
 ---
 

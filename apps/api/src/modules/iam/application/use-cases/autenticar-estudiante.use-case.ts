@@ -8,6 +8,7 @@ import { DispositivoRepository } from '../ports/dispositivo.repository';
 import { HashService } from '../ports/hash.service';
 import { PerfilEstudianteRepository } from '../ports/perfil-estudiante.repository';
 import { TokenService } from '../ports/token.service';
+import { VinculoRepository } from '../ports/vinculo.repository';
 import { EmisorSesiones } from '../services/emisor-sesiones';
 
 /**
@@ -18,6 +19,7 @@ import { EmisorSesiones } from '../services/emisor-sesiones';
 export class AutenticarEstudianteUseCase {
   constructor(
     private readonly perfiles: PerfilEstudianteRepository,
+    private readonly vinculos: VinculoRepository,
     private readonly dispositivos: DispositivoRepository,
     private readonly contextoAula: ResolutorContextoAula,
     private readonly hashService: HashService,
@@ -66,7 +68,11 @@ export class AutenticarEstudianteUseCase {
     }
     const contexto = dispositivo.contexto;
     if (contexto.tipo === 'FAMILIA') {
-      if (!perfil || dispositivo.cuentaId !== perfil.cuentaResponsableId) {
+      const deLaFamilia =
+        !!perfil &&
+        (perfil.perteneceA(dispositivo.cuentaId) ||
+          (await this.vinculos.vigentesDePerfil(perfil.id)).some((v) => v.cuentaId === dispositivo.cuentaId));
+      if (!deLaFamilia) {
         throw new ProhibidoError('Esta tablet no está activada para tu familia');
       }
       return;

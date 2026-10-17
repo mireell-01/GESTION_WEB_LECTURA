@@ -33,11 +33,6 @@ export class PrismaAulaRepository implements AulaRepository {
     return fila ? this.aDominio(fila) : null;
   }
 
-  async buscarPorCodigo(codigo: string): Promise<Aula | null> {
-    const fila = await this.prisma.aula.findUnique({ where: { codigo } });
-    return fila ? this.aDominio(fila) : null;
-  }
-
   async existeCodigo(codigo: string): Promise<boolean> {
     return (await this.prisma.aula.count({ where: { codigo } })) > 0;
   }
