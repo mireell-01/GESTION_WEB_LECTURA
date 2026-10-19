@@ -509,6 +509,8 @@ model Mision {
   id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   mundoId     String @map("mundo_id") @db.Uuid
   mundo       Mundo  @relation(fields: [mundoId], references: [id], onDelete: Cascade)
+  /// Módulo 4: cada misión es para un rango de edad (R1, R2, R3); sus lecturas son de ese rango.
+  rangoEdad   String @map("rango_edad")
   orden       Int
   titulo      String
   descripcion String @default("")
@@ -516,7 +518,8 @@ model Mision {
   lecturas  MisionLectura[]
   progresos ProgresoMision[]
 
-  @@unique([mundoId, orden])
+  /// Restricción diferible en la base (reordenar intercambia posiciones en una transacción).
+  @@unique([mundoId, rangoEdad, orden])
   @@map("mision")
   @@schema("aventura")
 }
@@ -542,6 +545,8 @@ model ProgresoMundo {
   estado         String    @default("BLOQUEADO")
   desbloqueadoEn DateTime? @map("desbloqueado_en") @db.Timestamptz(3)
   completadoEn   DateTime? @map("completado_en") @db.Timestamptz(3)
+  /// RF-031: cuándo vio el niño la celebración del desbloqueo (null = aún no la vio).
+  celebradoEn    DateTime? @map("celebrado_en") @db.Timestamptz(3)
 
   @@id([estudianteId, mundoId])
   @@map("progreso_mundo")

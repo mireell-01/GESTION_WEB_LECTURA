@@ -13,6 +13,7 @@ export default function BackofficeLayout({ children }: { children: ReactNode }) 
       <MarcoRol titulo="Backoffice" icono="escudo" menu={[
           { href: '/backoffice', texto: 'Inicio', icono: 'inicio' },
           { href: '/backoffice/lecturas', texto: 'Lecturas', icono: 'libro' },
+          { href: '/backoffice/misiones', texto: 'Misiones', icono: 'globo' },
         ]}>
         {children}
       </MarcoRol>

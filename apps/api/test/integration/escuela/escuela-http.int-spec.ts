@@ -63,7 +63,7 @@ async function sembrarCatalogo() {
     },
   });
   const mundo = await t.prisma.mundo.findUniqueOrThrow({ where: { numero: 1 } });
-  const mision = await t.prisma.mision.create({ data: { id: uuidV7(), mundoId: mundo.id, orden: 1, titulo: 'El mapa perdido' } });
+  const mision = await t.prisma.mision.create({ data: { id: uuidV7(), mundoId: mundo.id, rangoEdad: 'R2', orden: 1, titulo: 'El mapa perdido' } });
   return { lecturaId: lectura.id, borradorId: borrador.id, misionId: mision.id };
 }
 
@@ -187,7 +187,7 @@ describe('Asignaciones (RF-018)', () => {
     const r = await t.http().get(`${API}/aulas/${aulaId}/asignaciones/catalogo`).set(bearer(docente.token)).expect(200);
     expect(r.body).toEqual({
       lecturas: [{ id: catalogo.lecturaId, tipo: 'LECTURA', titulo: 'El zorro y la luna', detalle: '8–9 años · nivel 2' }],
-      misiones: [{ id: catalogo.misionId, tipo: 'MISION', titulo: 'El mapa perdido', detalle: 'Mundo 1 · Explorador' }],
+      misiones: [{ id: catalogo.misionId, tipo: 'MISION', titulo: 'El mapa perdido', detalle: 'Mundo 1 · Explorador · 8–9 años' }],
     });
   });
 

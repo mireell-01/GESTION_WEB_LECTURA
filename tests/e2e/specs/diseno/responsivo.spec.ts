@@ -1,7 +1,8 @@
 import { expect, Page, test as base } from '@playwright/test';
 
+import { misionConLecturas, tituloMision } from '../../support/aventura';
 import { cuentaBackoffice, filtrarPorTema, ingresarBackoffice, lecturaPublicada, sesionBackoffice, TEXTO_E2E } from '../../support/contenido';
-import { abrirAula, docenteConAula, sembrarCatalogoE2E, sesionApi } from '../../support/escuela';
+import { abrirAula, docenteConAula, PIN_PRUEBA, sembrarCatalogoE2E, sesionApi, tabletDelAulaActivada } from '../../support/escuela';
 import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 
 /** Cada prueba es un dispositivo distinto (IP simulada) para que el límite por IP (RNF-019) no las mezcle. */
@@ -84,8 +85,10 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
       expect(caja.width).toBeGreaterThanOrEqual(ventana.width - 1);
     }
     // Las secciones futuras se muestran con candado y avisan "muy pronto".
-    await nav.getByRole('button', { name: /Mundos/ }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Mundos llegará muy pronto' })).toBeVisible();
+    await nav.getByRole('button', { name: /Progreso/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Progreso llegará muy pronto' })).toBeVisible();
+    // Módulo 4: Mundos ya es una sección real.
+    await expect(nav.getByRole('link', { name: 'Mundos' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
   });
@@ -157,6 +160,33 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await revisarPantalla(page);
     await page.goto(`/docente/biblioteca/${lecturaId}`);
     await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible();
+    await revisarPantalla(page);
+  });
+  test('el mapa, un mundo y el backoffice de misiones se adaptan (RF-030 a RF-032)', async ({ page, request }) => {
+    test.setTimeout(150_000);
+    const editora = await cuentaBackoffice('EDITOR');
+    const mision = await misionConLecturas(request, editora, 1, tituloMision('Responsiva'), ['Lectura responsiva']);
+    await ingresarBackoffice(page, editora);
+    await page.goto('/backoffice/misiones');
+    await expect(page.getByRole('heading', { level: 2, name: mision.titulo })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('button', { name: '+ Nueva misión' }).click();
+    await expect(page.getByLabel('Título de la misión')).toBeVisible();
+    await revisarPantalla(page);
+    await salirDelPanel(page);
+
+    const aula = await docenteConAula(request, [{ alias: 'Ana', avatar: 'buho' }]);
+    await tabletDelAulaActivada(page, request, aula);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Ana' }).click();
+    await escribirPin(page, PIN_PRUEBA);
+    await esperarAreaEstudiante(page, 'Ana');
+    await revisarPantalla(page);
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Mundos' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Tu mapa de aventuras' })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('link', { name: 'Entrar al mundo 1: Explorador' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: mision.titulo })).toBeVisible();
     await revisarPantalla(page);
   });
 });

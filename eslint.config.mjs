@@ -29,7 +29,7 @@ export default tseslint.config(
       '**/prisma/migrations/**',
       '**/next-env.d.ts',
       // Plantillas de módulos aún no implementados: se quitan de aquí al construir cada módulo.
-      'apps/api/src/modules/{aventura,diagnostico,lectura,progreso,gamificacion,asistente,administracion}/**',
+      'apps/api/src/modules/{diagnostico,lectura,progreso,gamificacion,asistente,administracion}/**',
     ],
   },
   js.configs.recommended,
@@ -110,8 +110,8 @@ export default tseslint.config(
     },
   },
   {
-    // Variables globales de k6 (__ENV) en los scripts de carga.
+    // Variables globales de k6 (__ENV, __VU) en los scripts de carga.
     files: ['tests/load/**/*.js'],
-    languageOptions: { globals: { __ENV: 'readonly' } },
+    languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly' } },
   },
 );

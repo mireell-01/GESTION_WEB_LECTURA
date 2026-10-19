@@ -227,7 +227,8 @@ Entonces(
   /^(?:llego a|vuelvo a) mi área de lectura con el saludo "(.+)"$/,
   async ({ page }, saludo: string) => {
     await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
-    await expect(page.getByText(/Tu mapa de aventuras/)).toBeVisible();
+    // El inicio del niño muestra su mapa de aventuras (RF-030) bajo el título "Tus mundos".
+    await expect(page.getByRole('heading', { name: 'Tus mundos', level: 2 })).toBeVisible();
     await expect(page.getByRole('heading', { name: saludo })).toBeVisible();
   },
 );

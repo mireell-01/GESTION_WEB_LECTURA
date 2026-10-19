@@ -2058,3 +2058,312 @@ p {
     transition: none;
   }
 }
+
+/* ── Módulo 4 · Aventura: mapa, mundos y misiones (RF-030 a RF-033) ───────────────────── */
+
+/* Los mundos que se pueden abrir son un enlace que ocupa toda la tarjeta. */
+.est-mundo--disponible,
+.est-mundo--completado {
+  display: block;
+}
+
+.est-mundo__enlace {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 112px;
+  border-radius: 21px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.est-mundo__enlace:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.est-mundo--disponible {
+  border-color: var(--la-color-primario);
+  background: #fff;
+}
+
+.est-mundo--completado {
+  border-color: var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+.est-mundo--bloqueado .est-mundo__escena {
+  filter: saturate(0.45);
+}
+
+.est-mundo__sello {
+  background: var(--la-color-secundario-fuerte);
+}
+
+.est-mundo__texto .la-barra {
+  margin-top: 6px;
+}
+
+@media (hover: hover) {
+  .est-mundo__enlace {
+    transition: transform 0.15s ease;
+  }
+
+  .est-mundo__enlace:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* RF-031: celebración al desbloquear un mundo. */
+.celebracion {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(30 26 77 / 0.6);
+}
+
+.celebracion__confeti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.celebracion__confeti span {
+  position: absolute;
+  top: -24px;
+  left: calc(var(--i) * 7% + 2%);
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
+  background: hsl(calc(var(--i) * 47deg) 85% 62%);
+  animation: confeti 2.6s linear calc(var(--i) * -0.19s) infinite;
+}
+
+@keyframes confeti {
+  to {
+    transform: translateY(110vh) rotate(540deg);
+  }
+}
+
+.celebracion__tarjeta {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  border: 4px solid var(--la-color-secundario);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: var(--la-sombra);
+  text-align: center;
+  animation: celebracion-entrada 0.45s ease-out;
+}
+
+@keyframes celebracion-entrada {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+.celebracion__escena {
+  display: grid;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.celebracion__escena .la-ilustracion {
+  width: 100%;
+  height: 100%;
+}
+
+.celebracion__numero {
+  margin: 0;
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--la-color-texto-suave);
+}
+
+.celebracion h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+}
+
+.celebracion p {
+  margin: 0;
+}
+
+/* RF-032: un mundo y sus misiones. */
+.mundo-detalle__cabecera {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 3px solid #b9adf5;
+  border-radius: 24px;
+  background: #f8f6ff;
+  box-shadow: var(--la-sombra);
+}
+
+.mundo-detalle__escena {
+  display: grid;
+  min-height: 140px;
+}
+
+.mundo-detalle__escena .la-ilustracion {
+  width: 100%;
+  height: 100%;
+}
+
+.mundo-detalle__cabecera > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px 18px;
+}
+
+.mundo-detalle__cabecera h1,
+.mundo-detalle__cabecera p {
+  margin: 0;
+}
+
+.misiones,
+.mision__lecturas,
+.misiones-bo {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mision {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--la-sombra);
+}
+
+.mision--completada {
+  border-color: var(--la-color-exito);
+  background: var(--la-color-exito-suave);
+}
+
+.mision__cabecera,
+.misiones-bo__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.mision__cabecera h2,
+.misiones-bo__cabecera h2 {
+  flex: 1 1 160px;
+  margin: 0;
+  font-size: 1.375rem;
+}
+
+.mision__numero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--la-color-primario);
+  color: #fff;
+  font: 700 1.25rem var(--la-font-titulo);
+}
+
+.mision--completada .mision__numero {
+  background: var(--la-color-exito-fuerte);
+}
+
+.mision__descripcion {
+  margin: 0;
+}
+
+.mision__lecturas {
+  gap: 8px;
+}
+
+.mision__lecturas li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.mision__lecturas li > span:not(.la-chip) {
+  flex: 1 1 140px;
+}
+
+.misiones-bo {
+  gap: 12px;
+}
+
+.misiones-bo__item {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 2px solid var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+}
+
+.misiones-bo__item p {
+  margin: 0;
+}
+
+/* Una lectura dentro del formulario de misión: el botón nunca se encoge (RNF-023, 48 px). */
+.mision-lectura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.mision-lectura > span {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.mision-lectura > .la-boton {
+  flex: none;
+}
+
+@container est (min-width: 640px) {
+  .mundo-detalle__cabecera {
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .mundo-detalle__cabecera > div {
+    padding: 18px 18px 18px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebracion__confeti {
+    display: none;
+  }
+
+  .celebracion__tarjeta,
+  .est-mundo__enlace {
+    animation: none;
+    transition: none;
+  }
+}

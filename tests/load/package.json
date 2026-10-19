@@ -9,6 +9,7 @@
     "test:smoke": "k6 run -e DURACION=30s scenarios/iam-sesiones.js",
     "test:lectura": "k6 run scenarios/lectura.js",
     "test:escuela": "k6 run scenarios/escuela-panel.js",
-    "test:biblioteca": "node sembrar-biblioteca.mjs && k6 run scenarios/biblioteca.js"
+    "test:biblioteca": "node sembrar-biblioteca.mjs && k6 run scenarios/biblioteca.js",
+    "test:aventura": "node sembrar-aventura.mjs && k6 run scenarios/aventura-mapa.js"
   }
 }
