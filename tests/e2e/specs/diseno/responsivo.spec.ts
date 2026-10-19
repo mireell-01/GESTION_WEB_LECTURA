@@ -1,5 +1,6 @@
 import { expect, Page, test as base } from '@playwright/test';
 
+import { cuentaBackoffice, filtrarPorTema, ingresarBackoffice, lecturaPublicada, sesionBackoffice, TEXTO_E2E } from '../../support/contenido';
 import { abrirAula, docenteConAula, sembrarCatalogoE2E, sesionApi } from '../../support/escuela';
 import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 
@@ -121,6 +122,41 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     expect(vinculo.status(), await vinculo.text()).toBe(201);
     await ingresarComoAdulto(page, familia.email, familia.contrasena);
     await expect(page.getByRole('heading', { name: 'Desde su aula (1)' })).toBeVisible();
+    await revisarPantalla(page);
+  });
+  test('el backoffice de contenido y la biblioteca se adaptan (RF-021 a RF-028)', async ({ page, request }) => {
+    test.setTimeout(150_000); // dos cuentas con MFA, una lectura publicada, un aula y siete pantallas
+    const sufijo = Date.now().toString(36);
+    const { lecturaId, titulo } = await lecturaPublicada(request, { titulo: `Responsiva ${sufijo}`, tematica: `Responsiva ${sufijo}` });
+    const tituloBorrador = `Borrador responsivo ${sufijo}`;
+    const editora = await cuentaBackoffice('EDITOR');
+    const borrador = await request.post('/api/v1/backoffice/lecturas', {
+      headers: await sesionBackoffice(request, editora),
+      data: { metadatos: { titulo: tituloBorrador, rangoEdad: 'R2', nivelDificultad: 2, tematica: 'Animales', tipoTexto: 'CUENTO', habilidadesObjetivo: ['INF'], licencia: 'CC BY 4.0' }, texto: TEXTO_E2E },
+    });
+    const { lecturaId: idBorrador } = await borrador.json();
+
+    await ingresarBackoffice(page, editora);
+    await page.goto('/backoffice/lecturas');
+    await expect(page.getByRole('link', { name: `Abrir ${tituloBorrador}` })).toBeVisible();
+    await revisarPantalla(page);
+    await page.goto(`/backoffice/lecturas/${idBorrador}`);
+    await page.getByRole('button', { name: '+ Actividad durante la lectura' }).click();
+    await page.getByRole('button', { name: 'Cortar la oración 1' }).click();
+    await revisarPantalla(page);
+    await page.goto('/backoffice/lecturas/nueva');
+    await revisarPantalla(page);
+    await salirDelPanel(page);
+
+    const aula = await docenteConAula(request, [{ alias: 'Ana', avatar: 'buho' }]);
+    await ingresarComoAdulto(page, aula.docente.email, aula.docente.contrasena);
+    await expect(page).toHaveURL(/\/docente$/); // ingresarComoAdulto no espera: sin esto, el goto cortaría el ingreso
+    await page.goto('/docente/biblioteca');
+    await filtrarPorTema(page, sufijo);
+    await expect(page.getByRole('link', { name: `Abrir ${titulo}` })).toBeVisible();
+    await revisarPantalla(page);
+    await page.goto(`/docente/biblioteca/${lecturaId}`);
+    await expect(page.getByRole('heading', { level: 1, name: titulo })).toBeVisible();
     await revisarPantalla(page);
   });
 });

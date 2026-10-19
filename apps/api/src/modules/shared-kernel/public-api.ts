@@ -7,6 +7,7 @@ export * from './domain/value-objects';
 export * from './application/bus-eventos';
 export * from './application/catalogo-asignable';
 export * from './application/contexto-aula';
+export * from './application/nivel-lector';
 export * from './application/recolector-datos';
 export * from './infrastructure/prisma.service';
 export * from './infrastructure/redaccion';

@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
+import { EVENTOS_CONTENIDO } from '../../contenido/public-api';
 import { EVENTOS_ESCUELA } from '../../escuela/public-api';
 import { BUS_EVENTOS, BusEventos, EventoDominio, PrismaService, uuidV7 } from '../../shared-kernel/public-api';
 import { RegistrarAuditoriaUseCase } from '../application/use-cases/registrar-auditoria.use-case';
@@ -12,6 +13,8 @@ interface DatosEvento {
   docenteId?: string;
   cantidad?: number;
   ip?: string | null;
+  /** Cuando la acción la pueden hacer varios roles, el evento dice cuál fue. */
+  rol?: string;
 }
 
 /** Acciones sensibles que se auditan (RF-077) y cómo se leen de su evento de dominio. */
@@ -33,6 +36,12 @@ const AUDITADOS: Record<string, { accion: string; actorRol: string; recurso: (e:
     actorRol: 'DOCENTE',
     recurso: (e) => ['aula', e.agregadoId],
   },
+  // RF-026: cada transición del flujo de publicación queda auditada.
+  [EVENTOS_CONTENIDO.ENVIADA_A_REVISION]: { accion: 'LECTURA_ENVIADA_A_REVISION', actorRol: 'EDITOR', recurso: (e) => ['lectura', e.agregadoId] },
+  [EVENTOS_CONTENIDO.VERSION_PUBLICADA]: { accion: 'LECTURA_PUBLICADA', actorRol: 'REVISOR', recurso: (e) => ['lectura', e.agregadoId] },
+  [EVENTOS_CONTENIDO.VERSION_RECHAZADA]: { accion: 'LECTURA_RECHAZADA', actorRol: 'REVISOR', recurso: (e) => ['lectura', e.agregadoId] },
+  [EVENTOS_CONTENIDO.LECTURA_ARCHIVADA]: { accion: 'LECTURA_ARCHIVADA', actorRol: 'REVISOR', recurso: (e) => ['lectura', e.agregadoId] },
+  [EVENTOS_CONTENIDO.VERSION_CREADA]: { accion: 'LECTURA_NUEVA_VERSION', actorRol: 'EDITOR', recurso: (e) => ['lectura', e.agregadoId] },
 };
 
 /**
@@ -57,7 +66,7 @@ export class AuditoriaSuscripciones implements OnModuleInit {
         const [recursoTipo, recursoId] = regla.recurso(e);
         await this.registrar.ejecutar({
           actorId: actorId ?? null,
-          actorRol: regla.actorRol,
+          actorRol: e.datos.rol ?? regla.actorRol,
           accion: regla.accion,
           recursoTipo,
           recursoId,

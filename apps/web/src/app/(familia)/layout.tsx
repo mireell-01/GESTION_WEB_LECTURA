@@ -7,7 +7,10 @@ import { MarcoRol } from '@/shared/ui';
 export default function FamiliaLayout({ children }: { children: ReactNode }) {
   return (
     <RequiereRol roles={['FAMILIAR']}>
-      <MarcoRol titulo="Familia" icono="familia" menu={[{ href: '/familia', texto: 'Mis hijos', icono: 'familia' }]}>
+      <MarcoRol titulo="Familia" icono="familia" menu={[
+          { href: '/familia', texto: 'Mis hijos', icono: 'familia' },
+          { href: '/familia/biblioteca', texto: 'Biblioteca', icono: 'libro' },
+        ]}>
         {children}
       </MarcoRol>
     </RequiereRol>

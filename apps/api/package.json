@@ -12,6 +12,7 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
+        "cuenta:backoffice": "node scripts/invitar-cuenta-backoffice.mjs",
         "test": "vitest run",
         "test:cov": "vitest run --coverage",
         "test:int": "vitest run -c vitest.integration.config.ts"

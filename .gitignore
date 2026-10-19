@@ -57,3 +57,6 @@ override.tf.json
 apps/api/reports/
 tests/e2e/reportes/
 tests/e2e/.features-gen/
+
+# Archivos subidos en desarrollo (RF-023; en la nube van a S3)
+apps/api/almacen/
