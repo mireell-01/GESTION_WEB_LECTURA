@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
+import { EVENTOS_AVENTURA } from '../../aventura/public-api';
 import { EVENTOS_CONTENIDO } from '../../contenido/public-api';
 import { EVENTOS_ESCUELA } from '../../escuela/public-api';
 import { BUS_EVENTOS, BusEventos, EventoDominio, PrismaService, uuidV7 } from '../../shared-kernel/public-api';
@@ -42,6 +43,10 @@ const AUDITADOS: Record<string, { accion: string; actorRol: string; recurso: (e:
   [EVENTOS_CONTENIDO.VERSION_RECHAZADA]: { accion: 'LECTURA_RECHAZADA', actorRol: 'REVISOR', recurso: (e) => ['lectura', e.agregadoId] },
   [EVENTOS_CONTENIDO.LECTURA_ARCHIVADA]: { accion: 'LECTURA_ARCHIVADA', actorRol: 'REVISOR', recurso: (e) => ['lectura', e.agregadoId] },
   [EVENTOS_CONTENIDO.VERSION_CREADA]: { accion: 'LECTURA_NUEVA_VERSION', actorRol: 'EDITOR', recurso: (e) => ['lectura', e.agregadoId] },
+  // Módulo 4: cambios del recorrido de misiones que verán los niños.
+  [EVENTOS_AVENTURA.MISION_CREADA]: { accion: 'MISION_CREADA', actorRol: 'EDITOR', recurso: (e) => ['mision', e.agregadoId] },
+  [EVENTOS_AVENTURA.MISION_ACTUALIZADA]: { accion: 'MISION_ACTUALIZADA', actorRol: 'EDITOR', recurso: (e) => ['mision', e.agregadoId] },
+  [EVENTOS_AVENTURA.MISIONES_REORDENADAS]: { accion: 'MISIONES_REORDENADAS', actorRol: 'EDITOR', recurso: (e) => ['mundo', e.agregadoId] },
 };
 
 /**

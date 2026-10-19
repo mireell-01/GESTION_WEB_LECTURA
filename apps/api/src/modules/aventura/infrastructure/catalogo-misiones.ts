@@ -8,9 +8,11 @@ import {
   RegistroCatalogoAsignable,
 } from '../../shared-kernel/public-api';
 
+const EDADES: Record<string, string> = { R1: '6–7 años', R2: '8–9 años', R3: '10–12 años' };
+
 /**
- * Fuente del catálogo asignable (RF-018): misiones de los 5 mundos. Solo lectura; el mapa y el
- * avance llegan con el módulo Aventura (RF-030 a RF-033).
+ * Fuente del catálogo asignable (RF-018): misiones de los 5 mundos, para cada edad. Solo lectura:
+ * el equipo de contenidos las arma en el backoffice de misiones.
  */
 @Injectable()
 export class CatalogoMisiones implements OnModuleInit {
@@ -25,7 +27,7 @@ export class CatalogoMisiones implements OnModuleInit {
       listar: async () => {
         const filas = await this.prisma.mision.findMany({
           include: { mundo: true },
-          orderBy: [{ mundo: { numero: 'asc' } }, { orden: 'asc' }],
+          orderBy: [{ mundo: { numero: 'asc' } }, { rangoEdad: 'asc' }, { orden: 'asc' }],
         });
         return filas.map((f) => this.aContenido(f));
       },
@@ -37,7 +39,8 @@ export class CatalogoMisiones implements OnModuleInit {
     });
   }
 
-  private aContenido(f: { id: string; titulo: string; mundo: { numero: number; nombre: string } }): ContenidoAsignable {
-    return { id: f.id, tipo: 'MISION', titulo: f.titulo, detalle: `Mundo ${f.mundo.numero} · ${f.mundo.nombre}` };
+  private aContenido(f: { id: string; titulo: string; rangoEdad: string; mundo: { numero: number; nombre: string } }): ContenidoAsignable {
+    const edad = EDADES[f.rangoEdad] ?? f.rangoEdad;
+    return { id: f.id, tipo: 'MISION', titulo: f.titulo, detalle: `Mundo ${f.mundo.numero} · ${f.mundo.nombre} · ${edad}` };
   }
 }

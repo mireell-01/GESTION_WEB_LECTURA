@@ -14,9 +14,14 @@ export default function BackofficeHomePage() {
       <Tarjeta titulo={`Hola, ${usuario?.nombre ?? ''}`} nivel={1}>
         <p className="texto-suave">Gestiona contenido, revisión, usuarios, configuración y auditoría.</p>
         {usuario?.rol === 'EDITOR' || usuario?.rol === 'REVISOR' ? (
-          <Link href="/backoffice/lecturas" className={clasesBoton('primario')}>
-            {usuario.rol === 'EDITOR' ? 'Escribir y editar lecturas' : 'Revisar lecturas'}
-          </Link>
+          <div className="fila">
+            <Link href="/backoffice/lecturas" className={clasesBoton('primario')}>
+              {usuario.rol === 'EDITOR' ? 'Escribir y editar lecturas' : 'Revisar lecturas'}
+            </Link>
+            <Link href="/backoffice/misiones" className={clasesBoton('secundario')}>
+              {usuario.rol === 'EDITOR' ? 'Armar las misiones' : 'Ver las misiones'}
+            </Link>
+          </div>
         ) : null}
       </Tarjeta>
     </RequiereRol>

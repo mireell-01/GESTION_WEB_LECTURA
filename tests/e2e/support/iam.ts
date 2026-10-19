@@ -164,7 +164,8 @@ export const URL_AREA_ESTUDIANTE = /:\d+\/estudiante$/;
 /** Espera a que el niño esté de verdad dentro de su área (no en la pantalla del PIN). */
 export async function esperarAreaEstudiante(page: Page, alias: string): Promise<void> {
   await expect(page).toHaveURL(URL_AREA_ESTUDIANTE);
-  await expect(page.getByText(/Tu mapa de aventuras/)).toBeVisible();
+  // El inicio del niño muestra su mapa de aventuras (RF-030) bajo el título "Tus mundos".
+  await expect(page.getByRole('heading', { name: 'Tus mundos', level: 2 })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Hola, ${alias}`, level: 1 })).toBeVisible();
 }
 

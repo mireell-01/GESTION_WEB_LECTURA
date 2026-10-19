@@ -110,7 +110,7 @@ export async function sembrarCatalogoE2E(): Promise<{ lectura: string; mision: s
     if (!(await db.mision.findFirst({ where: { titulo: mision } }))) {
       const mundo = await db.mundo.findUniqueOrThrow({ where: { numero: 5 }, include: { misiones: { select: { orden: true } } } });
       const libre = [20, 19, 18, 17, 16].find((o) => !mundo.misiones.some((m) => m.orden === o)) as number;
-      await db.mision.create({ data: { mundoId: mundo.id, orden: libre, titulo: mision } });
+      await db.mision.create({ data: { mundoId: mundo.id, rangoEdad: 'R2', orden: libre, titulo: mision } });
     }
     return { lectura, mision };
   } finally {

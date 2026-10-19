@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
-import { AventuraController } from './interface/http/aventura.controller';
-import { aventuraProviders } from './infrastructure/aventura.providers';
 
-/**
- * Declaración NestJS del módulo aventura.
- */
+import { IamModule } from '../iam/public-api';
+import { aventuraProviders } from './infrastructure/aventura.providers';
+import { AventuraController } from './interface/http/aventura.controller';
+import { BackofficeMisionesController } from './interface/http/backoffice-misiones.controller';
+
+/** Módulo Aventura — mapa de 5 mundos, misiones y desbloqueo (RF-030 a RF-033). Depende de IAM. */
 @Module({
-  controllers: [AventuraController],
+  imports: [IamModule],
+  controllers: [AventuraController, BackofficeMisionesController],
   providers: [...aventuraProviders],
-  exports: [],
 })
 export class AventuraModule {}

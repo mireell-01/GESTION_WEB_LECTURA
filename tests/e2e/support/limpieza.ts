@@ -9,7 +9,8 @@ import { DOMINIO_E2E } from './iam';
  * Teardown global: borra las cuentas creadas por las pruebas (dominio e2e.lectoaventura.test)
  * y todo lo que depende de ellas, para no ensuciar la base del entorno. Las aulas arrastran sus
  * matrículas, asignaciones e invitaciones; las cuentas, sus vínculos familiares. La auditoría
- * (admin.auditoria) no se borra: es de solo agregar por diseño (RF-077).
+ * (admin.auditoria) no se borra: es de solo agregar por diseño (RF-077). Las misiones con lecturas de
+ * prueba y el mapa de los niños de prueba también se borran.
  */
 export default async function limpieza(): Promise<void> {
   try {
@@ -29,6 +30,12 @@ export default async function limpieza(): Promise<void> {
     await prisma.sesion.deleteMany({ where: { sujetoId: { in: sujetos } } });
     await prisma.exportacion.deleteMany({ where: { perfilId: { in: idsPerfiles } } });
     await prisma.aula.deleteMany({ where: { docenteId: { in: idsCuentas } } });
+    // Aventura: misiones armadas con lecturas de prueba (arrastran su progreso) y el mapa de los niños
+    // de prueba (sin llave foránea entre schemas, SRS §7).
+    const idsLecturas = (await prisma.lectura.findMany({ where: { autorId: { in: idsCuentas } }, select: { id: true } })).map((l) => l.id);
+    await prisma.mision.deleteMany({ where: { lecturas: { some: { lecturaId: { in: idsLecturas } } } } });
+    await prisma.progresoMision.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.progresoMundo.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).
     await prisma.lectura.deleteMany({ where: { autorId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });

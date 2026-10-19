@@ -10,13 +10,13 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `iam` | 1 · Identidad, consentimiento y acceso | 10 | ✅ En uso (`vinculo_responsable` desde el Módulo 2) |
 | `escuela` | 2 · Escuela (aulas y asignaciones) | 6 | ✅ En uso: `aula`, `matricula`, `asignacion`, `asignacion_destinatario` e `invitacion_familiar`; `institucion`, lista para el registro de instituciones (RF-076) |
 | `contenido` | 3 · Biblioteca y gestión de contenido | 9 | ✅ En uso: las 9 tablas (lecturas, versiones, oraciones, recursos, actividades, ítems, pistas, evidencias y nodos de historia). Migración [`20261020000000_comentario_revision`](../../apps/api/prisma/migrations/20261020000000_comentario_revision/migration.sql) |
-| `aventura` | 4 · Mapa, mundos y misiones | 5 | Lista, con los 5 mundos cargados |
+| `aventura` | 4 · Mapa, mundos y misiones | 5 | ✅ En uso: los 5 mundos cargados, misiones por edad con sus lecturas y el progreso de cada niño. Migración [`20261021000000_aventura_misiones_por_edad`](../../apps/api/prisma/migrations/20261021000000_aventura_misiones_por_edad/migration.sql) |
 | `diagnostico` | 5 · Diagnóstico | 3 | Lista |
 | `lectura` | 6 · Lectura interactiva | 6 | Lista |
 | `progreso` | 7 · Perfil lector y recomendaciones | 3 | Lista |
 | `gamificacion` | 8 · Gamificación | 6 | Lista, con los parámetros por defecto cargados |
 | `asistente` | 11 · Asistente inteligente | 2 | Lista |
-| `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; el resto de RF-077 llega con el Módulo 12) |
+| `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; misiones creadas, editadas y reordenadas; el resto de RF-077 llega con el Módulo 12) |
 | `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 vistas materializadas | Lista |
 
 **Total: 52 tablas y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
@@ -143,6 +143,13 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
 | Peso de la lectura ≤ 1,5 MB (RNF-006) | Se comprueba al enviar a revisión | Suma texto, actividades, historia y recursos; una lectura más pesada no puede publicarse |
 | Nivel del estudiante en la biblioteca (RF-028) | Su rango de edad y su nivel ± 1 | Mientras no exista el perfil lector (Módulo 7), el nivel inicial sale de la edad: 6–7 → 1, 8–9 → 2, 10–12 → 3. El Módulo 7 lo reemplazará registrándose en el shared-kernel (`NIVEL_LECTOR`) |
 | Cuentas EDITOR y REVISOR | Las crea el equipo, no el registro público | En desarrollo: `npm run cuenta:backoffice --workspace @lectoaventura/api -- --email … --nombre "…" --rol EDITOR`. La persona define su contraseña con el enlace de recuperación y la verificación en dos pasos se le exige al entrar. El alta desde la administración llega con el Módulo 12 |
+| `aventura.mision` (Mundo — Misión 1 : 3..20) | Columna nueva `rango_edad` (R1, R2, R3) y orden por mundo **y edad** | El SRS no decía cómo combinar los 5 mundos con las 3 edades. Cada misión es para una edad y sus lecturas son de esa edad: un niño de 7 años y uno de 11 recorren los mismos mundos con lecturas de su edad. Hasta 20 misiones por mundo y edad; RN-09 pide 3 completadas para avanzar |
+| Orden de las misiones | Restricción única **diferible** `(mundo_id, rango_edad, orden)` | Reordenar intercambia posiciones dentro de una transacción; la unicidad se comprueba al confirmar |
+| — | `aventura.progreso_mundo.celebrado_en` | RF-031 pide una celebración visual al desbloquear: se guarda cuándo la vio el niño para mostrarla una sola vez |
+| Invariante "un mundo no puede estar COMPLETADO si el anterior está BLOQUEADO" (SRS §6) | Dominio + `CHECK ck_progreso_mundo_fechas` | Primero los completados, a lo sumo un disponible y luego los bloqueados; las fechas acompañan al estado. Completar un mundo es una actualización condicional: dos eventos simultáneos no lo desbloquean dos veces |
+| Posición inicial (RF-033) y diagnóstico obligatorio (RN-05) | Se aplica cuando exista el Módulo 5 | Aventura ya consulta el diagnóstico por un puerto del shared-kernel. Mientras el Módulo 5 no exista en la plataforma, todos empiezan en el mundo 1; cuando exista, un diagnóstico pendiente deja el mapa cerrado y uno finalizado con LIT y VOC ≥ 65 ubica al niño en el mundo 2 |
+| Desbloqueo (RF-031, RN-09) y misiones completadas (RF-032) | Por eventos de los Módulos 6 y 7 | Aventura ya escucha `lectura.SesionLecturaFinalizada` y `progreso.MaestriaActualizada` y consulta la maestría y el avance por puertos del shared-kernel; hasta que esos módulos publiquen, el mapa no avanza solo. Lo ya leído cuenta al abrir un mundo nuevo, y una misión completada no retrocede |
+| Autoría de misiones | Backoffice de misiones (EDITOR arma y ordena; REVISOR consulta) | El SRS define el catálogo de misiones pero no quién lo arma. Crear, editar y reordenar queda en `admin.auditoria` (RF-077). No se borran misiones en esta versión: podrían tener avance de los niños |
 
 ## Respaldo
 
