@@ -637,6 +637,8 @@ model RespuestaDiagnostico {
 model SesionLectura {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   estudianteId      String    @map("estudiante_id") @db.Uuid
+  /// La lectura de la versión: se reanuda la misma lectura aunque se publique otra versión (RF-046).
+  lecturaId         String    @map("lectura_id") @db.Uuid
   versionLecturaId  String    @map("version_lectura_id") @db.Uuid
   asignacionId      String?   @map("asignacion_id") @db.Uuid
   estado            String    @default("INICIADA")
@@ -652,6 +654,7 @@ model SesionLectura {
   decisiones DecisionRuta[]
 
   @@index([estudianteId, iniciadaEn(sort: Desc)], map: "ix_sesion_estudiante")
+  @@index([estudianteId, lecturaId, estado])
   @@map("sesion_lectura")
   @@schema("lectura")
 }

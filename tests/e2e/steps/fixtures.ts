@@ -14,6 +14,8 @@ export interface Mundo {
   pines?: string[];
   lectura?: string;
   codigo?: string;
+  /** Lectura interactiva (Módulo 6): la lectura de ejemplo publicada para el escenario. */
+  killa?: { lecturaId: string; titulo: string; tematica: string };
 }
 
 /**

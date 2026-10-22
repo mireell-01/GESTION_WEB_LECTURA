@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { Alerta, Cargando, Chip, EscenaMundo, Icono } from '@lectoaventura/ui';
+import { Alerta, Cargando, Chip, clasesBoton, EscenaMundo, Icono } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ESTADO_MISION, MisionesDeMundo, TONO_MUNDO } from './tipos';
 
 const AVANCE = { PENDIENTE: 'Por leer', EN_CURSO: 'Leyendo', FINALIZADA: '¡Leída!' } as const;
+/** Módulo 6: qué dice el enlace a la lectura según su avance. */
+const LEER = { PENDIENTE: 'Leer', EN_CURSO: 'Seguir leyendo', FINALIZADA: 'Leer otra vez' } as const;
 
 /** RF-032: las misiones de un mundo, cada una con sus lecturas y el avance del niño. */
 export function MisionesDelMundo({ mundoId }: { mundoId: string }) {
@@ -74,6 +76,9 @@ export function MisionesDelMundo({ mundoId }: { mundoId: string }) {
                         <Icono nombre="libro" tamano={22} />
                         <span>{l.titulo}</span>
                         <Chip tipo={l.avance === 'FINALIZADA' ? 'exito' : l.avance === 'EN_CURSO' ? 'aviso' : undefined}>{AVANCE[l.avance]}</Chip>
+                        <Link href={`/estudiante/lecturas/${l.id}`} className={clasesBoton(l.avance === 'FINALIZADA' ? 'fantasma' : 'primario', { tamano: 'pequeno' })} aria-label={`${LEER[l.avance]}: ${l.titulo}`}>
+                          {LEER[l.avance]}
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -83,7 +88,6 @@ export function MisionesDelMundo({ mundoId }: { mundoId: string }) {
           })}
         </ol>
       )}
-      <p className="lectura__pronto">¡Muy pronto podrás leer las misiones aquí y ganar estrellas!</p>
     </div>
   );
 }

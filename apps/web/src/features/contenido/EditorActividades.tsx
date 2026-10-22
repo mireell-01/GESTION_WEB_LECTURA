@@ -28,6 +28,9 @@ interface ItemForm {
   enunciado: string;
   opciones: string[];
   indiceCorrecto: number;
+  /** RF-040: selección múltiple, con varias correctas. */
+  multiple: boolean;
+  correctas: number[];
   elementos: string[];
   minPalabras: string;
   clavesEvidencia: string[];
@@ -53,6 +56,8 @@ const itemNuevo = (tipo: TipoActividad): ItemForm => ({
   enunciado: '',
   opciones: ['', ''],
   indiceCorrecto: 0,
+  multiple: false,
+  correctas: [],
   elementos: ['', ''],
   minPalabras: '',
   clavesEvidencia: [],
@@ -74,6 +79,8 @@ function aFormulario(a: Actividad): ActividadForm {
       enunciado: it.enunciado,
       opciones: it.contenido.opciones ?? ['', ''],
       indiceCorrecto: it.respuestaCorrecta && 'indice' in it.respuestaCorrecta ? it.respuestaCorrecta.indice : 0,
+      multiple: it.contenido.multiple === true,
+      correctas: it.respuestaCorrecta && 'indices' in it.respuestaCorrecta ? it.respuestaCorrecta.indices : [],
       elementos: it.contenido.elementos ?? ['', ''],
       minPalabras: it.contenido.minPalabras ? String(it.contenido.minPalabras) : '',
       clavesEvidencia: it.clavesEvidencia,
@@ -97,7 +104,7 @@ function aPeticion(a: ActividadForm) {
       enunciado: it.enunciado,
       explicacionModelada: it.explicacionModelada,
       pistas: it.pistas.map((texto, i) => ({ nivel: `P${i + 1}`, texto })).filter((p) => p.texto.trim()),
-      ...(it.modalidad === 'SELECCION' ? { opciones: it.opciones, indiceCorrecto: it.indiceCorrecto } : {}),
+      ...(it.modalidad === 'SELECCION' ? (it.multiple ? { opciones: it.opciones, indicesCorrectos: it.correctas } : { opciones: it.opciones, indiceCorrecto: it.indiceCorrecto }) : {}),
       ...(it.modalidad === 'ORDENAMIENTO' ? { elementos: it.elementos } : {}),
       ...(it.modalidad === 'EVIDENCIA' ? { clavesEvidencia: it.clavesEvidencia } : {}),
       ...((it.modalidad === 'ESCRITURA' || it.modalidad === 'VOZ') && it.minPalabras ? { minPalabras: Number(it.minPalabras) } : {}),
@@ -113,6 +120,7 @@ function ListaTextos({
   max,
   onChange,
   marcado,
+  marcados,
   onMarcar,
 }: {
   titulo: string;
@@ -121,6 +129,8 @@ function ListaTextos({
   max: number;
   onChange: (v: string[]) => void;
   marcado?: number;
+  /** Selección múltiple: casillas en vez de una sola opción. */
+  marcados?: number[];
   onMarcar?: (i: number) => void;
 }) {
   return (
@@ -131,8 +141,12 @@ function ListaTextos({
           <div key={i} className="lista-textos__fila">
             {onMarcar ? (
               <label className="casilla casilla--sola">
-                <input type="radio" checked={marcado === i} onChange={() => onMarcar(i)} />
-                <span className="sr-only">Opción {i + 1} es la correcta</span>
+                {marcados ? (
+                  <input type="checkbox" checked={marcados.includes(i)} onChange={() => onMarcar(i)} />
+                ) : (
+                  <input type="radio" checked={marcado === i} onChange={() => onMarcar(i)} />
+                )}
+                <span className="sr-only">Opción {i + 1} es {marcados ? 'una de las correctas' : 'la correcta'}</span>
               </label>
             ) : (
               <span className="lista-textos__numero">{i + 1}</span>
@@ -201,15 +215,24 @@ function EditorItem({
       </div>
 
       {item.modalidad === 'SELECCION' ? (
-        <ListaTextos
-          titulo="Opciones (marca la correcta)"
-          valores={item.opciones}
-          min={2}
-          max={5}
-          onChange={(v) => onChange({ ...item, opciones: v, indiceCorrecto: Math.min(item.indiceCorrecto, v.length - 1) })}
-          marcado={item.indiceCorrecto}
-          onMarcar={(i) => cambiar('indiceCorrecto', i)}
-        />
+        <>
+          <label className="casilla">
+            <input type="checkbox" checked={item.multiple} onChange={(e) => cambiar('multiple', e.target.checked)} />
+            <span>Varias respuestas correctas (el niño marca todas)</span>
+          </label>
+          <ListaTextos
+            titulo={item.multiple ? 'Opciones (marca todas las correctas)' : 'Opciones (marca la correcta)'}
+            valores={item.opciones}
+            min={2}
+            max={5}
+            onChange={(v) => onChange({ ...item, opciones: v, indiceCorrecto: Math.min(item.indiceCorrecto, v.length - 1), correctas: item.correctas.filter((c) => c < v.length) })}
+            marcado={item.indiceCorrecto}
+            marcados={item.multiple ? item.correctas : undefined}
+            onMarcar={(i) =>
+              item.multiple ? cambiar('correctas', item.correctas.includes(i) ? item.correctas.filter((c) => c !== i) : [...item.correctas, i]) : cambiar('indiceCorrecto', i)
+            }
+          />
+        </>
       ) : null}
       {item.modalidad === 'ORDENAMIENTO' ? (
         <ListaTextos titulo="Elementos en el orden correcto (al niño se le muestran mezclados)" valores={item.elementos} min={2} max={8} onChange={(v) => cambiar('elementos', v)} />
@@ -385,7 +408,11 @@ export function VistaActividades({ detalle }: { detalle: DetalleLectura }) {
                 <ul>
                   {it.contenido.opciones.map((o, i) => (
                     <li key={i}>
-                      {o} {it.respuestaCorrecta && 'indice' in it.respuestaCorrecta && it.respuestaCorrecta.indice === i ? <Chip tipo="exito">Correcta</Chip> : null}
+                      {o}{' '}
+                      {(it.respuestaCorrecta && 'indice' in it.respuestaCorrecta && it.respuestaCorrecta.indice === i) ||
+                      (it.respuestaCorrecta && 'indices' in it.respuestaCorrecta && it.respuestaCorrecta.indices.includes(i)) ? (
+                        <Chip tipo="exito">Correcta</Chip>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

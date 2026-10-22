@@ -34,6 +34,8 @@ export interface Pista {
 export interface ContenidoItem {
   /** SELECCION: de 2 a 5 opciones. */
   opciones?: string[];
+  /** SELECCION múltiple (RF-040): el niño marca todas las correctas. */
+  multiple?: boolean;
   /** ORDENAMIENTO: de 2 a 8 elementos, escritos en el orden correcto (al niño se le muestran mezclados). */
   elementos?: string[];
   /** ESCRITURA / VOZ: mínimo de palabras esperado. */
@@ -49,8 +51,8 @@ export interface Item {
   esCerrado: boolean;
   enunciado: string;
   contenido: ContenidoItem;
-  /** SELECCION: { indice }; ORDENAMIENTO: { orden }. Abiertos y EVIDENCIA: null (la evidencia son sus claves). */
-  respuestaCorrecta: { indice: number } | { orden: number[] } | null;
+  /** SELECCION: { indice } o, si es múltiple, { indices }; ORDENAMIENTO: { orden }. Abiertos y EVIDENCIA: null (la evidencia son sus claves). */
+  respuestaCorrecta: { indice: number } | { indices: number[] } | { orden: number[] } | null;
   explicacionModelada: string;
   pistas: Pista[];
   /** EVIDENCIA: oraciones de la misma versión que respaldan la respuesta (ConjuntoEvidencia). */
@@ -80,6 +82,8 @@ export interface ActividadNueva {
     enunciado: string;
     opciones?: string[];
     indiceCorrecto?: number;
+    /** Selección múltiple: las opciones correctas (de 2 a todas menos una). */
+    indicesCorrectos?: number[];
     elementos?: string[];
     minPalabras?: number;
     clavesEvidencia?: string[];
@@ -137,11 +141,20 @@ export function construirActividades(entrada: ActividadNueva[], oracionIds: Set<
           const opciones = (it.opciones ?? []).map((o, k) => texto(o, 1, 200, `${donde}, opción ${k + 1}`));
           if (opciones.length < 2 || opciones.length > 5) throw new DatoLecturaInvalidoError(`${donde}: escribe de 2 a 5 opciones`);
           if (new Set(opciones.map((o) => o.toLowerCase())).size !== opciones.length) throw new DatoLecturaInvalidoError(`${donde}: hay opciones repetidas`);
-          if (!Number.isInteger(it.indiceCorrecto) || (it.indiceCorrecto as number) < 0 || (it.indiceCorrecto as number) >= opciones.length) {
-            throw new DatoLecturaInvalidoError(`${donde}: marca la opción correcta`);
+          if (Array.isArray(it.indicesCorrectos)) {
+            const indices = [...new Set(it.indicesCorrectos)].sort((x, y) => x - y);
+            if (indices.some((k) => !Number.isInteger(k) || k < 0 || k >= opciones.length) || indices.length < 2 || indices.length >= opciones.length) {
+              throw new DatoLecturaInvalidoError(`${donde}: en selección múltiple marca al menos 2 opciones correctas, y no todas`);
+            }
+            contenido = { opciones, multiple: true };
+            respuesta = { indices };
+          } else {
+            if (!Number.isInteger(it.indiceCorrecto) || (it.indiceCorrecto as number) < 0 || (it.indiceCorrecto as number) >= opciones.length) {
+              throw new DatoLecturaInvalidoError(`${donde}: marca la opción correcta`);
+            }
+            contenido = { opciones };
+            respuesta = { indice: it.indiceCorrecto as number };
           }
-          contenido = { opciones };
-          respuesta = { indice: it.indiceCorrecto as number };
         } else if (modalidad === 'ORDENAMIENTO') {
           const elementos = (it.elementos ?? []).map((e, k) => texto(e, 1, 200, `${donde}, elemento ${k + 1}`));
           if (elementos.length < 2 || elementos.length > 8) throw new DatoLecturaInvalidoError(`${donde}: escribe de 2 a 8 elementos en el orden correcto`);
@@ -197,13 +210,14 @@ export function problemasDeActividades(actividades: Actividad[]): string[] {
       const donde = `Actividad ${a.orden}, pregunta ${it.orden}`;
       if (it.esCerrado && !it.pistas.some((p) => p.nivel === 'P1')) problemas.push(`${donde}: falta la pista P1`);
       if (it.modalidad === 'EVIDENCIA' && it.clavesEvidencia.length === 0) problemas.push(`${donde}: marca las oraciones que son evidencia`);
-      if (it.respuestaCorrecta && 'indice' in it.respuestaCorrecta) {
-        const correcta = normal(it.contenido.opciones?.[it.respuestaCorrecta.indice] ?? '');
-        // Una pista nunca dice la respuesta literal (RN-06).
-        if (correcta.length >= 3 && it.pistas.some((p) => normal(p.texto).includes(correcta))) {
-          problemas.push(`${donde}: una pista revela la respuesta correcta`);
-        }
-      }
+      const rc = it.respuestaCorrecta;
+      const correctas = rc && 'indice' in rc ? [rc.indice] : rc && 'indices' in rc ? rc.indices : [];
+      // Una pista nunca dice la respuesta literal (RN-06).
+      const revela = correctas.some((k) => {
+        const correcta = normal(it.contenido.opciones?.[k] ?? '');
+        return correcta.length >= 3 && it.pistas.some((p) => normal(p.texto).includes(correcta));
+      });
+      if (revela) problemas.push(`${donde}: una pista revela la respuesta correcta`);
     }
   }
   return problemas;

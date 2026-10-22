@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alerta, Boton, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
 
 import { ReevaluacionAula } from '@/features/diagnostico/ReevaluacionAula';
+import { RespuestasAbiertasAula } from '@/features/lectura/RespuestasAbiertasAula';
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { AsignacionesAula } from './AsignacionesAula';
@@ -143,6 +144,8 @@ export function DetalleAula({ aulaId }: { aulaId: string }) {
       <AsignacionesAula aulaId={aula.id} estudiantes={estudiantes} editable={editable} />
 
       <ReevaluacionAula aulaId={aula.id} editable={editable} />
+
+      <RespuestasAbiertasAula aulaId={aula.id} />
 
       {editable ? <ArchivarAula aulaId={aula.id} nombre={aula.nombre} onArchivada={cargar} /> : null}
     </div>

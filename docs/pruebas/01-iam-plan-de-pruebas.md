@@ -1299,6 +1299,7 @@ import { cuentaBackoffice, filtrarPorTema, ingresarBackoffice, lecturaPublicada,
 import { retoTerminado } from '../../support/diagnostico';
 import { abrirAula, docenteConAula, PIN_PRUEBA, sembrarCatalogoE2E, sesionApi, tabletDelAulaActivada } from '../../support/escuela';
 import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
+import { ENUNCIADOS, lecturaKilla, leerPorApi } from '../../support/lectura';
 
 /** Cada prueba es un dispositivo distinto (IP simulada) para que el límite por IP (RNF-019) no las mezcle. */
 const test = base.extend({
@@ -1483,6 +1484,51 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await revisarPantalla(page);
     await page.getByRole('link', { name: 'Entrar al mundo 1: Explorador' }).click();
     await expect(page.getByRole('heading', { level: 2, name: mision.titulo })).toBeVisible();
+    await revisarPantalla(page);
+  });
+
+  test('la lectura interactiva y la revisión docente se adaptan (RF-038 a RF-051)', async ({ page, request }) => {
+    test.setTimeout(150_000);
+    const lectura = await lecturaKilla(request);
+    const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]);
+    await tabletDelAulaActivada(page, request, aula);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Mateo' }).click();
+    await escribirPin(page, PIN_PRUEBA);
+    await esperarAreaEstudiante(page, 'Mateo');
+    await page.goto(`/estudiante/lecturas/${lectura.lecturaId}`);
+    const titulo = (enunciado: string) => expect(page.getByRole('heading', { level: 2, name: enunciado, exact: true })).toBeVisible();
+
+    await titulo('¿Qué crees que le pasará a la llama?');
+    await revisarPantalla(page);
+    await page.getByLabel('Lo que creo que pasará').fill('Creo que la llama se enfermará');
+    await page.getByRole('button', { name: 'Empezar a leer' }).click();
+    await page.getByRole('button', { name: 'Opción A: Estaba feliz' }).click();
+    await expect(page.getByRole('list', { name: 'Tus pistas' })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('button', { name: 'Opción B: Le dolía algo' }).click();
+    await titulo(ENUNCIADOS.evidencia);
+    await page.getByRole('button', { name: 'Killa vio que tenía una espina en la pata.' }).click();
+    await revisarPantalla(page); // cada oración se toca con 48 px
+    await page.getByRole('button', { name: 'Esta es mi evidencia' }).click();
+    await expect(page.getByRole('heading', { name: '¿Qué camino eliges?' })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('button', { name: 'Ir al río' }).click();
+    await titulo(ENUNCIADOS.ordenar);
+    await revisarPantalla(page);
+
+    await leerPorApi(request, aula, 'Mateo', lectura.lecturaId);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: '¿Acertaste?' })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('region', { name: '¿Acertaste?' }).getByRole('textbox').fill('Me gustó');
+    await page.getByRole('button', { name: 'Terminar mi lectura' }).click();
+    await expect(page.getByRole('heading', { name: '¡Lectura terminada!' })).toBeVisible();
+    await revisarPantalla(page);
+
+    await salirDelPanel(page);
+    await abrirAula(page, aula);
+    await expect(page.getByRole('region', { name: 'Respuestas por revisar' }).getByRole('listitem', { name: 'Respuesta de Mateo' })).toBeVisible();
     await revisarPantalla(page);
   });
 });
@@ -2190,6 +2236,8 @@ jobs:
           node tests/load/sembrar-aventura.mjs
           k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
           k6 run tests/load/scenarios/diagnostico-reto.js
+          LECTURA_ID=$(node tests/load/sembrar-lectura.mjs)
+          k6 run -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

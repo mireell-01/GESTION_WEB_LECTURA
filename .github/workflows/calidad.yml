@@ -106,6 +106,8 @@ jobs:
           node tests/load/sembrar-aventura.mjs
           k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
           k6 run tests/load/scenarios/diagnostico-reto.js
+          LECTURA_ID=$(node tests/load/sembrar-lectura.mjs)
+          k6 run -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

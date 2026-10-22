@@ -1395,7 +1395,8 @@ export interface AulaPreparada {
 /** Docente con su aula y estudiantes, preparados por la API (RF-014, RF-015). */
 export async function docenteConAula(
   request: APIRequestContext,
-  estudiantes: { alias: string; avatar: string }[],
+  /** Por defecto nacidos en abril de 2017 (8–9 años, R2). */
+  estudiantes: { alias: string; avatar: string; anioNacimiento?: number }[],
   aula = '3.° B',
 ): Promise<AulaPreparada> {
   const docente = await cuentaVerificada(request, { rol: 'DOCENTE', nombre: 'Rosa Docente', prefijo: 'docente' });
@@ -1412,7 +1413,7 @@ export async function docenteConAula(
 
   const ids: Record<string, string> = {};
   for (const e of estudiantes) {
-    const r = await request.post(`/api/v1/aulas/${aulaId}/matriculas`, { headers, data: { ...e, anioNacimiento: 2017, mesNacimiento: 4 } });
+    const r = await request.post(`/api/v1/aulas/${aulaId}/matriculas`, { headers, data: { anioNacimiento: 2017, mesNacimiento: 4, ...e } });
     expect(r.status(), await r.text()).toBe(201);
     ids[e.alias] = (await r.json()).estudianteId;
     const pin = await request.post(`/api/v1/estudiantes/${ids[e.alias]}/pin/restablecer`, { headers, data: { pinNuevo: PIN_PRUEBA } });

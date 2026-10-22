@@ -30,8 +30,8 @@ export interface Item {
   modalidad: Modalidad;
   esCerrado: boolean;
   enunciado: string;
-  contenido: { opciones?: string[]; elementos?: string[]; minPalabras?: number };
-  respuestaCorrecta: { indice: number } | { orden: number[] } | null;
+  contenido: { opciones?: string[]; multiple?: boolean; elementos?: string[]; minPalabras?: number };
+  respuestaCorrecta: { indice: number } | { indices: number[] } | { orden: number[] } | null;
   explicacionModelada: string;
   pistas: { nivel: 'P1' | 'P2' | 'P3'; texto: string }[];
   clavesEvidencia: string[];

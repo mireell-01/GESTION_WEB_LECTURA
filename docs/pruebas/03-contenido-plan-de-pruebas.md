@@ -314,6 +314,20 @@ describe('Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
     expect(problemasDeActividades(a)).toEqual(['Agrega al menos una actividad para después de leer', 'Actividad 2, pregunta 1: una pista revela la respuesta correcta']);
     expect(problemasDeActividades(sinEvidencia)).toEqual(['Actividad 1, pregunta 1: falta la pista P1', 'Actividad 1, pregunta 1: marca las oraciones que son evidencia']);
   });
+
+  it('RF-040: selección múltiple con 2 o más correctas (y no todas); ninguna pista puede nombrarlas', () => {
+    const multiple = (indicesCorrectos: number[], pista = 'Mira el segundo párrafo') =>
+      construirActividades(
+        [{ momento: 'DESPUES', tipo: 'SELECCION', items: [{ habilidad: 'LIT', nivelDificultad: 2, modalidad: 'SELECCION', enunciado: '¿Qué hizo Killa?', opciones: ['Cuidó a Pancho', 'Voló', 'Le quitó la espina'], indicesCorrectos, explicacionModelada: 'Lo dice el texto', pistas: [{ nivel: 'P1', texto: pista }] }] }],
+        set,
+        ids(),
+      );
+    expect(multiple([2, 0, 2])[0]!.items[0]).toMatchObject({ esCerrado: true, contenido: { opciones: expect.any(Array), multiple: true }, respuestaCorrecta: { indices: [0, 2] } });
+    expect(() => multiple([1])).toThrow(/al menos 2 opciones correctas/);
+    expect(() => multiple([0, 1, 2])).toThrow(/y no todas/);
+    expect(() => multiple([0, 7])).toThrow(/al menos 2 opciones correctas/);
+    expect(problemasDeActividades(multiple([0, 2], 'Piensa en: le quitó la espina'))).toEqual(['Actividad 1, pregunta 1: una pista revela la respuesta correcta']);
+  });
 });
 
 describe('Historia ramificada (RF-029)', () => {
@@ -1272,7 +1286,8 @@ test.describe('Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
     const lectura = page.getByRole('article');
     await expect(lectura.getByRole('heading', { level: 1, name: paraEl.titulo })).toBeVisible();
     await expect(lectura.getByText('Había una vez un zorro que miraba la luna cada noche.', { exact: false })).toBeVisible();
-    await expect(page.getByText('¡Muy pronto podrás responder sus actividades y ganar estrellas!')).toBeVisible();
+    // Módulo 6: desde el detalle ya se lee la lectura con sus actividades.
+    await expect(page.getByRole('link', { name: '¡Leer ahora!' })).toHaveAttribute('href', `/estudiante/lecturas/${paraEl.lecturaId}`);
   });
 
   test('la lectura publicada aparece para asignar en el aula (Módulo 2)', async ({ page, request }) => {

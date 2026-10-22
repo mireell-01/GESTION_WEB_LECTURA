@@ -138,7 +138,8 @@ test.describe('Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
     const lectura = page.getByRole('article');
     await expect(lectura.getByRole('heading', { level: 1, name: paraEl.titulo })).toBeVisible();
     await expect(lectura.getByText('Había una vez un zorro que miraba la luna cada noche.', { exact: false })).toBeVisible();
-    await expect(page.getByText('¡Muy pronto podrás responder sus actividades y ganar estrellas!')).toBeVisible();
+    // Módulo 6: desde el detalle ya se lee la lectura con sus actividades.
+    await expect(page.getByRole('link', { name: '¡Leer ahora!' })).toHaveAttribute('href', `/estudiante/lecturas/${paraEl.lecturaId}`);
   });
 
   test('la lectura publicada aparece para asignar en el aula (Módulo 2)', async ({ page, request }) => {

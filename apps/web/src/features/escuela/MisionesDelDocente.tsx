@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { Icono } from '@lectoaventura/ui';
+import { clasesBoton, Icono } from '@lectoaventura/ui';
 
 import { api } from '@/shared/api/client';
 
@@ -43,6 +44,11 @@ export function MisionesDelDocente() {
                 Hasta el {diaEnPalabras(m.fechaLimite)}
               </span>
             </span>
+            {m.tipo === 'LECTURA' ? (
+              <Link href={`/estudiante/lecturas/${m.contenidoId}?asignacion=${m.id}`} className={clasesBoton('primario', { tamano: 'pequeno' })} aria-label={`Leer ${m.titulo}`}>
+                Leer
+              </Link>
+            ) : null}
           </li>
         ))}
       </ul>
