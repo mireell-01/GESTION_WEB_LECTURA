@@ -293,6 +293,16 @@ Se usa la misma skill del Módulo 1 (`.claude/skills/pruebas-modulo/SKILL.md`), 
 # 9. PIPELINE CI/CD (QUALITY GATES)
 El workflow `.github/workflows/calidad.yml` ya ejecuta los 4 niveles; las pruebas nuevas entran solas por sus carpetas. El escenario k6 de la lectura ahora mide también el perfil y las recomendaciones (mismo paso de CI).
 
+**Cambio en el paso de carga:** tras el merge del Módulo 6, la ejecución de `main` falló en ese paso (k6 salió con código 99: algún umbral no se cumplió), aunque el mismo código había pasado en el PR. Los registros de GitHub piden iniciar sesión, así que no se veía cuál. Ahora cada escenario corre con `--summary-export` y [`tests/load/anotar-resumen.mjs`](../../tests/load/anotar-resumen.mjs) publica sus tiempos (p95 y p99 de cada métrica con umbral) como anotación de la ejecución; si uno falla, los demás igual corren y el paso falla al final indicando cuáles:
+
+```yaml
+          escenario() {
+            nombre="$1"; shift
+            k6 run --summary-trend-stats "avg,med,p(95),p(99),max" --summary-export "k6-$nombre.json" "$@" || fallidos="$fallidos $nombre"
+            node tests/load/anotar-resumen.mjs "k6-$nombre.json" "$nombre"
+          }
+```
+
 ---
 
 # 10. MATRIZ DE TRAZABILIDAD DE PRUEBAS DEL MÓDULO
