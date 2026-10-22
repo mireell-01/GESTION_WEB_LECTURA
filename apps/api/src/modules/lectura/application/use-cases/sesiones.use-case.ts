@@ -143,6 +143,7 @@ export class SesionesUseCase {
   private publicarItem(s: SesionLectura, g: Guion, r: RespuestaItem): Promise<void> {
     const item = g.paso(r.itemId)?.item;
     return this.publicar(EVENTOS_LECTURA.ITEM_RESPONDIDO, s, {
+      respuestaId: r.id,
       itemId: r.itemId,
       habilidad: r.habilidad,
       nivelDificultad: item?.nivelDificultad ?? 1,

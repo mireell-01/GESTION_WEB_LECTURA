@@ -1,3 +1,4 @@
+import type { Habilidad } from '../domain/value-objects/habilidad';
 import type { Maestrias } from './progreso-lector';
 
 /**
@@ -17,11 +18,18 @@ export const EVENTOS_INTEGRACION = {
   RESPUESTA_ABIERTA_VALORADA: 'lectura.RespuestaAbiertaValorada',
   /** Progreso → Aventura evalúa el desbloqueo del mundo siguiente (RF-031, RN-09). */
   MAESTRIA_ACTUALIZADA: 'progreso.MaestriaActualizada',
+  /** Progreso → Gamificación otorga +50 al subir el nivel CNEB de una habilidad (RN-11) · Aventura evalúa desbloqueo. */
+  MAESTRIA_NIVEL_SUBIDO: 'progreso.MaestriaNivelSubido',
 } as const;
 
 export interface DatosDiagnosticoFinalizado {
   estudianteId: string;
   maestrias: Maestrias;
+  diagnosticoId?: string;
+  /** INICIAL o REEVALUACION (RF-037): el perfil lector solo parte del inicial. */
+  tipo?: string;
+  /** Ítems respondidos por habilidad (RN-08 los cuenta para declarar el nivel). */
+  items?: Partial<Record<Habilidad, number>>;
 }
 
 export interface DatosSesionLectura {
@@ -34,6 +42,8 @@ export interface DatosSesionLectura {
 
 export interface DatosItemRespondido {
   estudianteId: string;
+  /** Identifica la respuesta: así Progreso no la cuenta dos veces si el evento se reintenta. */
+  respuestaId: string;
   sesionId: string;
   lecturaId: string;
   itemId: string;
@@ -62,4 +72,7 @@ export interface DatosRespuestaAbiertaValorada {
 
 export interface DatosMaestriaActualizada {
   estudianteId: string;
+  habilidad?: string;
+  valorAnterior?: number;
+  valorNuevo?: number;
 }

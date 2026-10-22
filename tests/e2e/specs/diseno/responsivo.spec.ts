@@ -87,10 +87,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
       expect(caja.width).toBeGreaterThanOrEqual(ventana.width - 1);
     }
     // Las secciones futuras se muestran con candado y avisan "muy pronto".
-    await nav.getByRole('button', { name: /Progreso/ }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Progreso llegará muy pronto' })).toBeVisible();
-    // Módulo 4: Mundos ya es una sección real.
+    await nav.getByRole('button', { name: /Mi perfil/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Mi perfil llegará muy pronto' })).toBeVisible();
+    // Módulos 4 y 7: Mundos y Progreso ya son secciones reales.
     await expect(nav.getByRole('link', { name: 'Mundos' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Progreso' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
   });
@@ -230,6 +231,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await page.getByRole('region', { name: '¿Acertaste?' }).getByRole('textbox').fill('Me gustó');
     await page.getByRole('button', { name: 'Terminar mi lectura' }).click();
     await expect(page.getByRole('heading', { name: '¡Lectura terminada!' })).toBeVisible();
+    await revisarPantalla(page);
+
+    // Módulo 7: el perfil lector y sus próximas lecturas.
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Progreso' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Tus próximas lecturas' })).toBeVisible();
     await revisarPantalla(page);
 
     await salirDelPanel(page);

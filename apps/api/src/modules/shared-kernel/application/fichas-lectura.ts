@@ -1,3 +1,4 @@
+import type { Habilidad } from '../domain/value-objects/habilidad';
 import type { RangoEdad } from '../domain/value-objects/rango-edad';
 
 /**
@@ -11,6 +12,8 @@ export interface FichaLecturaPublicada {
   rangoEdad: RangoEdad;
   nivelDificultad: number;
   tematica: string;
+  /** Las habilidades que trabaja (RN-20: recomendar para la habilidad más débil). */
+  habilidadesObjetivo?: Habilidad[];
 }
 
 export interface FuenteFichasLectura {

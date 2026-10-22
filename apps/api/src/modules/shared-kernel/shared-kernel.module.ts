@@ -5,7 +5,7 @@ import { CATALOGO_ASIGNABLE } from './application/catalogo-asignable';
 import { CONTEXTO_AULA } from './application/contexto-aula';
 import { FICHAS_LECTURA } from './application/fichas-lectura';
 import { NIVEL_LECTOR } from './application/nivel-lector';
-import { AVANCE_LECTURAS, DIAGNOSTICO_INICIAL, MAESTRIA_LECTOR } from './application/progreso-lector';
+import { AVANCE_LECTURAS, DIAGNOSTICO_INICIAL, MAESTRIA_LECTOR, MISION_EN_CURSO } from './application/progreso-lector';
 import { RECOLECTOR_DATOS } from './application/recolector-datos';
 import { BusEventosOutbox } from './infrastructure/bus-eventos-outbox';
 import { RegistroCatalogoAsignableMemoria } from './infrastructure/catalogo-asignable-registro';
@@ -18,6 +18,7 @@ import {
   RegistroDiagnosticoInicialDelegado,
   RegistroFichasLecturaDelegado,
   RegistroMaestriaDelegado,
+  RegistroMisionEnCursoDelegado,
 } from './infrastructure/registros-integracion';
 
 /**
@@ -39,6 +40,8 @@ import {
     { provide: DIAGNOSTICO_INICIAL, useClass: RegistroDiagnosticoInicialDelegado },
     { provide: MAESTRIA_LECTOR, useClass: RegistroMaestriaDelegado },
     { provide: AVANCE_LECTURAS, useClass: RegistroAvanceLecturasDelegado },
+    // Módulo 7: lo que Progreso necesita de Aventura para recomendar (RN-20).
+    { provide: MISION_EN_CURSO, useClass: RegistroMisionEnCursoDelegado },
   ],
   exports: [
     PrismaService,
@@ -51,6 +54,7 @@ import {
     DIAGNOSTICO_INICIAL,
     MAESTRIA_LECTOR,
     AVANCE_LECTURAS,
+    MISION_EN_CURSO,
   ],
 })
 export class SharedKernelModule {}

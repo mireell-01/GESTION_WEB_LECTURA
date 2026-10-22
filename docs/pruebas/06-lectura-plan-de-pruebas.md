@@ -1608,15 +1608,26 @@ const NODOS = [
   { clave: 'cerro', contenido: 'En el cerro vieron un cóndor volar.', esFinal: true },
 ];
 
+/** La editora y el revisor que publican; se reutilizan para no superar el límite de ingresos por IP (RNF-019). */
+export interface Publicadores {
+  editoraCuenta: CuentaBackoffice;
+  editora: Record<string, string>;
+  revisor: Record<string, string>;
+}
+
+export async function publicadores(request: APIRequestContext): Promise<Publicadores> {
+  const editoraCuenta = await cuentaBackoffice('EDITOR');
+  return { editoraCuenta, editora: await sesionBackoffice(request, editoraCuenta), revisor: await sesionBackoffice(request, await cuentaBackoffice('REVISOR')) };
+}
+
 /** "Killa y la llama" publicada por la API (editora escribe, revisor aprueba), con historia ramificada. */
 export async function lecturaKilla(
   request: APIRequestContext,
   p: { rangoEdad?: 'R1' | 'R2'; tematica?: string } = {},
-): Promise<{ lecturaId: string; titulo: string; tematica: string; editora: CuentaBackoffice }> {
-  const editoraCuenta = await cuentaBackoffice('EDITOR');
-  const editora = await sesionBackoffice(request, editoraCuenta);
-  const revisor = await sesionBackoffice(request, await cuentaBackoffice('REVISOR'));
-  const sufijo = Date.now().toString(36);
+  quienes?: Publicadores,
+): Promise<{ lecturaId: string; titulo: string; tematica: string; editora: CuentaBackoffice; editoraSesion: Record<string, string> }> {
+  const { editoraCuenta, editora, revisor } = quienes ?? (await publicadores(request));
+  const sufijo = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   const titulo = `Killa y la llama ${sufijo}`;
   const tematica = p.tematica ?? `Llamas ${sufijo}`;
   const creada = await request.post('/api/v1/backoffice/lecturas', {
@@ -1632,7 +1643,7 @@ export async function lecturaKilla(
   }
   expect((await request.post(`/api/v1/backoffice/lecturas/${lecturaId}/enviar-revision`, { headers: editora })).status()).toBe(200);
   expect((await request.post(`/api/v1/backoffice/lecturas/${lecturaId}/aprobar`, { headers: revisor })).status()).toBe(200);
-  return { lecturaId, titulo, tematica, editora: editoraCuenta };
+  return { lecturaId, titulo, tematica, editora: editoraCuenta, editoraSesion: editora };
 }
 
 interface PreguntaApi {
@@ -1678,9 +1689,10 @@ export async function leerPorApi(
   preparada: AulaPreparada,
   alias: string,
   lecturaId: string,
-  p: { hasta?: string; terminar?: boolean; prediccion?: string } = {},
+  p: { hasta?: string; terminar?: boolean; prediccion?: string; fallar?: string[]; nino?: Record<string, string> } = {},
 ): Promise<string> {
-  const nino = await sesionDelNino(request, preparada, alias);
+  // `nino`: una sesión ya abierta (cada sesión nueva cuesta un ingreso de la docente, RNF-019).
+  const nino = p.nino ?? (await sesionDelNino(request, preparada, alias));
   const llamar = async (metodo: 'post' | 'put', ruta: string, data: object = {}) => {
     const r = await request[metodo](`/api/v1${ruta}`, { headers: nino, data });
     expect(r.status(), await r.text()).toBeLessThan(300);
@@ -1693,7 +1705,9 @@ export async function leerPorApi(
       s = await llamar('post', `/sesiones-lectura/${s.id}/decisiones`, { nodoId: s.historia?.nodo.id, opcion: 0 });
     } else if (s.pregunta) {
       if (s.pregunta.enunciado === p.hasta) return s.id;
-      const r = await llamar('post', `/sesiones-lectura/${s.id}/respuestas`, { itemId: s.pregunta.itemId, idempotencyKey: crypto.randomUUID(), ...respuestaCorrecta(s, s.pregunta) });
+      // `fallar`: se equivoca en esa pregunta de selección hasta ver la explicación (RF-045).
+      const entrada = p.fallar?.includes(s.pregunta.enunciado) ? { indice: s.pregunta.opciones.indexOf('Estaba feliz') } : respuestaCorrecta(s, s.pregunta);
+      const r = await llamar('post', `/sesiones-lectura/${s.id}/respuestas`, { itemId: s.pregunta.itemId, idempotencyKey: crypto.randomUUID(), ...entrada });
       s = r.sesion;
     } else break;
   }
@@ -1835,6 +1849,8 @@ import { check, fail } from 'k6';
  *   RF-040: corrección en el servidor → p95 < 300 ms.
  *   RF-046: reanudar la sesión (GET) → p95 < 300 ms.
  *   RF-047: cerrar la lectura sin errores.
+ *   RF-052, RF-055 (Módulo 7): al terminar ve su perfil lector y sus próximas lecturas → p95 < 300 ms
+ *   (RNF-001), con la maestría ya movida por cada respuesta (RF-053).
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa) y la lectura publicada:
  *   LECTURA=$(node tests/load/sembrar-lectura.mjs)
@@ -1863,6 +1879,8 @@ export const options = {
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/respuestas}': ['p(95)<300'],
     'http_req_duration{nombre:GET /sesiones-lectura/{id}}': ['p(95)<300'],
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/finalizar}': ['p(95)<800'],
+    'http_req_duration{nombre:GET /yo/perfil-lector}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/recomendaciones}': ['p(95)<300'],
     checks: ['rate>0.995'],
   },
 };
@@ -1958,6 +1976,11 @@ export function leer(datos) {
   }
   const fin = http.post(`${BASE}/sesiones-lectura/${id}/finalizar`, JSON.stringify({ reflexion: 'Pensé que se enfermaba y era una espina' }), { headers: yo, tags: { nombre: 'POST /sesiones-lectura/{id}/finalizar' } });
   check(fin, { 'lectura terminada': (r) => r.status === 200 && r.json('fase') === 'FINALIZADA' });
+
+  const perfil = http.get(`${BASE}/yo/perfil-lector`, { headers: yo, tags: { nombre: 'GET /yo/perfil-lector' } });
+  check(perfil, { 'perfil con 5 habilidades medidas': (r) => r.status === 200 && r.json('habilidades').length === 5 && r.json('conDatos') === true });
+  const recomendaciones = http.get(`${BASE}/yo/recomendaciones`, { headers: yo, tags: { nombre: 'GET /yo/recomendaciones' } });
+  check(recomendaciones, { 'entre 0 y 3 recomendaciones': (r) => r.status === 200 && r.json().length <= 3 });
 }
 ```
 
@@ -1977,8 +2000,8 @@ Característica: Lectura interactiva con actividades antes, durante y después
 
   Responsable de aprobación (Product Owner): ______________________  Fecha: ____
 
-  # Los 6 puntos por corregir tras una pista (RN-11) los otorgará Gamificación (Módulo 8) y la
-  # maestría la recalculará Progreso (Módulo 7), ambos con el evento ItemRespondido que aquí se verifica.
+  # La maestría ya la recalcula Progreso (Módulo 7). Los 6 puntos por corregir tras una pista (RN-11)
+  # los otorgará Gamificación (Módulo 8) con el mismo evento ItemRespondido.
   @RF-045 @RN-06 @RN-07 @UAT-02 @camino-feliz @smoke
   Escenario: El estudiante corrige su respuesta después de una pista
     Dado un estudiante en una lectura del mundo "Detective"
@@ -2028,6 +2051,7 @@ import { retoTerminado } from '../support/diagnostico';
 import { abrirAula, docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../support/escuela';
 import { escribirPin, esperarAreaEstudiante, salirDelPanel } from '../support/iam';
 import { DESENLACE_RIO, ENUNCIADOS, itemDeLectura, itemsRespondidos, lecturaKilla, leerPorApi, respuestaGuardada } from '../support/lectura';
+import { maestriaGuardada } from '../support/progreso';
 import { Cuando, Dado, Entonces } from './fixtures';
 
 /** Nivel 4 — Pasos de los escenarios de la lectura interactiva (RF-038 a RF-051, UAT-02, UAT-03). */
@@ -2098,8 +2122,12 @@ Entonces('su maestría en {word} se actualiza con un puntaje de ítem de {word}'
   const guardada = await respuestaGuardada(estudianteId, ENUNCIADOS.seleccion);
   expect(guardada).toMatchObject({ habilidad, esCorrecta: true, pistasUsadas: 1 });
   expect(Number(guardada.puntajeItem)).toBe(valor);
-  // Progreso (Módulo 7) recalcula la maestría con este evento (RF-053).
   expect(await itemsRespondidos(estudianteId)).toContainEqual(expect.objectContaining({ habilidad, puntajeItem: valor, pistasUsadas: 1 }));
+  // Módulo 7: Progreso la recalcula con RN-07: EMA (α = 0,3) de 0,75 × (0,8 + 0,1 × 3) × 100 = 82,5.
+  const m = await maestriaGuardada(estudianteId, habilidad);
+  const ultimo = m.cambios.at(-1)!;
+  expect(ultimo.origen).toBe('ITEM');
+  expect(m.valor).toBeCloseTo(Math.round((0.3 * 82.5 + 0.7 * ultimo.anterior) * 100) / 100, 2);
 });
 
 // ── UAT-03: encuentra la evidencia (RF-043) ───────────────────────────────

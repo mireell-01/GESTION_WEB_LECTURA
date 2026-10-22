@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
 import { DIAGNOSTICO_INICIAL, PrismaService, RegistroDiagnosticoInicial } from '../../shared-kernel/public-api';
-import { maestriasDe } from '../domain/services/calculo-nivel';
+import { itemsDe, maestriasDe } from '../domain/services/calculo-nivel';
 import { PrismaDiagnosticoRepository } from './persistence/prisma-diagnostico-repository';
 
 /**
@@ -25,7 +25,7 @@ export class DiagnosticoInicialRegistro implements OnModuleInit {
       resultadoDe: async (estudianteId) => {
         const inicial = await this.repo.inicialDe(estudianteId);
         return inicial?.estado === 'FINALIZADO' && inicial.resultado
-          ? { estado: 'FINALIZADO', maestrias: maestriasDe(inicial.resultado.habilidades) }
+          ? { estado: 'FINALIZADO', maestrias: maestriasDe(inicial.resultado.habilidades), items: itemsDe(inicial.resultado.habilidades), diagnosticoId: inicial.id }
           : { estado: 'PENDIENTE' };
       },
     });

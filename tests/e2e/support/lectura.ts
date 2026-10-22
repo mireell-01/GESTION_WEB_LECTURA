@@ -68,15 +68,26 @@ const NODOS = [
   { clave: 'cerro', contenido: 'En el cerro vieron un cóndor volar.', esFinal: true },
 ];
 
+/** La editora y el revisor que publican; se reutilizan para no superar el límite de ingresos por IP (RNF-019). */
+export interface Publicadores {
+  editoraCuenta: CuentaBackoffice;
+  editora: Record<string, string>;
+  revisor: Record<string, string>;
+}
+
+export async function publicadores(request: APIRequestContext): Promise<Publicadores> {
+  const editoraCuenta = await cuentaBackoffice('EDITOR');
+  return { editoraCuenta, editora: await sesionBackoffice(request, editoraCuenta), revisor: await sesionBackoffice(request, await cuentaBackoffice('REVISOR')) };
+}
+
 /** "Killa y la llama" publicada por la API (editora escribe, revisor aprueba), con historia ramificada. */
 export async function lecturaKilla(
   request: APIRequestContext,
   p: { rangoEdad?: 'R1' | 'R2'; tematica?: string } = {},
-): Promise<{ lecturaId: string; titulo: string; tematica: string; editora: CuentaBackoffice }> {
-  const editoraCuenta = await cuentaBackoffice('EDITOR');
-  const editora = await sesionBackoffice(request, editoraCuenta);
-  const revisor = await sesionBackoffice(request, await cuentaBackoffice('REVISOR'));
-  const sufijo = Date.now().toString(36);
+  quienes?: Publicadores,
+): Promise<{ lecturaId: string; titulo: string; tematica: string; editora: CuentaBackoffice; editoraSesion: Record<string, string> }> {
+  const { editoraCuenta, editora, revisor } = quienes ?? (await publicadores(request));
+  const sufijo = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   const titulo = `Killa y la llama ${sufijo}`;
   const tematica = p.tematica ?? `Llamas ${sufijo}`;
   const creada = await request.post('/api/v1/backoffice/lecturas', {
@@ -92,7 +103,7 @@ export async function lecturaKilla(
   }
   expect((await request.post(`/api/v1/backoffice/lecturas/${lecturaId}/enviar-revision`, { headers: editora })).status()).toBe(200);
   expect((await request.post(`/api/v1/backoffice/lecturas/${lecturaId}/aprobar`, { headers: revisor })).status()).toBe(200);
-  return { lecturaId, titulo, tematica, editora: editoraCuenta };
+  return { lecturaId, titulo, tematica, editora: editoraCuenta, editoraSesion: editora };
 }
 
 interface PreguntaApi {
@@ -138,9 +149,10 @@ export async function leerPorApi(
   preparada: AulaPreparada,
   alias: string,
   lecturaId: string,
-  p: { hasta?: string; terminar?: boolean; prediccion?: string } = {},
+  p: { hasta?: string; terminar?: boolean; prediccion?: string; fallar?: string[]; nino?: Record<string, string> } = {},
 ): Promise<string> {
-  const nino = await sesionDelNino(request, preparada, alias);
+  // `nino`: una sesión ya abierta (cada sesión nueva cuesta un ingreso de la docente, RNF-019).
+  const nino = p.nino ?? (await sesionDelNino(request, preparada, alias));
   const llamar = async (metodo: 'post' | 'put', ruta: string, data: object = {}) => {
     const r = await request[metodo](`/api/v1${ruta}`, { headers: nino, data });
     expect(r.status(), await r.text()).toBeLessThan(300);
@@ -153,7 +165,9 @@ export async function leerPorApi(
       s = await llamar('post', `/sesiones-lectura/${s.id}/decisiones`, { nodoId: s.historia?.nodo.id, opcion: 0 });
     } else if (s.pregunta) {
       if (s.pregunta.enunciado === p.hasta) return s.id;
-      const r = await llamar('post', `/sesiones-lectura/${s.id}/respuestas`, { itemId: s.pregunta.itemId, idempotencyKey: crypto.randomUUID(), ...respuestaCorrecta(s, s.pregunta) });
+      // `fallar`: se equivoca en esa pregunta de selección hasta ver la explicación (RF-045).
+      const entrada = p.fallar?.includes(s.pregunta.enunciado) ? { indice: s.pregunta.opciones.indexOf('Estaba feliz') } : respuestaCorrecta(s, s.pregunta);
+      const r = await llamar('post', `/sesiones-lectura/${s.id}/respuestas`, { itemId: s.pregunta.itemId, idempotencyKey: crypto.randomUUID(), ...entrada });
       s = r.sesion;
     } else break;
   }
