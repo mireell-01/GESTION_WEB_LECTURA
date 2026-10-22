@@ -10,7 +10,7 @@ import { DOMINIO_E2E } from './iam';
  * y todo lo que depende de ellas, para no ensuciar la base del entorno. Las aulas arrastran sus
  * matrículas, asignaciones e invitaciones; las cuentas, sus vínculos familiares. La auditoría
  * (admin.auditoria) no se borra: es de solo agregar por diseño (RF-077). Las misiones con lecturas de
- * prueba y el mapa de los niños de prueba también se borran.
+ * prueba, el mapa y los retos de los niños de prueba también se borran.
  */
 export default async function limpieza(): Promise<void> {
   try {
@@ -36,6 +36,8 @@ export default async function limpieza(): Promise<void> {
     await prisma.mision.deleteMany({ where: { lecturas: { some: { lecturaId: { in: idsLecturas } } } } });
     await prisma.progresoMision.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     await prisma.progresoMundo.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    // Diagnóstico: los retos de los niños de prueba (arrastran sus respuestas).
+    await prisma.diagnostico.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).
     await prisma.lectura.deleteMany({ where: { autorId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });

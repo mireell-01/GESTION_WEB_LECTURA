@@ -3,12 +3,14 @@
 import { AVATARES, Icono, Paisaje } from '@lectoaventura/ui';
 
 import { MapaMundos } from '@/features/aventura/MapaMundos';
+import { TarjetaReto } from '@/features/diagnostico/TarjetaReto';
 import { MisionesDelDocente } from '@/features/escuela/MisionesDelDocente';
 import { useSesion } from '@/shared/auth/sesion';
 
 /**
  * Inicio del estudiante con la identidad aprobada. Solo muestra datos reales: alias, avatar, las
- * misiones que deja la docente ("Misión del docente", RF-018) y su mapa de aventuras (RF-030). La
+ * misiones que deja la docente ("Misión del docente", RF-018), su reto pendiente (RF-034, RF-037) y su
+ * mapa de aventuras (RF-030). La
  * racha y las monedas aparecerán cuando existan los módulos que las generan.
  */
 export default function EstudianteHomePage() {
@@ -30,6 +32,8 @@ export default function EstudianteHomePage() {
         </p>
         <Paisaje className="est-heroe__paisaje" />
       </section>
+
+      <TarjetaReto />
 
       <MisionesDelDocente />
 

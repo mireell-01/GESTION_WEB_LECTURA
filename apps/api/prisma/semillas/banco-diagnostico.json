@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "nota": "Banco inicial del diagnóstico (RF-034, RF-037), borrador para validación del líder pedagógico (SRS, Sprint 0). En cada pregunta la PRIMERA opción es la correcta; al cargarlo, la migración 20261022000000_banco_diagnostico cambia su posición para que no siempre sea la misma. Cada lectura tiene una pregunta por habilidad (LIT, VOC, INF, CRI, ARG) con dificultad creciente; la forma B es equivalente a la A (misma estructura y dificultad) para la reevaluación.",
+  "formas": {
+    "A": {
+      "R1": [
+        {
+          "clave": "R1-A-1",
+          "titulo": "Toby en el parque",
+          "texto": "Toby es un perro pequeño. Tiene manchas negras. Cada mañana corre al parque con Ana. Allí juega con una pelota roja. Cuando se cansa, toma agua y duerme bajo un árbol.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 1, "enunciado": "¿De qué color es la pelota de Toby?", "opciones": ["Roja", "Azul", "Negra"] },
+            { "habilidad": "VOC", "dificultad": 1, "enunciado": "Toby «se cansa». ¿Qué quiere decir?", "opciones": ["Ya no tiene fuerzas para jugar", "Tiene mucha hambre", "Está muy contento"] },
+            { "habilidad": "INF", "dificultad": 2, "enunciado": "¿Por qué Toby toma agua?", "opciones": ["Porque corrió y jugó mucho", "Porque la pelota es roja", "Porque Ana se fue"] },
+            { "habilidad": "CRI", "dificultad": 2, "enunciado": "¿Te parece bien que Ana lleve a Toby al parque?", "opciones": ["Sí, porque así Toby juega y se mueve", "No, porque los perros no juegan", "Sí, porque el árbol es grande"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Ana dice: «Toby es mi compañero». ¿Qué parte del texto lo muestra mejor?", "opciones": ["Cada mañana corre al parque con Ana", "Tiene manchas negras", "Duerme bajo un árbol"] }
+          ]
+        },
+        {
+          "clave": "R1-A-2",
+          "titulo": "La lluvia en el huerto",
+          "texto": "En el huerto de la escuela hay tomates y lechugas. Hoy llovió toda la mañana. Por eso los niños no regaron las plantas. En la tarde salió el sol y las hojas brillaban.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿Qué hay en el huerto de la escuela?", "opciones": ["Tomates y lechugas", "Flores y árboles", "Papas y maíz"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "Las hojas «brillaban». ¿Qué significa?", "opciones": ["Se veían con luz", "Estaban rotas", "Estaban secas"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Por qué los niños no regaron las plantas?", "opciones": ["Porque la lluvia ya les dio agua", "Porque no les gustan las plantas", "Porque era de noche"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Para qué sirve tener un huerto en la escuela?", "opciones": ["Para aprender a cuidar plantas", "Para que llueva más", "Para no ir a clases"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Luis cree que la lluvia ayudó al huerto. ¿Qué razón le da la razón?", "opciones": ["Las plantas tuvieron agua sin regarlas", "En la tarde salió el sol", "En el huerto hay tomates"] }
+          ]
+        }
+      ],
+      "R2": [
+        {
+          "clave": "R2-A-1",
+          "titulo": "Killa y el cóndor",
+          "texto": "En lo alto de los Andes vivía una vicuña llamada Killa. Todas las mañanas comía ichu junto al lago. Un día vio la sombra enorme de un cóndor que volaba en círculos. Killa se quedó quieta entre las rocas hasta que el ave se alejó. Desde entonces, siempre mira al cielo antes de bajar al lago.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 1, "enunciado": "¿Qué comía Killa cada mañana?", "opciones": ["Ichu", "Maíz", "Peces", "Flores"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "El cóndor volaba «en círculos». ¿Cómo se movía?", "opciones": ["Daba vueltas en el aire", "Volaba en línea recta", "Caminaba por el suelo", "Bajaba al lago"] },
+            { "habilidad": "INF", "dificultad": 2, "enunciado": "¿Por qué Killa se quedó quieta entre las rocas?", "opciones": ["Para que el cóndor no la viera", "Porque estaba dormida", "Porque quería jugar", "Porque tenía frío"] },
+            { "habilidad": "CRI", "dificultad": 2, "enunciado": "¿Qué aprendió Killa después de ese día?", "opciones": ["A tener cuidado antes de bajar al lago", "A volar como el cóndor", "A comer menos ichu", "A nadar en el lago"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Rosa dice que Killa es prudente. ¿Qué oración lo demuestra mejor?", "opciones": ["Siempre mira al cielo antes de bajar al lago", "Comía ichu junto al lago", "Vivía en lo alto de los Andes", "Vio la sombra de un cóndor"] }
+          ]
+        },
+        {
+          "clave": "R2-A-2",
+          "titulo": "El volcán de la feria",
+          "texto": "Mateo y Lucía prepararon un volcán para la feria de ciencias. Mezclaron bicarbonato con vinagre y una espuma roja salió por la boca del volcán. Los visitantes aplaudieron. La profesora les preguntó por qué salía espuma, y Lucía explicó que los dos ingredientes, al juntarse, producen un gas.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿Qué mezclaron Mateo y Lucía?", "opciones": ["Bicarbonato con vinagre", "Agua con sal", "Arena con piedras", "Leche con azúcar"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "Los visitantes «aplaudieron». ¿Qué hicieron?", "opciones": ["Golpearon sus palmas para felicitarlos", "Se fueron de la feria", "Hicieron preguntas", "Se asustaron"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Cómo se sintieron los visitantes al ver el volcán?", "opciones": ["Les gustó mucho", "Se aburrieron", "Se enojaron", "Tuvieron miedo"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Por qué es importante la explicación de Lucía?", "opciones": ["Porque muestra que entendió lo que pasó", "Porque el volcán era rojo", "Porque la feria terminó", "Porque Mateo no habló"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Mateo dice: «Nuestro volcán fue un experimento de verdad». ¿Qué dato lo apoya?", "opciones": ["Lucía explicó por qué se produce el gas", "La espuma era roja", "Había muchos visitantes", "La feria era en la escuela"] }
+          ]
+        },
+        {
+          "clave": "R2-A-3",
+          "titulo": "Las abejas del valle",
+          "texto": "En el valle de Urubamba, don Pedro cuida colmenas de abejas. Él sabe que las abejas no solo producen miel: al volar de flor en flor llevan polen y ayudan a que nazcan frutos. Por eso, cuando un vecino quiso fumigar su campo con veneno, don Pedro le pidió que buscara otra manera de cuidar sus cultivos.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 3, "enunciado": "¿Qué llevan las abejas al volar de flor en flor?", "opciones": ["Polen", "Agua", "Semillas", "Hojas"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "«Fumigar» un campo es…", "opciones": ["Echarle productos para matar insectos", "Sembrar árboles", "Regarlo con agua", "Cosechar sus frutos"] },
+            { "habilidad": "INF", "dificultad": 4, "enunciado": "¿Por qué don Pedro no quería que fumigaran con veneno?", "opciones": ["Porque podía dañar a sus abejas", "Porque no le gusta la miel", "Porque el campo era suyo", "Porque quería vender veneno"] },
+            { "habilidad": "CRI", "dificultad": 4, "enunciado": "¿Qué opinas del pedido de don Pedro?", "opciones": ["Es razonable: cuidar a las abejas ayuda a los cultivos", "Es malo: las abejas no sirven", "Da igual: la miel se compra", "Es injusto: el vecino no tiene campo"] },
+            { "habilidad": "ARG", "dificultad": 4, "enunciado": "¿Qué razón usaría don Pedro para convencer al vecino?", "opciones": ["Sin abejas habría menos frutos en el valle", "La miel es dulce", "Las abejas vuelan rápido", "Él tiene muchas colmenas"] }
+          ]
+        }
+      ],
+      "R3": [
+        {
+          "clave": "R3-A-1",
+          "titulo": "La campaña del plástico",
+          "texto": "Los estudiantes de sexto grado notaron que en el recreo los tachos se llenaban de botellas de plástico. Decidieron organizar una campaña: colocaron tachos de colores, hicieron afiches y pesaron cada semana lo que juntaban. En un mes reunieron 40 kilos de plástico, que vendieron a una recicladora para comprar libros.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿Qué hicieron con el plástico reunido?", "opciones": ["Lo vendieron para comprar libros", "Lo botaron al mar", "Lo guardaron en el aula", "Lo regalaron a otra escuela"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "Una «campaña» es…", "opciones": ["Un conjunto de acciones organizadas para lograr algo", "Un tipo de tacho", "Una clase de matemática", "Un viaje al campo"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Para qué pesaban cada semana lo que juntaban?", "opciones": ["Para saber cuánto avanzaban", "Para hacer ejercicio", "Para vender los tachos", "Para cansarse menos"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Qué parte de la campaña ayudó más a que otros participaran?", "opciones": ["Los afiches y los tachos de colores", "Pesar el plástico", "Venderlo a la recicladora", "Que fueran de sexto grado"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Un profesor dice que la campaña fue un éxito. ¿Qué dato lo demuestra mejor?", "opciones": ["Reunieron 40 kilos en un mes", "Los tachos eran de colores", "Era la hora del recreo", "Eran de sexto grado"] }
+          ]
+        },
+        {
+          "clave": "R3-A-2",
+          "titulo": "El agua del nevado",
+          "texto": "El nevado Pastoruri, en Áncash, ha perdido gran parte de su hielo en los últimos treinta años. Los científicos explican que el aumento de la temperatura del planeta derrite los glaciares más rápido de lo que se forman. Muchas comunidades de la sierra y de la costa dependen del agua que baja de estos nevados para beber y regar sus cultivos.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 3, "enunciado": "¿Dónde está el nevado Pastoruri?", "opciones": ["En Áncash", "En Cusco", "En Loreto", "En Tacna"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "Un «glaciar» es…", "opciones": ["Una gran masa de hielo en las montañas", "Un río de la costa", "Un tipo de cultivo", "Una ciudad de la sierra"] },
+            { "habilidad": "INF", "dificultad": 4, "enunciado": "¿Qué podría pasar si el nevado sigue perdiendo hielo?", "opciones": ["Habría menos agua para las comunidades", "Habría más nieve en la costa", "Los cultivos crecerían más", "Bajaría la temperatura"] },
+            { "habilidad": "CRI", "dificultad": 4, "enunciado": "¿Para qué menciona el texto a las comunidades de la costa?", "opciones": ["Para mostrar que el problema afecta a más personas", "Para hablar de la playa", "Para cambiar de tema", "Porque allí hay nevados"] },
+            { "habilidad": "ARG", "dificultad": 4, "enunciado": "¿Qué argumento usarías para pedir que se cuiden los glaciares?", "opciones": ["Muchas personas dependen de su agua", "El hielo es blanco", "Los científicos estudian mucho", "El nevado es alto"] }
+          ]
+        },
+        {
+          "clave": "R3-A-3",
+          "titulo": "¿Ropa libre los viernes?",
+          "texto": "En una asamblea escolar, Valeria propuso que los estudiantes pudieran ir con ropa libre los viernes. Dijo que así cada uno expresaría su estilo y estaría más cómodo. Diego no estuvo de acuerdo: afirmó que el uniforme evita que algunos se sientan menos por no tener ropa de marca. La directora pidió que ambos grupos presentaran una encuesta antes de decidir.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 4, "enunciado": "¿Qué propuso Valeria?", "opciones": ["Ir con ropa libre los viernes", "Eliminar el uniforme para siempre", "Comprar ropa de marca", "Hacer asambleas todos los días"] },
+            { "habilidad": "VOC", "dificultad": 4, "enunciado": "Expresar su «estilo» quiere decir mostrar…", "opciones": ["Su manera propia de vestirse y de ser", "Su nota en el colegio", "Su edad", "Su lugar en la fila"] },
+            { "habilidad": "INF", "dificultad": 5, "enunciado": "¿Por qué la directora pidió una encuesta?", "opciones": ["Para conocer la opinión de todos antes de decidir", "Porque no le interesaba el tema", "Para castigar a Diego", "Para vender uniformes"] },
+            { "habilidad": "CRI", "dificultad": 5, "enunciado": "¿Qué argumento piensa más en los compañeros que tienen menos?", "opciones": ["El de Diego, porque cuida que nadie se sienta menos", "El de Valeria, porque habla de comodidad", "Ninguno, porque solo hablan de ropa", "El de la directora, porque es mayor"] },
+            { "habilidad": "ARG", "dificultad": 5, "enunciado": "Si quisieras apoyar a Valeria sin olvidar la idea de Diego, ¿qué propondrías?", "opciones": ["Ropa libre los viernes con una regla sencilla para todos", "Que solo vengan con ropa de marca", "Que nadie use uniforme nunca", "Que no se haga la encuesta"] }
+          ]
+        }
+      ]
+    },
+    "B": {
+      "R1": [
+        {
+          "clave": "R1-B-1",
+          "titulo": "La gata Mishi",
+          "texto": "Mishi es una gata blanca. Vive con Pablo. Todas las tardes se sienta en la ventana. Desde allí mira a los pájaros del jardín. Cuando llega Pablo, Mishi corre a la puerta.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 1, "enunciado": "¿De qué color es Mishi?", "opciones": ["Blanca", "Negra", "Gris"] },
+            { "habilidad": "VOC", "dificultad": 1, "enunciado": "Mishi «corre» a la puerta. ¿Cómo va?", "opciones": ["Rápido", "Muy despacio", "Dormida"] },
+            { "habilidad": "INF", "dificultad": 2, "enunciado": "¿Por qué Mishi corre a la puerta cuando llega Pablo?", "opciones": ["Porque quiere recibirlo", "Porque tiene miedo", "Porque vio un pájaro"] },
+            { "habilidad": "CRI", "dificultad": 2, "enunciado": "¿Crees que Mishi quiere a Pablo?", "opciones": ["Sí, porque corre a recibirlo", "No, porque es una gata", "Sí, porque es blanca"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Pablo dice: «A Mishi le gustan los pájaros». ¿Qué parte lo muestra mejor?", "opciones": ["Todas las tardes mira a los pájaros", "Es una gata blanca", "Vive con Pablo"] }
+          ]
+        },
+        {
+          "clave": "R1-B-2",
+          "titulo": "El cumpleaños de Sofía",
+          "texto": "Hoy es el cumpleaños de Sofía. Su mamá preparó una torta de chocolate. Sus primos llegaron con globos. Sofía sopló las velas y pidió un deseo. Al final, todos ayudaron a ordenar la sala.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿De qué era la torta?", "opciones": ["De chocolate", "De fresa", "De vainilla"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "Sofía «pidió un deseo». ¿Qué hizo?", "opciones": ["Pensó en algo que quiere que pase", "Pidió más torta", "Llamó a sus primos"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Cómo se sentía Sofía en su cumpleaños?", "opciones": ["Feliz", "Triste", "Enojada"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Qué fue lo más amable que hicieron los invitados?", "opciones": ["Ayudar a ordenar la sala", "Comer la torta", "Mirar los globos"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "La mamá dice que fue una buena fiesta. ¿Qué razón lo prueba?", "opciones": ["Todos compartieron y ayudaron", "La torta era grande", "Era de día"] }
+          ]
+        }
+      ],
+      "R2": [
+        {
+          "clave": "R2-B-1",
+          "titulo": "El bufeo colorado",
+          "texto": "En los ríos de la Amazonía vive el bufeo colorado, un delfín de color rosado. Cuando el río crece, nada entre las raíces de los árboles. Los pescadores de Iquitos cuentan que a veces se acerca a sus botes por curiosidad. Hoy está en peligro porque algunas redes de pesca lo atrapan por error.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 1, "enunciado": "¿De qué color es el bufeo?", "opciones": ["Rosado", "Azul", "Verde", "Negro"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "El río «crece». ¿Qué pasa con el río?", "opciones": ["Tiene más agua", "Se seca", "Se vuelve salado", "Se congela"] },
+            { "habilidad": "INF", "dificultad": 2, "enunciado": "¿Por qué el bufeo se acerca a los botes?", "opciones": ["Por curiosidad", "Porque quiere comer redes", "Porque está perdido en el mar", "Porque le gusta el ruido"] },
+            { "habilidad": "CRI", "dificultad": 2, "enunciado": "¿Qué problema muestra el texto?", "opciones": ["Que algunas redes ponen en peligro al bufeo", "Que los ríos son rosados", "Que no hay pescadores", "Que los árboles tienen raíces"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "¿Qué razón darías para usar redes que no atrapen delfines?", "opciones": ["Así el bufeo dejaría de estar en peligro", "Así se pescaría menos", "Así los botes irían más rápido", "Así el río crecería"] }
+          ]
+        },
+        {
+          "clave": "R2-B-2",
+          "titulo": "El taller de cometas",
+          "texto": "Para el Día del Niño, la profesora Carmen organizó un taller de cometas. Cada estudiante usó carrizo, papel de colores y pabilo. La cometa de Sebastián tenía la cola muy corta y giraba sin control. Valentina le sugirió alargarla con tiras de papel, y entonces la cometa subió alta y estable.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿Qué materiales usaron?", "opciones": ["Carrizo, papel de colores y pabilo", "Plástico y clavos", "Madera y vidrio", "Tela y piedras"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "La cometa subió «estable». ¿Cómo volaba?", "opciones": ["Firme, sin dar vueltas", "Rota", "Muy baja", "Hacia el suelo"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Por qué giraba la cometa de Sebastián?", "opciones": ["Porque su cola era muy corta", "Porque era de papel", "Porque no había viento", "Porque Valentina la tocó"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Qué muestra la ayuda de Valentina?", "opciones": ["Que compartir ideas ayuda a resolver problemas", "Que las cometas son difíciles", "Que Sebastián no sabía jugar", "Que el taller fue corto"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "Sebastián dice: «La cola es importante en una cometa». ¿Qué lo prueba?", "opciones": ["Al alargarla, la cometa voló estable", "El papel era de colores", "Era el Día del Niño", "La profesora organizó el taller"] }
+          ]
+        },
+        {
+          "clave": "R2-B-3",
+          "titulo": "Los guardianes del bosque",
+          "texto": "En Madre de Dios, un grupo de jóvenes recorre el bosque para registrar los árboles de castaña. Anotan en una libreta dónde está cada árbol y cuántos frutos da. Con esa información, las familias planifican la cosecha sin cortar árboles. Además, avisan a las autoridades si ven a madereros ilegales.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 3, "enunciado": "¿Qué árboles registran los jóvenes?", "opciones": ["Árboles de castaña", "Palmeras", "Pinos", "Eucaliptos"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "«Planificar» la cosecha es…", "opciones": ["Organizarla antes de hacerla", "Hacerla sin pensar", "Cancelarla", "Venderla"] },
+            { "habilidad": "INF", "dificultad": 4, "enunciado": "¿Por qué es útil saber cuántos frutos da cada árbol?", "opciones": ["Para cosechar sin dañar el bosque", "Para cortar más árboles", "Para pintar la libreta", "Para dormir en el bosque"] },
+            { "habilidad": "CRI", "dificultad": 4, "enunciado": "¿Por qué el texto los llama «guardianes»?", "opciones": ["Porque cuidan y protegen el bosque", "Porque son policías", "Porque viven en castillos", "Porque cuidan una puerta"] },
+            { "habilidad": "ARG", "dificultad": 4, "enunciado": "¿Qué argumento muestra que el trabajo de los jóvenes es importante?", "opciones": ["Ayuda a las familias y protege los árboles", "Usan una libreta", "Caminan mucho", "Son jóvenes"] }
+          ]
+        }
+      ],
+      "R3": [
+        {
+          "clave": "R3-B-1",
+          "titulo": "Libros que navegan",
+          "texto": "En Puno, una lancha llamada «Lectores del Lago» lleva libros a las islas del Titicaca. Cada quince días, los niños de Amantaní esperan en el muelle para devolver los libros leídos y elegir otros. La idea nació cuando una maestra notó que sus alumnos querían leer, pero la biblioteca más cercana estaba a tres horas de viaje.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 2, "enunciado": "¿Cada cuánto llega la lancha?", "opciones": ["Cada quince días", "Todos los días", "Una vez al año", "Cada hora"] },
+            { "habilidad": "VOC", "dificultad": 2, "enunciado": "Una biblioteca «itinerante» es una biblioteca que…", "opciones": ["Va de un lugar a otro", "Está siempre cerrada", "Solo tiene revistas", "Está bajo el agua"] },
+            { "habilidad": "INF", "dificultad": 3, "enunciado": "¿Por qué los niños esperan en el muelle?", "opciones": ["Porque allí llega la lancha con los libros", "Porque quieren pescar", "Porque van al colegio", "Porque hace calor"] },
+            { "habilidad": "CRI", "dificultad": 3, "enunciado": "¿Qué problema resolvió la idea de la maestra?", "opciones": ["La distancia hasta una biblioteca", "La falta de lanchas", "El frío del lago", "La falta de maestros"] },
+            { "habilidad": "ARG", "dificultad": 3, "enunciado": "¿Qué dato usarías para defender que el proyecto continúe?", "opciones": ["Los niños quieren leer y la biblioteca está lejos", "La lancha tiene nombre", "El lago es grande", "Amantaní es una isla"] }
+          ]
+        },
+        {
+          "clave": "R3-B-2",
+          "titulo": "Energía del sol en el desierto",
+          "texto": "En Moquegua funciona una de las plantas solares más grandes del Perú. Miles de paneles transforman la luz del sol en electricidad sin producir humo. La región fue elegida porque casi no tiene nubes durante el año. Sin embargo, los paneles necesitan limpiarse con frecuencia, ya que el polvo del desierto reduce su rendimiento.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 3, "enunciado": "¿Qué transforman los paneles en electricidad?", "opciones": ["La luz del sol", "El viento", "El agua", "El humo"] },
+            { "habilidad": "VOC", "dificultad": 3, "enunciado": "Si el polvo reduce su «rendimiento», los paneles…", "opciones": ["Producen menos energía", "Se vuelven más grandes", "Cambian de color", "Se apagan para siempre"] },
+            { "habilidad": "INF", "dificultad": 4, "enunciado": "¿Por qué eligieron Moquegua para la planta?", "opciones": ["Porque casi no tiene nubes", "Porque llueve mucho", "Porque hay mucho polvo", "Porque hace frío"] },
+            { "habilidad": "CRI", "dificultad": 4, "enunciado": "¿Qué dificultad de la energía solar en el desierto muestra el texto?", "opciones": ["El polvo obliga a limpiar los paneles", "El sol se apaga", "Produce humo", "No hay espacio"] },
+            { "habilidad": "ARG", "dificultad": 4, "enunciado": "¿Qué argumento a favor de la energía solar da el texto?", "opciones": ["Produce electricidad sin humo", "Necesita limpieza", "Está en el desierto", "Usa miles de paneles"] }
+          ]
+        },
+        {
+          "clave": "R3-B-3",
+          "titulo": "¿Tareas en vacaciones?",
+          "texto": "En el consejo estudiantil, Andrés propuso eliminar las tareas en vacaciones para que los estudiantes descansen y compartan con su familia. Camila respondió que, sin práctica, muchos olvidan lo aprendido y el regreso a clases es más difícil. El profesor sugirió escuchar también a las familias antes de tomar una decisión.",
+          "preguntas": [
+            { "habilidad": "LIT", "dificultad": 4, "enunciado": "¿Qué propuso Andrés?", "opciones": ["Eliminar las tareas en vacaciones", "Tener más tareas", "Alargar las clases", "Cerrar el consejo"] },
+            { "habilidad": "VOC", "dificultad": 4, "enunciado": "«Compartir» con la familia es…", "opciones": ["Pasar tiempo juntos", "Venderles cosas", "Hacer tareas a solas", "Viajar sin ellos"] },
+            { "habilidad": "INF", "dificultad": 5, "enunciado": "¿Por qué el profesor quiere escuchar a las familias?", "opciones": ["Porque la decisión también las afecta", "Porque no le interesa el tema", "Porque Andrés se fue", "Para dejar más tareas"] },
+            { "habilidad": "CRI", "dificultad": 5, "enunciado": "¿Qué argumento se basa en lo que pasa al volver a clases?", "opciones": ["El de Camila", "El de Andrés", "El del profesor", "Ninguno"] },
+            { "habilidad": "ARG", "dificultad": 5, "enunciado": "Si quisieras unir las dos ideas, ¿qué propondrías?", "opciones": ["Pocas actividades cortas y divertidas para repasar", "Muchas tareas todos los días", "Ninguna lectura en todo el verano", "Que solo decidan los profesores"] }
+          ]
+        }
+      ]
+    }
+  }
+}

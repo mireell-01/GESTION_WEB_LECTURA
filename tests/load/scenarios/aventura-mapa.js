@@ -63,13 +63,25 @@ export function setup() {
   const ninos = matriculados.map((m) => {
     http.post(`${BASE}/estudiantes/${m.estudianteId}/pin/restablecer`, JSON.stringify({ pinNuevo: '4826' }), { headers: docente });
     const ingreso = http.post(`${BASE}/acceso-estudiante/login`, JSON.stringify({ tokenDispositivo, perfilId: m.estudianteId, pin: '4826' }), cabeceras).json();
-    return { Authorization: `Bearer ${ingreso.accessToken}` };
+    const nino = { ...JSON_HEADERS, Authorization: `Bearer ${ingreso.accessToken}` };
+    retoInicial(nino);
+    return nino;
   });
-  // La primera visita ubica a cada niño en su mundo inicial (RF-033); se mide el uso de todos los días.
+  // Al terminar el reto, cada niño quedó en su mundo inicial (RF-033); se mide el uso de todos los días.
   const mapa = http.get(`${BASE}/aventura/mapa`, { headers: ninos[0] }).json();
-  for (const n of ninos.slice(1)) http.get(`${BASE}/aventura/mapa`, { headers: n });
   if (!mapa.mundos || mapa.mundos[0].misiones.total === 0) fail('No hay misiones: ejecuta antes node tests/load/sembrar-aventura.mjs');
   return { ninos, mundoActual: mapa.mundos[0].id };
+}
+
+/** RN-05: un niño nuevo hace su reto inicial (Módulo 5) antes de que se abra su mapa. */
+function retoInicial(nino) {
+  const { id } = http.post(`${BASE}/diagnosticos`, null, { headers: nino }).json();
+  for (let i = 0; i < 20; i++) {
+    const item = http.get(`${BASE}/diagnosticos/${id}/siguiente-item`, { headers: nino }).json('item');
+    if (!item) break;
+    http.post(`${BASE}/diagnosticos/${id}/respuestas`, JSON.stringify({ itemId: item.itemId, indice: 0 }), { headers: nino });
+  }
+  if (http.post(`${BASE}/diagnosticos/${id}/finalizar`, null, { headers: nino }).status !== 200) fail('No se pudo terminar el reto inicial de un niño de carga');
 }
 
 export function recorrerMapa(datos) {

@@ -1347,7 +1347,8 @@ test.describe('Modo escuela (RF-014 a RF-020)', () => {
     await expect(page.getByText('Esta aula está archivada: puedes consultarla, pero ya no se modifica.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Matricular estudiantes' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Descargar tarjetas/ })).toHaveCount(0);
-    await expect(page.getByText('Ana', { exact: true })).toBeVisible();
+    // Ana sigue en la lista de estudiantes del aula (también aparece en el reto de repaso, Módulo 5).
+    await expect(page.locator('.alumnos').getByText('Ana', { exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: 'Mis aulas' }).first().click();
     await expect(page.getByRole('link', { name: 'Abrir 3.° B' }).getByText('Archivada')).toBeVisible();
