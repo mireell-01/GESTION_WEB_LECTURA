@@ -36,6 +36,20 @@ test.describe('Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => 
     await expect(page.getByRole('heading', { level: 3, name: texto, exact: true })).toHaveCount(0); // llegó otra pregunta o el resultado
   }
 
+  /** Responde hasta el final. Antes de cada vuelta espera la pregunta o el resultado, para no cortar mientras la página carga. */
+  async function terminarReto(page: Page, acertar: string[]) {
+    const pregunta = page.getByRole('heading', { level: 3 });
+    const fin = page.getByRole('heading', { level: 1, name: '¡Reto completado!' });
+    for (;;) {
+      await expect(pregunta.or(fin)).toBeVisible();
+      if (await fin.isVisible()) return;
+      await responder(page, acertar);
+    }
+  }
+
+  /** El contador del reto. Exacto: el inicio también dice «Vas en la pregunta 5 de 15». */
+  const contador = (page: Page, n: number) => page.getByText(`Pregunta ${n} de 15`, { exact: true });
+
   test('el niño hace su reto, lo pausa, sigue donde quedó y con buen LIT y VOC empieza en el Detective', async ({ page, request }) => {
     const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017: 8–9 años
     await tabletDelAulaActivada(page, request, aula);
@@ -48,20 +62,19 @@ test.describe('Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => 
     await reto.getByRole('link', { name: '¡Empezar mi reto!' }).click();
 
     // RF-034: una pregunta a la vez, con su lectura a la vista y sin decir si acertó.
-    await expect(page.getByText('Pregunta 1 de 15')).toBeVisible();
+    await expect(contador(page, 1)).toBeVisible();
     await expect(page.getByRole('article')).toContainText('Killa');
     for (let i = 0; i < 4; i++) await responder(page, ['LIT', 'VOC']);
-    await expect(page.getByText('Pregunta 5 de 15')).toBeVisible();
+    await expect(contador(page, 5)).toBeVisible();
 
     // RF-036: pausa y vuelve donde se quedó.
     await page.getByRole('button', { name: 'Pausar y seguir después' }).click();
     await expect(page.getByRole('region', { name: '¡Tu reto inicial te espera!' })).toContainText('Vas en la pregunta 5 de 15');
     await page.getByRole('link', { name: 'Continuar mi reto' }).click();
-    await expect(page.getByText('Pregunta 5 de 15')).toBeVisible();
-    while (await page.getByRole('heading', { level: 3 }).count()) await responder(page, ['LIT', 'VOC']);
+    await expect(contador(page, 5)).toBeVisible();
+    await terminarReto(page, ['LIT', 'VOC']);
 
     // RF-035: lo que ya sabe hacer, en estrellas (sin notas).
-    await expect(page.getByRole('heading', { level: 1, name: '¡Reto completado!' })).toBeVisible();
     const habilidades = page.getByRole('list', { name: 'Lo que ya sabes hacer' });
     await expect(habilidades.getByRole('listitem')).toHaveCount(5);
     await expect(habilidades.getByRole('listitem').filter({ hasText: 'Encontrar lo que dice el texto' }).getByRole('img', { name: '3 de 3 estrellas' })).toBeVisible();
@@ -84,7 +97,7 @@ test.describe('Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => 
     await expect(page.getByText('Primero, tu reto inicial')).toBeVisible();
     await expect(page.getByRole('link', { name: /^Entrar al mundo/ })).toHaveCount(0);
     await page.getByRole('link', { name: 'Ir a mi reto' }).click();
-    await expect(page.getByText('Pregunta 1 de 15')).toBeVisible();
+    await expect(contador(page, 1)).toBeVisible();
   });
 
   test('RF-037: la docente asigna un reto de repaso y ve cuánto avanzó cada habilidad', async ({ page, request }) => {

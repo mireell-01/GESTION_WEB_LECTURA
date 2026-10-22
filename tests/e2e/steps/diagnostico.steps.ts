@@ -16,6 +16,17 @@ async function responder(page: Page, acertar: string[]) {
   await expect(page.getByRole('heading', { level: 3, name: texto, exact: true })).toHaveCount(0); // llegó otra pregunta o el resultado
 }
 
+/** Responde hasta el final. Antes de cada vuelta espera la pregunta o el resultado, para no cortar mientras la página carga. */
+async function terminarReto(page: Page, acertar: string[]) {
+  const pregunta = page.getByRole('heading', { level: 3 });
+  const fin = page.getByRole('heading', { level: 1, name: '¡Reto completado!' });
+  for (;;) {
+    await expect(pregunta.or(fin)).toBeVisible();
+    if (await fin.isVisible()) return;
+    await responder(page, acertar);
+  }
+}
+
 async function empezarReto(page: Page) {
   await page.getByRole('region', { name: '¡Tu reto inicial te espera!' }).getByRole('link').click();
   await expect(page.getByText(/^Pregunta \d+ de 15$/)).toBeVisible();
@@ -37,8 +48,7 @@ Dado('entró con su avatar y su PIN', async ({ page }) => {
 
 Cuando('completa las 15 preguntas de su reto acertando en comprensión literal y vocabulario', async ({ page }) => {
   await empezarReto(page);
-  while (await page.getByRole('heading', { level: 3 }).count()) await responder(page, ['LIT', 'VOC']);
-  await expect(page.getByRole('heading', { level: 1, name: '¡Reto completado!' })).toBeVisible();
+  await terminarReto(page, ['LIT', 'VOC']);
 });
 
 Entonces('ve lo que ya sabe hacer en cada una de las 5 habilidades', async ({ page }) => {
@@ -81,7 +91,7 @@ Entonces('su inicio le dice que va en la pregunta 4 de 15', async ({ page }) => 
 
 Entonces('al continuar, el reto sigue en la pregunta 4', async ({ page }) => {
   await page.getByRole('link', { name: 'Continuar mi reto' }).click();
-  await expect(page.getByText('Pregunta 4 de 15')).toBeVisible();
+  await expect(page.getByText('Pregunta 4 de 15', { exact: true })).toBeVisible(); // exacto: el inicio también dice «Vas en la pregunta 4 de 15»
 });
 
 // ── RF-037 ────────────────────────────────────────────────────────────────
