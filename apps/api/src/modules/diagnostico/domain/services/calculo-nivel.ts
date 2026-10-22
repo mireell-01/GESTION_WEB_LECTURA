@@ -40,6 +40,11 @@ export function calcularResultado(respuestas: readonly RespuestaCalificada[]): R
   return resultado;
 }
 
+/** Ítems respondidos por habilidad: el perfil lector los cuenta para declarar el nivel (RN-08). */
+export function itemsDe(resultado: ResultadoPorHabilidad): Record<Habilidad, number> {
+  return Object.fromEntries(HABILIDADES.map((h) => [h, resultado[h].items])) as Record<Habilidad, number>;
+}
+
 /** Los valores de maestría por habilidad, como los publica el evento DiagnosticoFinalizado. */
 export function maestriasDe(resultado: ResultadoPorHabilidad): Record<Habilidad, number> {
   return Object.fromEntries(HABILIDADES.map((h) => [h, resultado[h].valor])) as Record<Habilidad, number>;

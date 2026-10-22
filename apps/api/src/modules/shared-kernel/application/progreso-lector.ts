@@ -16,7 +16,7 @@ export type Maestrias = Partial<Record<Habilidad, number>>;
 export type ResultadoDiagnosticoInicial =
   | { estado: 'SIN_MODULO' }
   | { estado: 'PENDIENTE' }
-  | { estado: 'FINALIZADO'; maestrias: Maestrias };
+  | { estado: 'FINALIZADO'; maestrias: Maestrias; diagnosticoId?: string; items?: Partial<Record<Habilidad, number>> };
 
 export interface ResolutorDiagnosticoInicial {
   resultadoDe(estudianteId: string): Promise<ResultadoDiagnosticoInicial>;
@@ -52,3 +52,22 @@ export interface RegistroAvanceLecturas extends ResolutorAvanceLecturas {
 }
 
 export const AVANCE_LECTURAS = Symbol('AVANCE_LECTURAS');
+
+/** La lectura que sigue en la misión en curso del mapa (Aventura, RF-032), para recomendarla (RN-20). */
+export interface LecturaDeMision {
+  misionId: string;
+  mision: string;
+  lecturaId: string;
+  /** Ya la empezó (EN_CURSO) o aún no. */
+  enCurso: boolean;
+}
+
+export interface ResolutorMisionEnCurso {
+  lecturaSiguiente(estudianteId: string): Promise<LecturaDeMision | null>;
+}
+
+export interface RegistroMisionEnCurso extends ResolutorMisionEnCurso {
+  registrar(resolutor: ResolutorMisionEnCurso): void;
+}
+
+export const MISION_EN_CURSO = Symbol('MISION_EN_CURSO');

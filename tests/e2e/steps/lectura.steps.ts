@@ -6,6 +6,7 @@ import { retoTerminado } from '../support/diagnostico';
 import { abrirAula, docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../support/escuela';
 import { escribirPin, esperarAreaEstudiante, salirDelPanel } from '../support/iam';
 import { DESENLACE_RIO, ENUNCIADOS, itemDeLectura, itemsRespondidos, lecturaKilla, leerPorApi, respuestaGuardada } from '../support/lectura';
+import { maestriaGuardada } from '../support/progreso';
 import { Cuando, Dado, Entonces } from './fixtures';
 
 /** Nivel 4 — Pasos de los escenarios de la lectura interactiva (RF-038 a RF-051, UAT-02, UAT-03). */
@@ -76,8 +77,12 @@ Entonces('su maestría en {word} se actualiza con un puntaje de ítem de {word}'
   const guardada = await respuestaGuardada(estudianteId, ENUNCIADOS.seleccion);
   expect(guardada).toMatchObject({ habilidad, esCorrecta: true, pistasUsadas: 1 });
   expect(Number(guardada.puntajeItem)).toBe(valor);
-  // Progreso (Módulo 7) recalcula la maestría con este evento (RF-053).
   expect(await itemsRespondidos(estudianteId)).toContainEqual(expect.objectContaining({ habilidad, puntajeItem: valor, pistasUsadas: 1 }));
+  // Módulo 7: Progreso la recalcula con RN-07: EMA (α = 0,3) de 0,75 × (0,8 + 0,1 × 3) × 100 = 82,5.
+  const m = await maestriaGuardada(estudianteId, habilidad);
+  const ultimo = m.cambios.at(-1)!;
+  expect(ultimo.origen).toBe('ITEM');
+  expect(m.valor).toBeCloseTo(Math.round((0.3 * 82.5 + 0.7 * ultimo.anterior) * 100) / 100, 2);
 });
 
 // ── UAT-03: encuentra la evidencia (RF-043) ───────────────────────────────

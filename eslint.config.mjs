@@ -29,7 +29,7 @@ export default tseslint.config(
       '**/prisma/migrations/**',
       '**/next-env.d.ts',
       // Plantillas de módulos aún no implementados: se quitan de aquí al construir cada módulo.
-      'apps/api/src/modules/{progreso,gamificacion,asistente,administracion}/**',
+      'apps/api/src/modules/{gamificacion,asistente,administracion}/**',
     ],
   },
   js.configs.recommended,

@@ -1381,10 +1381,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
       expect(caja.width).toBeGreaterThanOrEqual(ventana.width - 1);
     }
     // Las secciones futuras se muestran con candado y avisan "muy pronto".
-    await nav.getByRole('button', { name: /Progreso/ }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Progreso llegará muy pronto' })).toBeVisible();
-    // Módulo 4: Mundos ya es una sección real.
+    await nav.getByRole('button', { name: /Mi perfil/ }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Mi perfil llegará muy pronto' })).toBeVisible();
+    // Módulos 4 y 7: Mundos y Progreso ya son secciones reales.
     await expect(nav.getByRole('link', { name: 'Mundos' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Progreso' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
   });
@@ -1524,6 +1525,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await page.getByRole('region', { name: '¿Acertaste?' }).getByRole('textbox').fill('Me gustó');
     await page.getByRole('button', { name: 'Terminar mi lectura' }).click();
     await expect(page.getByRole('heading', { name: '¡Lectura terminada!' })).toBeVisible();
+    await revisarPantalla(page);
+
+    // Módulo 7: el perfil lector y sus próximas lecturas.
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Progreso' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Tus próximas lecturas' })).toBeVisible();
     await revisarPantalla(page);
 
     await salirDelPanel(page);
@@ -2226,18 +2232,28 @@ jobs:
         run: npm run test:uat
       - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'
         uses: grafana/setup-k6-action@v1
-      - run: |
+      # Cada escenario publica sus tiempos como anotación de la ejecución (se ven sin abrir los
+      # registros) y, si uno no cumple sus umbrales, igual corren los demás antes de fallar.
+      - name: 'Nivel 3: escenarios de carga (tiempos en las anotaciones)'
+        run: |
           npm run start --workspace @lectoaventura/api &
           npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
-          k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
-          k6 run -e DURACION=30s tests/load/scenarios/escuela-panel.js
+          fallidos=""
+          escenario() {
+            nombre="$1"; shift
+            k6 run --summary-trend-stats "avg,med,p(95),p(99),max" --summary-export "k6-$nombre.json" "$@" || fallidos="$fallidos $nombre"
+            node tests/load/anotar-resumen.mjs "k6-$nombre.json" "$nombre"
+          }
+          escenario iam-sesiones -e DURACION=30s tests/load/scenarios/iam-sesiones.js
+          escenario escuela-panel -e DURACION=30s tests/load/scenarios/escuela-panel.js
           node tests/load/sembrar-biblioteca.mjs
-          k6 run -e DURACION=30s tests/load/scenarios/biblioteca.js
+          escenario biblioteca -e DURACION=30s tests/load/scenarios/biblioteca.js
           node tests/load/sembrar-aventura.mjs
-          k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
-          k6 run tests/load/scenarios/diagnostico-reto.js
+          escenario aventura-mapa -e DURACION=30s tests/load/scenarios/aventura-mapa.js
+          escenario diagnostico-reto tests/load/scenarios/diagnostico-reto.js
           LECTURA_ID=$(node tests/load/sembrar-lectura.mjs)
-          k6 run -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
+          escenario lectura-respuestas -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
+          if [ -n "$fallidos" ]; then echo "::error title=k6::Umbrales no cumplidos en:$fallidos"; exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

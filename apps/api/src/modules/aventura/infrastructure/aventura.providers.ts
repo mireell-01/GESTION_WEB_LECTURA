@@ -22,6 +22,7 @@ import { MisionesBackofficeUseCase } from '../application/use-cases/misiones-bac
 import { ProgresoUseCase } from '../application/use-cases/progreso.use-case';
 import { CatalogoMisiones } from './catalogo-misiones';
 import { IdentidadEstudiantesIam } from './identidad/identidad-estudiantes-iam';
+import { MisionEnCursoRegistro } from './mision-en-curso-registro';
 import { PrismaAventuraRepository } from './persistence/prisma-aventura-repository';
 import { SuscripcionesAventura } from './suscripciones-aventura';
 
@@ -58,4 +59,6 @@ export const aventuraProviders: Provider[] = [
   SuscripcionesAventura,
   // RF-018: misiones que el docente puede asignar.
   CatalogoMisiones,
+  // Módulo 7: la lectura que sigue en la misión en curso, para las recomendaciones (RN-20).
+  MisionEnCursoRegistro,
 ];

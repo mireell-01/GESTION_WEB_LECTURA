@@ -6,6 +6,7 @@ import {
   esUuid,
   FICHAS_LECTURA,
   FichaLecturaPublicada,
+  Habilidad,
   PrismaService,
   RangoEdad,
   RegistroCatalogoAsignable,
@@ -14,7 +15,7 @@ import {
 
 const EDADES: Record<string, string> = { R1: '6–7 años', R2: '8–9 años', R3: '10–12 años' };
 
-type VersionPublica = { titulo: string; rangoEdad: string; nivelDificultad: number; tematica: string };
+type VersionPublica = { titulo: string; rangoEdad: string; nivelDificultad: number; tematica: string; habilidadesObjetivo: string[] };
 
 /**
  * Fuentes que Contenido registra en el shared-kernel, solo con lecturas publicadas y no archivadas:
@@ -93,6 +94,7 @@ export class CatalogoLecturas implements OnModuleInit {
       rangoEdad: version.rangoEdad as RangoEdad,
       nivelDificultad: version.nivelDificultad,
       tematica: version.tematica,
+      habilidadesObjetivo: version.habilidadesObjetivo as Habilidad[],
     };
   }
 }

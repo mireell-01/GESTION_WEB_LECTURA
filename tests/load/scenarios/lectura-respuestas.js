@@ -8,6 +8,8 @@ import { check, fail } from 'k6';
  *   RF-040: corrección en el servidor → p95 < 300 ms.
  *   RF-046: reanudar la sesión (GET) → p95 < 300 ms.
  *   RF-047: cerrar la lectura sin errores.
+ *   RF-052, RF-055 (Módulo 7): al terminar ve su perfil lector y sus próximas lecturas → p95 < 300 ms
+ *   (RNF-001), con la maestría ya movida por cada respuesta (RF-053).
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa) y la lectura publicada:
  *   LECTURA=$(node tests/load/sembrar-lectura.mjs)
@@ -36,6 +38,8 @@ export const options = {
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/respuestas}': ['p(95)<300'],
     'http_req_duration{nombre:GET /sesiones-lectura/{id}}': ['p(95)<300'],
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/finalizar}': ['p(95)<800'],
+    'http_req_duration{nombre:GET /yo/perfil-lector}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/recomendaciones}': ['p(95)<300'],
     checks: ['rate>0.995'],
   },
 };
@@ -131,4 +135,9 @@ export function leer(datos) {
   }
   const fin = http.post(`${BASE}/sesiones-lectura/${id}/finalizar`, JSON.stringify({ reflexion: 'Pensé que se enfermaba y era una espina' }), { headers: yo, tags: { nombre: 'POST /sesiones-lectura/{id}/finalizar' } });
   check(fin, { 'lectura terminada': (r) => r.status === 200 && r.json('fase') === 'FINALIZADA' });
+
+  const perfil = http.get(`${BASE}/yo/perfil-lector`, { headers: yo, tags: { nombre: 'GET /yo/perfil-lector' } });
+  check(perfil, { 'perfil con 5 habilidades medidas': (r) => r.status === 200 && r.json('habilidades').length === 5 && r.json('conDatos') === true });
+  const recomendaciones = http.get(`${BASE}/yo/recomendaciones`, { headers: yo, tags: { nombre: 'GET /yo/recomendaciones' } });
+  check(recomendaciones, { 'entre 0 y 3 recomendaciones': (r) => r.status === 200 && r.json().length <= 3 });
 }

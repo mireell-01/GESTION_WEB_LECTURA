@@ -7,8 +7,8 @@ Característica: Lectura interactiva con actividades antes, durante y después
 
   Responsable de aprobación (Product Owner): ______________________  Fecha: ____
 
-  # Los 6 puntos por corregir tras una pista (RN-11) los otorgará Gamificación (Módulo 8) y la
-  # maestría la recalculará Progreso (Módulo 7), ambos con el evento ItemRespondido que aquí se verifica.
+  # La maestría ya la recalcula Progreso (Módulo 7). Los 6 puntos por corregir tras una pista (RN-11)
+  # los otorgará Gamificación (Módulo 8) con el mismo evento ItemRespondido.
   @RF-045 @RN-06 @RN-07 @UAT-02 @camino-feliz @smoke
   Escenario: El estudiante corrige su respuesta después de una pista
     Dado un estudiante en una lectura del mundo "Detective"

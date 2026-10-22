@@ -3,7 +3,7 @@ import { Diagnostico } from '../../domain/entities/diagnostico';
 import { ItemDiagnostico } from '../../domain/entities/item-diagnostico';
 import { SinRetoPendienteError, TransicionDiagnosticoError } from '../../domain/errors/errores-diagnostico';
 import { EVENTOS_DIAGNOSTICO } from '../../domain/events/eventos-diagnostico';
-import { maestriasDe } from '../../domain/services/calculo-nivel';
+import { itemsDe, maestriasDe } from '../../domain/services/calculo-nivel';
 import { ITEMS_POR_RANGO } from '../../domain/value-objects/plan-diagnostico';
 import {
   ItemVista,
@@ -89,7 +89,12 @@ export class RetoUseCase {
     const d = await this.suyo(estudianteId, diagnosticoId);
     const resultado = d.finalizar(await this.items(d), this.ahora());
     await this.repo.guardar(d);
-    await this.publicar(EVENTOS_DIAGNOSTICO.FINALIZADO, d, { maestrias: maestriasDe(resultado.habilidades), aciertos: resultado.aciertos, total: resultado.total });
+    await this.publicar(EVENTOS_DIAGNOSTICO.FINALIZADO, d, {
+      maestrias: maestriasDe(resultado.habilidades),
+      items: itemsDe(resultado.habilidades),
+      aciertos: resultado.aciertos,
+      total: resultado.total,
+    });
     return vistaResultado(d, resultado);
   }
 

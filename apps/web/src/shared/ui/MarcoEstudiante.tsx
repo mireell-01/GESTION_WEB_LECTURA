@@ -20,7 +20,7 @@ const SECCIONES: Seccion[] = [
   { texto: 'Inicio', icono: 'inicio', href: '/estudiante' },
   { texto: 'Biblioteca', icono: 'libro', href: '/estudiante/biblioteca' },
   { texto: 'Mundos', icono: 'globo', href: '/estudiante/mundos' },
-  { texto: 'Progreso', icono: 'progreso' },
+  { texto: 'Progreso', icono: 'progreso', href: '/estudiante/progreso' },
   { texto: 'Mi perfil', icono: 'perfil' },
 ];
 

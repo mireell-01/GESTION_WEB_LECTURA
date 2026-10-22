@@ -96,18 +96,28 @@ jobs:
         run: npm run test:uat
       - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'
         uses: grafana/setup-k6-action@v1
-      - run: |
+      # Cada escenario publica sus tiempos como anotación de la ejecución (se ven sin abrir los
+      # registros) y, si uno no cumple sus umbrales, igual corren los demás antes de fallar.
+      - name: 'Nivel 3: escenarios de carga (tiempos en las anotaciones)'
+        run: |
           npm run start --workspace @lectoaventura/api &
           npx wait-on -t 120000 http-get://localhost:3001/api/v1/dev/correos
-          k6 run -e DURACION=30s tests/load/scenarios/iam-sesiones.js
-          k6 run -e DURACION=30s tests/load/scenarios/escuela-panel.js
+          fallidos=""
+          escenario() {
+            nombre="$1"; shift
+            k6 run --summary-trend-stats "avg,med,p(95),p(99),max" --summary-export "k6-$nombre.json" "$@" || fallidos="$fallidos $nombre"
+            node tests/load/anotar-resumen.mjs "k6-$nombre.json" "$nombre"
+          }
+          escenario iam-sesiones -e DURACION=30s tests/load/scenarios/iam-sesiones.js
+          escenario escuela-panel -e DURACION=30s tests/load/scenarios/escuela-panel.js
           node tests/load/sembrar-biblioteca.mjs
-          k6 run -e DURACION=30s tests/load/scenarios/biblioteca.js
+          escenario biblioteca -e DURACION=30s tests/load/scenarios/biblioteca.js
           node tests/load/sembrar-aventura.mjs
-          k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
-          k6 run tests/load/scenarios/diagnostico-reto.js
+          escenario aventura-mapa -e DURACION=30s tests/load/scenarios/aventura-mapa.js
+          escenario diagnostico-reto tests/load/scenarios/diagnostico-reto.js
           LECTURA_ID=$(node tests/load/sembrar-lectura.mjs)
-          k6 run -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
+          escenario lectura-respuestas -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
+          if [ -n "$fallidos" ]; then echo "::error title=k6::Umbrales no cumplidos en:$fallidos"; exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -3041,3 +3041,125 @@ p {
   border-color: var(--la-color-primario);
   background: var(--la-color-primario-suave);
 }
+
+/* ── Módulo 7 · Perfil lector y recomendaciones (RF-052 a RF-055) ─────────────────────── */
+
+.perfil-lector {
+  width: 100%;
+  max-width: 860px;
+}
+
+.perfil-lector__cabecera h1,
+.perfil-lector__cabecera p {
+  margin: 0;
+}
+
+.perfil-lector__nivel {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+  font: 700 var(--la-texto-base) var(--la-font-titulo);
+}
+
+.perfil-lector__habilidades,
+.recomendaciones {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.perfil-habilidad {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: #fff;
+}
+
+/* RF-054: la que conviene practicar, destacada con el amarillo del juego (nunca en rojo). */
+.perfil-habilidad--reforzar {
+  border-color: var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+.perfil-habilidad--reforzar .la-chip {
+  background: #fff;
+}
+
+.perfil-habilidad__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.perfil-habilidad__nombre {
+  font: 700 1.125rem / 1.3 var(--la-font-titulo);
+}
+
+.perfil-recomendaciones {
+  display: grid;
+  gap: 12px;
+}
+
+.perfil-recomendaciones h2 {
+  margin: 0;
+}
+
+.recomendacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.recomendacion--asignacion_docente {
+  border-color: var(--la-color-secundario);
+}
+
+.recomendacion__icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario);
+}
+
+.recomendacion--asignacion_docente .recomendacion__icono {
+  background: var(--la-color-secundario-suave);
+  color: var(--la-color-secundario-fuerte);
+}
+
+.recomendacion__texto {
+  display: grid;
+  flex: 1 1 180px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recomendacion__motivo {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--la-color-texto-suave);
+}
+
+.recomendacion__titulo {
+  font: 700 1.125rem / 1.3 var(--la-font-titulo);
+}

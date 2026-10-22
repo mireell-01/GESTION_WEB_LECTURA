@@ -3,13 +3,16 @@ import { Injectable } from '@nestjs/common';
 import { FichaLecturaPublicada, FuenteFichasLectura, RegistroFichasLectura } from '../application/fichas-lectura';
 import {
   AvanceLectura,
+  LecturaDeMision,
   Maestrias,
   RegistroAvanceLecturas,
   RegistroDiagnosticoInicial,
   RegistroMaestria,
+  RegistroMisionEnCurso,
   ResolutorAvanceLecturas,
   ResolutorDiagnosticoInicial,
   ResolutorMaestria,
+  ResolutorMisionEnCurso,
   ResultadoDiagnosticoInicial,
 } from '../application/progreso-lector';
 import type { RangoEdad } from '../domain/value-objects/rango-edad';
@@ -71,5 +74,19 @@ export class RegistroAvanceLecturasDelegado implements RegistroAvanceLecturas {
 
   async avanceDe(estudianteId: string, lecturaIds: string[]): Promise<Map<string, AvanceLectura>> {
     return this.resolutor && lecturaIds.length > 0 ? this.resolutor.avanceDe(estudianteId, lecturaIds) : new Map();
+  }
+}
+
+/** Delegado de la misión en curso: sin Aventura registrada, no hay misión que recomendar. */
+@Injectable()
+export class RegistroMisionEnCursoDelegado implements RegistroMisionEnCurso {
+  private resolutor: ResolutorMisionEnCurso | null = null;
+
+  registrar(resolutor: ResolutorMisionEnCurso): void {
+    this.resolutor = resolutor;
+  }
+
+  async lecturaSiguiente(estudianteId: string): Promise<LecturaDeMision | null> {
+    return this.resolutor ? this.resolutor.lecturaSiguiente(estudianteId) : null;
   }
 }

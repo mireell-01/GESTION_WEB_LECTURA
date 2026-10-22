@@ -16,6 +16,8 @@ export interface Mundo {
   codigo?: string;
   /** Lectura interactiva (Módulo 6): la lectura de ejemplo publicada para el escenario. */
   killa?: { lecturaId: string; titulo: string; tematica: string };
+  /** Perfil lector (Módulo 7): las lecturas que leerá en el escenario. */
+  lecturas?: string[];
 }
 
 /**
