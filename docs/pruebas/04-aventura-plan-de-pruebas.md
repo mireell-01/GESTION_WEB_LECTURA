@@ -1130,6 +1130,7 @@ import { expect, Page, test as base } from '@playwright/test';
 
 import { idMundo, misionConLecturas, simularDesbloqueo, tituloMision } from '../../support/aventura';
 import { cuentaBackoffice, ingresarBackoffice, lecturaPublicada } from '../../support/contenido';
+import { retoTerminado } from '../../support/diagnostico';
 import { AulaPreparada, docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../../support/escuela';
 import { escribirPin, esperarAreaEstudiante, ipSimulada, salirDelPanel } from '../../support/iam';
 
@@ -1177,8 +1178,9 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
     await expect(page.getByRole('heading', { level: 2, name: titulo })).toBeVisible();
     await salirDelPanel(page);
 
-    // RF-030, RF-033: un niño nuevo (sin el Módulo 5 todavía) empieza en el Explorador.
+    // RF-030, RF-033: tras su reto inicial sin destacar en LIT ni VOC, empieza en el Explorador.
     const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017: 8–9 años
+    await retoTerminado(request, aula, 'Mateo'); // RN-05: primero su reto inicial (sin destacar: mundo 1)
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Mateo');
     const mundos = page.getByRole('region', { name: 'Tus mundos' });
@@ -1199,6 +1201,7 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
 
   test('un mundo bloqueado no se abre aunque el niño escriba su dirección', async ({ page, request }) => {
     const aula = await docenteConAula(request, [{ alias: 'Lía', avatar: 'koala' }]);
+    await retoTerminado(request, aula, 'Lía');
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Lía');
     await page.goto(`/estudiante/mundos/${await idMundo(3)}`);
@@ -1211,6 +1214,7 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
     const editora = await cuentaBackoffice('EDITOR');
     const delDetective = await misionConLecturas(request, editora, 2, tituloMision('El enigma del valle'), ['Pistas en la arena']);
     const aula = await docenteConAula(request, [{ alias: 'Teo', avatar: 'panda' }]);
+    await retoTerminado(request, aula, 'Teo');
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Teo');
     await expect(page.getByRole('link', { name: 'Entrar al mundo 1: Explorador' })).toBeVisible(); // ya tiene su mapa
@@ -1395,13 +1399,25 @@ export function setup() {
   const ninos = matriculados.map((m) => {
     http.post(`${BASE}/estudiantes/${m.estudianteId}/pin/restablecer`, JSON.stringify({ pinNuevo: '4826' }), { headers: docente });
     const ingreso = http.post(`${BASE}/acceso-estudiante/login`, JSON.stringify({ tokenDispositivo, perfilId: m.estudianteId, pin: '4826' }), cabeceras).json();
-    return { Authorization: `Bearer ${ingreso.accessToken}` };
+    const nino = { ...JSON_HEADERS, Authorization: `Bearer ${ingreso.accessToken}` };
+    retoInicial(nino);
+    return nino;
   });
-  // La primera visita ubica a cada niño en su mundo inicial (RF-033); se mide el uso de todos los días.
+  // Al terminar el reto, cada niño quedó en su mundo inicial (RF-033); se mide el uso de todos los días.
   const mapa = http.get(`${BASE}/aventura/mapa`, { headers: ninos[0] }).json();
-  for (const n of ninos.slice(1)) http.get(`${BASE}/aventura/mapa`, { headers: n });
   if (!mapa.mundos || mapa.mundos[0].misiones.total === 0) fail('No hay misiones: ejecuta antes node tests/load/sembrar-aventura.mjs');
   return { ninos, mundoActual: mapa.mundos[0].id };
+}
+
+/** RN-05: un niño nuevo hace su reto inicial (Módulo 5) antes de que se abra su mapa. */
+function retoInicial(nino) {
+  const { id } = http.post(`${BASE}/diagnosticos`, null, { headers: nino }).json();
+  for (let i = 0; i < 20; i++) {
+    const item = http.get(`${BASE}/diagnosticos/${id}/siguiente-item`, { headers: nino }).json('item');
+    if (!item) break;
+    http.post(`${BASE}/diagnosticos/${id}/respuestas`, JSON.stringify({ itemId: item.itemId, indice: 0 }), { headers: nino });
+  }
+  if (http.post(`${BASE}/diagnosticos/${id}/finalizar`, null, { headers: nino }).status !== 200) fail('No se pudo terminar el reto inicial de un niño de carga');
 }
 
 export function recorrerMapa(datos) {
@@ -1461,8 +1477,8 @@ Característica: Mapa de aventuras, mundos y misiones
   Responsable de aprobación (Product Owner): ______________________  Fecha: ____
 
   @RF-030 @RF-033 @camino-feliz @smoke
-  Escenario: Un niño nuevo empieza en el mundo Explorador y los demás están bloqueados
-    Dado un niño de 9 años matriculado en un aula con la tablet activada
+  Escenario: Tras su reto inicial, un niño empieza en el mundo Explorador y los demás están bloqueados
+    Dado un niño de 9 años que ya hizo su reto inicial, con la tablet activada
     Cuando entra con su avatar y su PIN
     Entonces su mapa lo ubica en el mundo "Explorador"
     Y los mundos "Detective", "Investigador", "Crítico" y "Maestro de la Lectura" aparecen bloqueados
@@ -1476,14 +1492,14 @@ Característica: Mapa de aventuras, mundos y misiones
 
   @RF-030 @negativo
   Escenario: Un mundo bloqueado no se puede abrir
-    Dado un niño de 9 años matriculado en un aula con la tablet activada
+    Dado un niño de 9 años que ya hizo su reto inicial, con la tablet activada
     Cuando entra con su avatar y su PIN
     Y intenta abrir el mundo "Investigador"
     Entonces le explica que primero debe completar el mundo anterior
 
   @RF-031 @RN-09
   Escenario: Al desbloquear el mundo Detective el niño lo celebra una sola vez
-    Dado un niño de 9 años matriculado en un aula con la tablet activada
+    Dado un niño de 9 años que ya hizo su reto inicial, con la tablet activada
     Y que ya entró y tiene su mapa
     Cuando cumple el umbral de maestría y misiones del Explorador
     Y vuelve a su mapa
@@ -1498,6 +1514,7 @@ import { expect, Page } from '@playwright/test';
 
 import { idMundo, simularDesbloqueo, tituloMision } from '../support/aventura';
 import { cuentaBackoffice, ingresarBackoffice, lecturaPublicada } from '../support/contenido';
+import { retoTerminado } from '../support/diagnostico';
 import { docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../support/escuela';
 import { escribirPin, esperarAreaEstudiante, salirDelPanel } from '../support/iam';
 import { Cuando, Dado, Entonces } from './fixtures';
@@ -1532,8 +1549,9 @@ async function abrirMapa(page: Page) {
 
 // ── RF-030, RF-033: posición inicial y mundos bloqueados ──────────────────
 
-Dado('un niño de 9 años matriculado en un aula con la tablet activada', async ({ page, request, mundo }) => {
+Dado('un niño de 9 años que ya hizo su reto inicial, con la tablet activada', async ({ page, request, mundo }) => {
   mundo.aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017
+  await retoTerminado(request, mundo.aula, 'Mateo'); // RN-05; sin destacar en LIT ni VOC: mundo 1 (RF-033)
   await tabletDelAulaActivada(page, request, mundo.aula);
 });
 
@@ -1577,6 +1595,7 @@ Cuando('una editora arma en el mundo {string} la misión {string} con esa lectur
 
 Cuando('un niño de 9 años abre el mundo {string}', async ({ page, request, mundo }, nombre: string) => {
   mundo.aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]);
+  await retoTerminado(request, mundo.aula, 'Mateo');
   await tabletDelAulaActivada(page, request, mundo.aula);
   await entrar(page);
   await abrirMapa(page);

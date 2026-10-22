@@ -2,6 +2,7 @@ import { expect, Page } from '@playwright/test';
 
 import { idMundo, simularDesbloqueo, tituloMision } from '../support/aventura';
 import { cuentaBackoffice, ingresarBackoffice, lecturaPublicada } from '../support/contenido';
+import { retoTerminado } from '../support/diagnostico';
 import { docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../support/escuela';
 import { escribirPin, esperarAreaEstudiante, salirDelPanel } from '../support/iam';
 import { Cuando, Dado, Entonces } from './fixtures';
@@ -36,8 +37,9 @@ async function abrirMapa(page: Page) {
 
 // ── RF-030, RF-033: posición inicial y mundos bloqueados ──────────────────
 
-Dado('un niño de 9 años matriculado en un aula con la tablet activada', async ({ page, request, mundo }) => {
+Dado('un niño de 9 años que ya hizo su reto inicial, con la tablet activada', async ({ page, request, mundo }) => {
   mundo.aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017
+  await retoTerminado(request, mundo.aula, 'Mateo'); // RN-05; sin destacar en LIT ni VOC: mundo 1 (RF-033)
   await tabletDelAulaActivada(page, request, mundo.aula);
 });
 
@@ -81,6 +83,7 @@ Cuando('una editora arma en el mundo {string} la misión {string} con esa lectur
 
 Cuando('un niño de 9 años abre el mundo {string}', async ({ page, request, mundo }, nombre: string) => {
   mundo.aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]);
+  await retoTerminado(request, mundo.aula, 'Mateo');
   await tabletDelAulaActivada(page, request, mundo.aula);
   await entrar(page);
   await abrirMapa(page);

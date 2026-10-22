@@ -105,6 +105,7 @@ jobs:
           k6 run -e DURACION=30s tests/load/scenarios/biblioteca.js
           node tests/load/sembrar-aventura.mjs
           k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
+          k6 run tests/load/scenarios/diagnostico-reto.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

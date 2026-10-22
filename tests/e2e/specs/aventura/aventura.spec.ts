@@ -2,6 +2,7 @@ import { expect, Page, test as base } from '@playwright/test';
 
 import { idMundo, misionConLecturas, simularDesbloqueo, tituloMision } from '../../support/aventura';
 import { cuentaBackoffice, ingresarBackoffice, lecturaPublicada } from '../../support/contenido';
+import { retoTerminado } from '../../support/diagnostico';
 import { AulaPreparada, docenteConAula, PIN_PRUEBA, tabletDelAulaActivada } from '../../support/escuela';
 import { escribirPin, esperarAreaEstudiante, ipSimulada, salirDelPanel } from '../../support/iam';
 
@@ -49,8 +50,9 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
     await expect(page.getByRole('heading', { level: 2, name: titulo })).toBeVisible();
     await salirDelPanel(page);
 
-    // RF-030, RF-033: un niño nuevo (sin el Módulo 5 todavía) empieza en el Explorador.
+    // RF-030, RF-033: tras su reto inicial sin destacar en LIT ni VOC, empieza en el Explorador.
     const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017: 8–9 años
+    await retoTerminado(request, aula, 'Mateo'); // RN-05: primero su reto inicial (sin destacar: mundo 1)
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Mateo');
     const mundos = page.getByRole('region', { name: 'Tus mundos' });
@@ -71,6 +73,7 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
 
   test('un mundo bloqueado no se abre aunque el niño escriba su dirección', async ({ page, request }) => {
     const aula = await docenteConAula(request, [{ alias: 'Lía', avatar: 'koala' }]);
+    await retoTerminado(request, aula, 'Lía');
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Lía');
     await page.goto(`/estudiante/mundos/${await idMundo(3)}`);
@@ -83,6 +86,7 @@ test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
     const editora = await cuentaBackoffice('EDITOR');
     const delDetective = await misionConLecturas(request, editora, 2, tituloMision('El enigma del valle'), ['Pistas en la arena']);
     const aula = await docenteConAula(request, [{ alias: 'Teo', avatar: 'panda' }]);
+    await retoTerminado(request, aula, 'Teo');
     await tabletDelAulaActivada(page, request, aula);
     await entrarComoNino(page, aula, 'Teo');
     await expect(page.getByRole('link', { name: 'Entrar al mundo 1: Explorador' })).toBeVisible(); // ya tiene su mapa

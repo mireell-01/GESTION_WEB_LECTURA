@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Alerta, BarraProgreso, Cargando, EscenaMundo, Icono, Mascota } from '@lectoaventura/ui';
+import { Alerta, BarraProgreso, Cargando, clasesBoton, EscenaMundo, Icono, Mascota } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
@@ -47,9 +47,14 @@ export function MapaMundos({ comoPagina = false }: { comoPagina?: boolean }) {
       ) : mapa.diagnosticoPendiente ? (
         <div className="est-preparando">
           <Mascota tamano={96} flota />
-          <div>
+          <div className="pila-sm">
             <h2>Primero, tu reto inicial</h2>
             <p>Cuando lo completes, se abrirá tu mapa de aventuras en el mundo que te toca.</p>
+            <div>
+              <Link href="/estudiante/reto" className={clasesBoton('primario', { tamano: 'grande' })}>
+                Ir a mi reto
+              </Link>
+            </div>
           </div>
         </div>
       ) : (

@@ -1296,6 +1296,7 @@ import { expect, Page, test as base } from '@playwright/test';
 
 import { misionConLecturas, tituloMision } from '../../support/aventura';
 import { cuentaBackoffice, filtrarPorTema, ingresarBackoffice, lecturaPublicada, sesionBackoffice, TEXTO_E2E } from '../../support/contenido';
+import { retoTerminado } from '../../support/diagnostico';
 import { abrirAula, docenteConAula, PIN_PRUEBA, sembrarCatalogoE2E, sesionApi, tabletDelAulaActivada } from '../../support/escuela';
 import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 
@@ -1470,6 +1471,7 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await salirDelPanel(page);
 
     const aula = await docenteConAula(request, [{ alias: 'Ana', avatar: 'buho' }]);
+    await retoTerminado(request, aula, 'Ana');
     await tabletDelAulaActivada(page, request, aula);
     await page.goto('/');
     await page.getByRole('button', { name: 'Ana' }).click();
@@ -2187,6 +2189,7 @@ jobs:
           k6 run -e DURACION=30s tests/load/scenarios/biblioteca.js
           node tests/load/sembrar-aventura.mjs
           k6 run -e DURACION=30s tests/load/scenarios/aventura-mapa.js
+          k6 run tests/load/scenarios/diagnostico-reto.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
