@@ -2585,3 +2585,459 @@ p {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* ── Módulo 6 · Lectura interactiva (RF-038 a RF-051) ─────────────────────────────────── */
+
+.sesion-lectura {
+  width: 100%;
+  max-width: 860px;
+}
+
+.sesion-lectura__cabecera {
+  display: grid;
+  gap: 8px;
+}
+
+.sesion-lectura__cabecera h1 {
+  margin: 0;
+}
+
+/* RF-038: portada con título e imagen, antes del texto. */
+.portada-lectura {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  padding: 18px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 24px;
+  background: var(--la-color-secundario-suave);
+}
+
+.portada-lectura h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+}
+
+.portada-lectura__imagen {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 18px;
+}
+
+.portada-lectura > .pila-sm {
+  width: 100%;
+}
+
+@container est (min-width: 720px) {
+  .portada-lectura {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: center;
+    justify-items: start;
+  }
+}
+
+.lectura-prediccion {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 6px solid var(--la-color-secundario);
+  border-radius: 12px;
+  background: var(--la-color-secundario-suave);
+  font: 600 var(--la-texto-base) / 1.4 var(--la-font-titulo);
+}
+
+.lectura-texto {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--la-sombra);
+}
+
+.lectura-texto__sigue {
+  margin: 0;
+  font-style: italic;
+}
+
+.texto-lectura {
+  display: grid;
+  gap: 10px;
+}
+
+.texto-lectura__parrafo {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  line-height: 1.7;
+  transition: background 0.2s ease;
+}
+
+/* RN-06: el párrafo de la pista. */
+.texto-lectura__parrafo--pista {
+  background: var(--la-color-secundario-suave);
+  box-shadow: inset 5px 0 0 var(--la-color-secundario);
+}
+
+/* RF-050: la oración que se escucha. */
+.lectura-oracion--leyendo {
+  border-radius: 6px;
+  background: var(--la-color-primario-suave);
+  box-shadow: 0 0 0 3px var(--la-color-primario-suave);
+}
+
+/* RF-039: tras esta oración aparece la pregunta. */
+.lectura-oracion--anclaje {
+  text-decoration: underline wavy var(--la-color-secundario);
+  text-underline-offset: 6px;
+}
+
+/* RF-043: en "Encuentra la evidencia" cada oración se toca (objetivo de 48 px). */
+.lectura-oracion--elegible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--la-target-min);
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: 2px dashed var(--la-color-primario-borde);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--la-color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lectura-oracion--elegible:hover {
+  border-color: var(--la-color-primario);
+}
+
+.lectura-oracion--elegible:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.lectura-oracion--elegida {
+  border-style: solid;
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+}
+
+.lectura-oracion--elegida .la-icono {
+  flex: none;
+  color: var(--la-color-secundario-fuerte);
+}
+
+/* RF-050: lectura en voz alta. */
+.lector-voz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.lector-voz__velocidad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lector-voz__opcion {
+  min-width: var(--la-target-min);
+  min-height: var(--la-target-min);
+  padding: 0 14px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--la-color-texto);
+  font: 700 var(--la-texto-sm) var(--la-font-titulo);
+  cursor: pointer;
+}
+
+.lector-voz__opcion[aria-checked="true"] {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario);
+  color: #fff;
+}
+
+.lector-voz__opcion:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+/* La pregunta en pantalla. */
+.pregunta-lectura {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 22px;
+  background: #fff;
+}
+
+.pregunta-lectura h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+}
+
+.pregunta-lectura h2:focus {
+  outline: none;
+}
+
+.pregunta-lectura__momento,
+.pregunta-lectura__etiqueta {
+  margin: 0;
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--la-color-texto-suave);
+}
+
+.pregunta-lectura__defiende {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.pregunta-lectura__defiende p {
+  margin: 0;
+}
+
+.reto__opcion--marcada {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+}
+
+.pistas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pista {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--la-color-secundario-suave);
+  font: 600 var(--la-texto-base) / 1.4 var(--la-font-titulo);
+}
+
+.pista .la-icono {
+  flex: none;
+  color: var(--la-color-secundario-fuerte);
+}
+
+/* RF-042: ordenar arrastrando o con botones. */
+.ordenar {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ordenar__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.ordenar__fila--arrastrando {
+  border-color: var(--la-color-primario);
+  box-shadow: var(--la-sombra);
+}
+
+.ordenar__asa {
+  display: flex;
+  flex: 1 1 180px;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--la-target-min);
+  padding: 4px 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ordenar__fila--arrastrando .ordenar__asa {
+  cursor: grabbing;
+}
+
+.ordenar__numero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario);
+  font: 700 1rem var(--la-font-titulo);
+}
+
+.ordenar__texto {
+  font: 600 1.125rem / 1.3 var(--la-font-titulo);
+}
+
+.ordenar__botones {
+  display: flex;
+  gap: 6px;
+}
+
+.respuesta-escrita__confirmar {
+  margin: 0;
+  font-weight: 700;
+  color: var(--la-color-primario-fuerte);
+}
+
+/* RF-048: historia ramificada; también la explicación modelada y el cierre. */
+.historia,
+.explicacion,
+.cierre-lectura {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 22px;
+  background: #fff;
+}
+
+.historia h2,
+.explicacion h2,
+.cierre-lectura h2 {
+  margin: 0;
+}
+
+.historia__paso p,
+.historia__nodo,
+.explicacion p {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.historia__eleccion {
+  color: var(--la-color-primario-fuerte);
+  font-weight: 700;
+}
+
+.explicacion {
+  border-color: var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+/* RF-047: lo que pensó frente a lo que pasó. */
+.cierre-lectura__comparar {
+  display: grid;
+  gap: 10px;
+}
+
+.cierre-lectura__comparar > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.cierre-lectura__comparar p {
+  margin: 0;
+}
+
+@container est (min-width: 640px) {
+  .cierre-lectura__comparar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.lectura-fin h2 {
+  margin: 0;
+}
+
+.lectura-fin__resumen {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 1.2em;
+  font: 600 var(--la-texto-lg) / 1.4 var(--la-font-titulo);
+}
+
+/* RF-051: revisión docente con rúbrica. */
+.revision {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.revision__fila {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 2px solid var(--la-color-borde);
+  border-radius: var(--la-radio-lg);
+}
+
+.revision__fila p {
+  margin: 0;
+}
+
+.revision__pregunta {
+  font-weight: 700;
+}
+
+.revision__respuesta {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 5px solid var(--la-color-primario);
+  border-radius: 10px;
+  background: var(--la-color-fondo-alterno);
+  white-space: pre-wrap;
+}
+
+.rubrica {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rubrica__nivel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: var(--la-target-min);
+  padding: 8px 10px;
+  border: 2px solid var(--la-color-borde);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.rubrica__nivel input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.rubrica__nivel:has(input:checked) {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+}

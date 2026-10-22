@@ -5,6 +5,7 @@ import { Provider } from '@nestjs/common';
 import { IamFacade } from '../../iam/public-api';
 import { BUS_EVENTOS, BusEventos, NIVEL_LECTOR, PrismaService, ResolutorNivelLector, uuidV7 } from '../../shared-kernel/public-api';
 import { CASOS_USO_CONTENIDO, CasosUsoContenido } from '../application/casos-uso-contenido';
+import { ContenidoFacade } from '../application/contenido.facade';
 import { AutoriaUseCase } from '../application/use-cases/autoria.use-case';
 import { BibliotecaUseCase } from '../application/use-cases/biblioteca.use-case';
 import { PublicacionUseCase } from '../application/use-cases/publicacion.use-case';
@@ -32,6 +33,7 @@ export function crearCasosUsoContenido(
     publicacion: new PublicacionUseCase(repo, bus, ahora),
     recursos: new RecursosUseCase(repo, almacen, firmador, bus, generarId, ahora),
     biblioteca: new BibliotecaUseCase(repo, new IdentidadLectoresIam(iam), nivelLector),
+    facade: new ContenidoFacade(repo),
   };
 }
 
@@ -46,4 +48,10 @@ export const contenidoProviders: Provider[] = [
   },
   // RF-018: lecturas publicadas que el docente puede asignar.
   CatalogoLecturas,
+  // Módulo 6: la lectura interactiva lee las versiones publicadas por la fachada.
+  {
+    provide: ContenidoFacade,
+    useFactory: (casos: CasosUsoContenido) => casos.facade,
+    inject: [CASOS_USO_CONTENIDO],
+  },
 ];

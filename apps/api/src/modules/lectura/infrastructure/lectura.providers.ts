@@ -1,11 +1,56 @@
-/**
- * Vinculación puerto → adaptador (Dependency Injection).
- */
-export const lecturaProviders = [
-  // Adaptadores de persistencia
-  // { provide: SesionRepository, useClass: PrismaSesionRepository },
-  // { provide: ItemRepository, useClass: PrismaItemRepository },
+import { Inject, Injectable, OnModuleInit, Provider } from '@nestjs/common';
 
-  // Adaptador de mensajería
-  // { provide: EventPublisher, useClass: OutboxEventPublisher },
+import { ContenidoFacade } from '../../contenido/public-api';
+import { EscuelaFacade } from '../../escuela/public-api';
+import { IamFacade } from '../../iam/public-api';
+import { AVANCE_LECTURAS, BUS_EVENTOS, BusEventos, PrismaService, RegistroAvanceLecturas, uuidV7 } from '../../shared-kernel/public-api';
+import { CASOS_USO_LECTURA, CasosUsoLectura } from '../application/casos-uso-lectura';
+import { RevisionUseCase } from '../application/use-cases/revision.use-case';
+import { SesionesUseCase } from '../application/use-cases/sesiones.use-case';
+import { DIAS_PARA_ABANDONO } from '../domain/entities/sesion-lectura';
+import { ContenidoLecturasContenido, EscuelaLecturaEscuela, IdentidadEstudiantesIam } from './anticorrupcion';
+import { PrismaSesionRepository } from './persistence/prisma-sesion-repository';
+
+/** Composition root de Lectura. */
+export function crearCasosUsoLectura(prisma: PrismaService, bus: BusEventos, iam: IamFacade, escuela: EscuelaFacade, contenido: ContenidoFacade): CasosUsoLectura {
+  const ahora = () => new Date();
+  const generarId = () => uuidV7();
+  const repo = new PrismaSesionRepository(prisma);
+  const contenidos = new ContenidoLecturasContenido(contenido);
+  const identidad = new IdentidadEstudiantesIam(iam);
+  const aulas = new EscuelaLecturaEscuela(escuela);
+  return {
+    sesiones: new SesionesUseCase(repo, contenidos, identidad, aulas, bus, generarId, ahora),
+    revision: new RevisionUseCase(repo, contenidos, identidad, aulas, bus, ahora),
+  };
+}
+
+/** RF-032: Aventura consulta por el shared-kernel qué lecturas empezó o terminó el niño. */
+@Injectable()
+export class AvanceLecturasRegistro implements OnModuleInit {
+  private readonly repo: PrismaSesionRepository;
+
+  constructor(
+    prisma: PrismaService,
+    @Inject(AVANCE_LECTURAS) private readonly registro: RegistroAvanceLecturas,
+  ) {
+    this.repo = new PrismaSesionRepository(prisma);
+  }
+
+  onModuleInit(): void {
+    this.registro.registrar({
+      avanceDe: (estudianteId, lecturaIds) =>
+        this.repo.avanceDe(estudianteId, lecturaIds, new Date(Date.now() - DIAS_PARA_ABANDONO * 24 * 60 * 60 * 1000)),
+    });
+  }
+}
+
+/** Vinculación puerto → adaptador (Dependency Injection). */
+export const lecturaProviders: Provider[] = [
+  {
+    provide: CASOS_USO_LECTURA,
+    useFactory: crearCasosUsoLectura,
+    inject: [PrismaService, BUS_EVENTOS, IamFacade, EscuelaFacade, ContenidoFacade],
+  },
+  AvanceLecturasRegistro,
 ];

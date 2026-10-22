@@ -73,6 +73,8 @@ export interface Invitacion {
 export interface MisionDelDocente {
   id: string;
   tipo: TipoAsignacion;
+  /** La lectura o misión asignada (Módulo 6: el niño la abre desde aquí). */
+  contenidoId: string;
   titulo: string;
   fechaLimite: string;
   aula: string;

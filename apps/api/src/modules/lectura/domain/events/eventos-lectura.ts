@@ -1,0 +1,10 @@
+import { EVENTOS_INTEGRACION } from '../../../shared-kernel/public-api';
+
+/** Eventos de Lectura (SAD §6). Los de integración los escuchan Aventura, Progreso y Gamificación. */
+export const EVENTOS_LECTURA = {
+  INICIADA: EVENTOS_INTEGRACION.SESION_LECTURA_INICIADA,
+  ITEM_RESPONDIDO: EVENTOS_INTEGRACION.ITEM_RESPONDIDO,
+  FINALIZADA: EVENTOS_INTEGRACION.SESION_LECTURA_FINALIZADA,
+  ABANDONADA: 'lectura.SesionLecturaAbandonada',
+  RESPUESTA_VALORADA: EVENTOS_INTEGRACION.RESPUESTA_ABIERTA_VALORADA,
+} as const;

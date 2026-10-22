@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Boton, Campo, Cargando, Chip, Icono, Selector } from '@lectoaventura/ui';
+import { Alerta, Boton, Campo, Cargando, Chip, clasesBoton, Icono, Selector } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
@@ -133,7 +133,7 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
   );
 }
 
-/** Detalle de una lectura publicada (sin respuestas). Leerla con sus actividades llega con el Módulo 6. */
+/** Detalle de una lectura publicada (sin respuestas). El estudiante la lee con sus actividades en /estudiante/lecturas (Módulo 6). */
 export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: { lecturaId: string; base: string; infantil?: boolean }) {
   const [lectura, setLectura] = useState<DetalleBiblioteca | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,7 +186,12 @@ export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: 
             </p>
           </div>
         ) : (
-          <p className="lectura__pronto">¡Muy pronto podrás responder sus actividades y ganar estrellas!</p>
+          <div>
+            <Link href={`/estudiante/lecturas/${lecturaId}`} className={clasesBoton('primario', { tamano: 'grande' })}>
+              <Icono nombre="libro" tamano={24} />
+              ¡Leer ahora!
+            </Link>
+          </div>
         )}
       </article>
     </div>

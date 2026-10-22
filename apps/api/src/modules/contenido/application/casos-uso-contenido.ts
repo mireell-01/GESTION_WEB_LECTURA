@@ -1,3 +1,4 @@
+import { ContenidoFacade } from './contenido.facade';
 import { AutoriaUseCase } from './use-cases/autoria.use-case';
 import { BibliotecaUseCase } from './use-cases/biblioteca.use-case';
 import { PublicacionUseCase } from './use-cases/publicacion.use-case';
@@ -9,6 +10,7 @@ export interface CasosUsoContenido {
   publicacion: PublicacionUseCase;
   recursos: RecursosUseCase;
   biblioteca: BibliotecaUseCase;
+  facade: ContenidoFacade;
 }
 
 export const CASOS_USO_CONTENIDO = Symbol('CASOS_USO_CONTENIDO');
