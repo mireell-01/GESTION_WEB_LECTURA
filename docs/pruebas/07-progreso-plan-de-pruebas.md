@@ -1503,6 +1503,10 @@ El workflow `.github/workflows/calidad.yml` ya ejecuta los 4 niveles; las prueba
           }
 ```
 
+**Resultado en GitHub tras el cambio** (PR #9 y `main`, 22/10/2026): todos los umbrales con mucho margen; por ejemplo, corregir una respuesta (con la maestría) p95 66–76 ms frente a 300 ms, y el perfil p95 21–22 ms. La falla anterior de `main` no fue de tiempos (ninguno se acerca a su umbral): una petición con error, que no volvió a repetirse; si ocurre otra vez, la anotación dirá cuál.
+
+**Compilación:** la otra falla de `main` (tras el Módulo 5) fue al compilar la web, que descarga las fuentes de Google (`next/font`). Ahora, si esa compilación falla, se reintenta una vez; un error de código falla igual las dos veces.
+
 ---
 
 # 10. MATRIZ DE TRAZABILIDAD DE PRUEBAS DEL MÓDULO

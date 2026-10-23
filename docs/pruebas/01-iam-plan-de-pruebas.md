@@ -2224,8 +2224,16 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: tests/e2e
       # Se compila una sola vez; E2E, UAT y k6 arrancan la compilación de producción.
+      # La compilación de la web descarga las fuentes de Google (next/font): si la red de GitHub falla,
+      # se reintenta una vez. Un error de código falla igual las dos veces.
       - name: Compilar API y web
-        run: npm run build --workspace @lectoaventura/api && npm run build --workspace @lectoaventura/web
+        run: |
+          npm run build --workspace @lectoaventura/api
+          npm run build --workspace @lectoaventura/web || {
+            echo "::warning title=Compilación de la web::Falló (¿descarga de fuentes?); se reintenta una vez"
+            sleep 20
+            npm run build --workspace @lectoaventura/web
+          }
       - name: 'Nivel 3: sistema E2E (escritorio y tablet)'
         run: npm run test:e2e
       - name: 'Nivel 4: aceptación (Gherkin)'
