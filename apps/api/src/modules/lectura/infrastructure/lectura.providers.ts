@@ -3,7 +3,16 @@ import { Inject, Injectable, OnModuleInit, Provider } from '@nestjs/common';
 import { ContenidoFacade } from '../../contenido/public-api';
 import { EscuelaFacade } from '../../escuela/public-api';
 import { IamFacade } from '../../iam/public-api';
-import { AVANCE_LECTURAS, BUS_EVENTOS, BusEventos, PrismaService, RegistroAvanceLecturas, uuidV7 } from '../../shared-kernel/public-api';
+import {
+  AVANCE_LECTURAS,
+  BUS_EVENTOS,
+  BusEventos,
+  LECTURAS_REALIZADAS,
+  PrismaService,
+  RegistroAvanceLecturas,
+  RegistroLecturasRealizadas,
+  uuidV7,
+} from '../../shared-kernel/public-api';
 import { CASOS_USO_LECTURA, CasosUsoLectura } from '../application/casos-uso-lectura';
 import { RevisionUseCase } from '../application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../application/use-cases/sesiones.use-case';
@@ -25,7 +34,10 @@ export function crearCasosUsoLectura(prisma: PrismaService, bus: BusEventos, iam
   };
 }
 
-/** RF-032: Aventura consulta por el shared-kernel qué lecturas empezó o terminó el niño. */
+/**
+ * RF-032: Aventura consulta por el shared-kernel qué lecturas empezó o terminó el niño.
+ * RF-059 (Módulo 8): el Pasaporte del Lector muestra las lecturas que terminó.
+ */
 @Injectable()
 export class AvanceLecturasRegistro implements OnModuleInit {
   private readonly repo: PrismaSesionRepository;
@@ -33,6 +45,7 @@ export class AvanceLecturasRegistro implements OnModuleInit {
   constructor(
     prisma: PrismaService,
     @Inject(AVANCE_LECTURAS) private readonly registro: RegistroAvanceLecturas,
+    @Inject(LECTURAS_REALIZADAS) private readonly realizadas: RegistroLecturasRealizadas,
   ) {
     this.repo = new PrismaSesionRepository(prisma);
   }
@@ -42,6 +55,7 @@ export class AvanceLecturasRegistro implements OnModuleInit {
       avanceDe: (estudianteId, lecturaIds) =>
         this.repo.avanceDe(estudianteId, lecturaIds, new Date(Date.now() - DIAS_PARA_ABANDONO * 24 * 60 * 60 * 1000)),
     });
+    this.realizadas.registrar({ realizadasDe: (estudianteId) => this.repo.realizadasDe(estudianteId) });
   }
 }
 

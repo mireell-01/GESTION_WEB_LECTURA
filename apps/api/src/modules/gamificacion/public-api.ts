@@ -1,4 +1,3 @@
-/** ÚNICO punto de entrada del módulo gamificacion desde otros módulos. */
+/** ÚNICO punto de entrada del módulo Gamificación desde otros módulos. */
 export * from './gamificacion.module';
-// exportar casos de uso y tipos públicos según sea necesario:
-// export * from './application/use-cases/...';
+export { EVENTOS_GAMIFICACION } from './domain/events/eventos-gamificacion';

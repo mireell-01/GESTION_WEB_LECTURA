@@ -1380,9 +1380,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
       expect(Math.round(caja.y + caja.height)).toBeGreaterThanOrEqual(ventana.height - 1);
       expect(caja.width).toBeGreaterThanOrEqual(ventana.width - 1);
     }
-    // Las secciones futuras se muestran con candado y avisan "muy pronto".
-    await nav.getByRole('button', { name: /Mi perfil/ }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Mi perfil llegará muy pronto' })).toBeVisible();
+    // Módulo 8: el Pasaporte del Lector (antes "Mi perfil", con candado) ya es una sección real.
+    await nav.getByRole('link', { name: 'Pasaporte' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Pasaporte del Lector' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Recompensas' }).getByRole('listitem')).toHaveCount(10);
+    await revisarPantalla(page);
     // Módulos 4 y 7: Mundos y Progreso ya son secciones reales.
     await expect(nav.getByRole('link', { name: 'Mundos' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Progreso' })).toBeVisible();

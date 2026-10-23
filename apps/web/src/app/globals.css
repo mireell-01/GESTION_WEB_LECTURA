@@ -3163,3 +3163,387 @@ p {
 .recomendacion__titulo {
   font: 700 1.125rem / 1.3 var(--la-font-titulo);
 }
+
+/* ── Módulo 8 · Gamificación: pasaporte, reto del día, racha y recompensas (RF-056 a RF-062) ─── */
+
+/* Marcador del saludo del inicio: nivel, racha y monedas. */
+.marcador {
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marcador__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  font: 700 1rem var(--la-font-titulo);
+}
+
+/* RF-060: reto del día. */
+.reto-dia {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 24px;
+  background: #fff;
+}
+
+.reto-dia--cumplido {
+  border-color: var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+.reto-dia__icono {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--la-color-primario-suave);
+  font-size: 36px;
+  line-height: 1;
+}
+
+.reto-dia--cumplido .reto-dia__icono {
+  background: #fff;
+}
+
+.reto-dia h2,
+.reto-dia p {
+  margin: 0;
+}
+
+.reto-dia h2 {
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
+}
+
+.reto-dia p {
+  font: 600 var(--la-texto-base) / 1.4 var(--la-font-titulo);
+}
+
+.reto-dia__avance {
+  color: var(--la-color-texto-suave);
+}
+
+/* RF-058, RF-059: lo que ganó al terminar una lectura. */
+.logros-lectura {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 24px;
+  background: var(--la-color-secundario-suave);
+}
+
+.logros-lectura h2,
+.logros-lectura p {
+  margin: 0;
+}
+
+.logros-lectura__nivel {
+  font: 700 1.125rem var(--la-font-titulo);
+  color: var(--la-color-primario-fuerte);
+}
+
+.logros-lectura__insignias {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 700 1.125rem / 1.35 var(--la-font-titulo);
+}
+
+/* RF-059: Pasaporte del Lector. */
+.pasaporte {
+  width: 100%;
+  max-width: 980px;
+}
+
+.pasaporte h2 {
+  margin: 0;
+}
+
+.pasaporte__portada {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 22px 18px;
+  border-radius: var(--la-radio-lg);
+  background: linear-gradient(115deg, #5b3fd9 0%, #6c55ec 48%, #93a6f6 100%);
+  color: #fff;
+  text-align: center;
+}
+
+.pasaporte__avatar {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border: 6px solid #fff;
+  border-radius: 50%;
+  font-size: 58px;
+  line-height: 1;
+  box-shadow: 0 6px 0 rgba(30, 26, 77, 0.2);
+}
+
+.pasaporte__portada-texto {
+  width: 100%;
+  max-width: 460px;
+}
+
+.pasaporte__portada h1,
+.pasaporte__portada p {
+  margin: 0;
+}
+
+.pasaporte__portada h1 {
+  font-size: clamp(1.75rem, 1.3rem + 2vw, 2.75rem);
+}
+
+.pasaporte__alias {
+  color: var(--la-color-nombre);
+  font: 700 1.5rem var(--la-font-titulo);
+}
+
+.pasaporte__nivel {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--la-color-primario-fuerte);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  font: 700 1.125rem var(--la-font-titulo);
+}
+
+.pasaporte__portada .la-barra {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.pasaporte__cifras {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pasaporte__cifras li {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: #fff;
+  font: 600 1rem var(--la-font-titulo);
+}
+
+.pasaporte__cifras small {
+  color: var(--la-color-texto-suave);
+  font: 600 0.875rem var(--la-font-redondeada);
+}
+
+.pasaporte__cifra {
+  font: 800 1.75rem / 1.1 var(--la-font-titulo);
+  color: var(--la-color-primario-fuerte);
+}
+
+.pasaporte__columnas {
+  display: grid;
+  gap: 20px;
+}
+
+.pasaporte__lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pasaporte__lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+  font: 600 1rem / 1.35 var(--la-font-titulo);
+}
+
+.pasaporte__lista .la-icono {
+  color: var(--la-color-primario);
+}
+
+.pasaporte__mas {
+  min-width: 48px;
+  color: var(--la-color-exito-texto);
+  font-weight: 800;
+}
+
+/* RF-058: insignias ganadas a color y por ganar en gris con candado (nunca en rojo). */
+.insignias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insignia {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 3px dashed var(--la-color-borde);
+  border-radius: 20px;
+  background: var(--la-color-fondo-alterno);
+  text-align: center;
+}
+
+.insignia--ganada {
+  border: 3px solid var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+}
+
+.insignia__sello {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 34px;
+  line-height: 1;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.insignia--ganada .insignia__sello {
+  filter: none;
+  opacity: 1;
+  box-shadow: 0 4px 0 rgba(30, 26, 77, 0.15);
+}
+
+.insignia__candado {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--la-color-texto-suave);
+  color: #fff;
+}
+
+.insignia__nombre {
+  font: 700 1rem / 1.25 var(--la-font-titulo);
+}
+
+.insignia__descripcion {
+  color: var(--la-color-texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.insignia__estado {
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fff;
+  font: 700 0.875rem var(--la-font-redondeada);
+}
+
+/* RF-062: tienda de recompensas. */
+.tienda {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tienda__item {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 10px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.tienda__item--tuya {
+  border-color: var(--la-color-exito);
+  background: var(--la-color-exito-suave);
+}
+
+.tienda__emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.tienda__nombre {
+  font: 700 1rem / 1.25 var(--la-font-titulo);
+}
+
+.tienda__tipo,
+.tienda__faltan {
+  color: var(--la-color-texto-suave);
+  font: 600 0.8125rem var(--la-font-redondeada);
+}
+
+.tienda__tuya {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--la-target-min);
+  color: var(--la-color-exito-texto);
+  font: 800 1rem var(--la-font-titulo);
+}
+
+@container est (min-width: 640px) {
+  .pasaporte__portada {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    text-align: left;
+  }
+
+  .pasaporte__nivel {
+    justify-self: start;
+  }
+
+  .pasaporte__cifras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .pasaporte__columnas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

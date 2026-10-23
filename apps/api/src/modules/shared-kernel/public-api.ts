@@ -9,6 +9,7 @@ export * from './application/catalogo-asignable';
 export * from './application/contexto-aula';
 export * from './application/eventos-integracion';
 export * from './application/fichas-lectura';
+export * from './application/logros-lector';
 export * from './application/nivel-lector';
 export * from './application/progreso-lector';
 export * from './application/recolector-datos';

@@ -108,7 +108,7 @@ Otros módulos (solo por su public-api, el shared-kernel o eventos):
 | Tema | Riesgo | Propuesta |
 | :--- | :--- | :--- |
 | Perfil para la docente y la familia | Hoy solo lo ve el niño | Paneles docente y familiar (RF-063, RF-064, RF-068) con una fachada de Progreso |
-| +50 por subir de nivel (RN-11) | El evento ya se publica, nadie lo escucha | Gamificación (Módulo 8) |
+| +50 por subir de nivel (RN-11) | El evento ya se publica, nadie lo escucha | Gamificación (Módulo 8) — ✅ resuelto: +50 la primera vez que cada habilidad llega a cada nivel |
 | Tiempo de respuesta al corregir | Subió de 67 a 154 ms (p95) por calcular la maestría y el desbloqueo en el mismo pedido | Dentro de la meta (300 ms); si hiciera falta, evaluar el desbloqueo de Aventura fuera del pedido |
 | Heredadas | Outbox no transaccional; límite de tasa en memoria | Ver informes de los Módulos 1 a 6 |
 

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
 import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
+import { LogrosDeLectura } from '@/features/gamificacion/LogrosDeLectura';
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { PreguntaLectura } from './PreguntaLectura';
@@ -280,6 +281,8 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
           </div>
         </section>
       ) : null}
+
+      <LogrosDeLectura terminada={fase === 'FINALIZADA'} />
     </div>
   );
 }

@@ -37,7 +37,8 @@ describe('Organización de la base (SRS §7)', () => {
       WHERE table_type = 'BASE TABLE' AND table_schema = ANY(${SCHEMAS})`;
     const porSchema = (s: string) => filas.filter((f) => f.esquema === s).map((f) => f.tabla).sort();
 
-    expect(filas).toHaveLength(52);
+    // 52 del SRS + 4 del Módulo 8 (idempotencia, avance de insignias y recompensas).
+    expect(filas).toHaveLength(56);
     expect(porSchema('iam')).toEqual(expect.arrayContaining(['cuenta_adulta', 'perfil_estudiante', 'consentimiento', 'vinculo_responsable', 'factor_mfa', 'refresh_token']));
     expect(porSchema('escuela')).toEqual(['asignacion', 'asignacion_destinatario', 'aula', 'institucion', 'invitacion_familiar', 'matricula']);
     expect(porSchema('contenido')).toEqual(['actividad', 'clave_evidencia', 'item', 'lectura', 'nodo_historia', 'oracion', 'pista', 'recurso', 'version_lectura']);
@@ -45,7 +46,7 @@ describe('Organización de la base (SRS §7)', () => {
     expect(porSchema('diagnostico')).toEqual(['banco_item_diagnostico', 'diagnostico', 'respuesta_diagnostico']);
     expect(porSchema('lectura')).toEqual(['decision_ruta', 'justificacion', 'respuesta', 'sesion_lectura', 'uso_pista', 'valoracion_rubrica']);
     expect(porSchema('progreso')).toEqual(['historial_maestria', 'maestria_habilidad', 'recomendacion']);
-    expect(porSchema('gamificacion')).toEqual(['asiento_puntos', 'insignia', 'insignia_otorgada', 'parametro_gamificacion', 'racha', 'reto_diario']);
+    expect(porSchema('gamificacion')).toEqual(['asiento_puntos', 'avance_insignia', 'canje_recompensa', 'evento_aplicado', 'insignia', 'insignia_otorgada', 'parametro_gamificacion', 'racha', 'recompensa', 'reto_diario']);
     expect(porSchema('asistente')).toEqual(['conversacion', 'turno']);
     expect(porSchema('admin')).toEqual(['auditoria', 'outbox_evento']);
 
@@ -112,7 +113,7 @@ describe('Reglas del negocio en la base', () => {
     await expect(crearCuenta({ rol: 'SUPERUSUARIO' })).rejects.toThrow(/ck_cuenta_rol/);
     // RN-10: los puntos nunca son negativos.
     await expect(
-      prisma.asientoPuntos.create({ data: { estudianteId: uuidV7(), puntos: -5, motivo: 'X', eventoOrigen: uuidV7(), fechaLima: AHORA } }),
+      prisma.asientoPuntos.create({ data: { estudianteId: uuidV7(), puntos: -5, motivo: 'ITEM_CORRECTO', eventoOrigen: uuidV7(), fechaLima: AHORA } }),
     ).rejects.toThrow(/ck_asiento_puntos/);
     // RF-074: el asistente admite como máximo 10 intercambios.
     await expect(

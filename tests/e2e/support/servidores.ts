@@ -1,6 +1,8 @@
 import type { PlaywrightTestConfig } from '@playwright/test';
 
 export const WEB = process.env.WEB_URL ?? 'http://localhost:3002';
+/** La API a la que la web reenvía /api (la misma API_URL con que se compiló la web). */
+const API = process.env.API_URL ?? 'http://localhost:3001';
 
 /**
  * Servidores que necesitan los niveles 3 (E2E) y 4 (UAT). Cada ejecución de Playwright apaga
@@ -13,7 +15,7 @@ export const servidores: PlaywrightTestConfig['webServer'] = [
     command: process.env.CI ? 'npm run start --workspace @lectoaventura/api' : 'npm run dev:api',
     cwd: '../..',
     // Responde 401 sin sesión: Playwright lo acepta como "servidor listo".
-    url: 'http://localhost:3001/api/v1/auth/yo',
+    url: `${API}/api/v1/auth/yo`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

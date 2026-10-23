@@ -34,8 +34,8 @@ export async function crearApp(opciones: { conLogs?: boolean } = {}): Promise<Ap
 
 /** Schemas de los bounded contexts (SRS §7). */
 const SCHEMAS = ['iam', 'escuela', 'contenido', 'aventura', 'diagnostico', 'lectura', 'progreso', 'gamificacion', 'asistente', 'admin'];
-/** Datos de catálogo que cargan las migraciones (los 5 mundos, el banco del diagnóstico y los parámetros de gamificación). */
-const CATALOGO = ['aventura.mundo', 'diagnostico.banco_item_diagnostico', 'gamificacion.parametro_gamificacion'];
+/** Datos de catálogo que cargan las migraciones (los 5 mundos, el banco del diagnóstico, los parámetros, insignias y recompensas de gamificación). */
+const CATALOGO = ['aventura.mundo', 'diagnostico.banco_item_diagnostico', 'gamificacion.parametro_gamificacion', 'gamificacion.insignia', 'gamificacion.recompensa'];
 
 /** Deja vacías todas las tablas de los módulos, salvo el catálogo y el historial de migraciones. */
 export async function vaciarBase(prisma: PrismaService): Promise<void> {

@@ -1,6 +1,12 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
-import { MISION_EN_CURSO, RegistroMisionEnCurso } from '../../shared-kernel/public-api';
+import {
+  MISION_EN_CURSO,
+  MUNDOS_COMPLETADOS,
+  PrismaService,
+  RegistroMisionEnCurso,
+  RegistroMundosCompletados,
+} from '../../shared-kernel/public-api';
 import { CASOS_USO_AVENTURA, CasosUsoAventura } from '../application/casos-uso-aventura';
 
 /**
@@ -28,6 +34,28 @@ export class MisionEnCursoRegistro implements OnModuleInit {
           if (lectura) return { misionId: m.id, mision: m.titulo, lecturaId: lectura.id, enCurso: lectura.avance === 'EN_CURSO' };
         }
         return null;
+      },
+    });
+  }
+}
+
+/** RF-059 (Módulo 8): los mundos que el niño completó, para su Pasaporte del Lector. */
+@Injectable()
+export class MundosCompletadosRegistro implements OnModuleInit {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(MUNDOS_COMPLETADOS) private readonly registro: RegistroMundosCompletados,
+  ) {}
+
+  onModuleInit(): void {
+    this.registro.registrar({
+      completadosDe: async (estudianteId) => {
+        const filas = await this.prisma.progresoMundo.findMany({
+          where: { estudianteId, estado: 'COMPLETADO' },
+          include: { mundo: { select: { numero: true, nombre: true } } },
+          orderBy: { mundo: { numero: 'asc' } },
+        });
+        return filas.map((f) => ({ numero: f.mundo.numero, nombre: f.mundo.nombre, completadoEn: f.completadoEn }));
       },
     });
   }

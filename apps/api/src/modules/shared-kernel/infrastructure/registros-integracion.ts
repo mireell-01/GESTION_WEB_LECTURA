@@ -15,6 +15,14 @@ import {
   ResolutorMisionEnCurso,
   ResultadoDiagnosticoInicial,
 } from '../application/progreso-lector';
+import {
+  LecturaRealizada,
+  MundoCompletado,
+  RegistroLecturasRealizadas,
+  RegistroMundosCompletados,
+  ResolutorLecturasRealizadas,
+  ResolutorMundosCompletados,
+} from '../application/logros-lector';
 import type { RangoEdad } from '../domain/value-objects/rango-edad';
 
 /** Delegado de las fichas de lectura: sin Contenido registrado, no hay lecturas publicadas. */
@@ -88,5 +96,33 @@ export class RegistroMisionEnCursoDelegado implements RegistroMisionEnCurso {
 
   async lecturaSiguiente(estudianteId: string): Promise<LecturaDeMision | null> {
     return this.resolutor ? this.resolutor.lecturaSiguiente(estudianteId) : null;
+  }
+}
+
+/** Delegado de las lecturas realizadas: sin el Módulo 6, el estudiante aún no terminó ninguna. */
+@Injectable()
+export class RegistroLecturasRealizadasDelegado implements RegistroLecturasRealizadas {
+  private resolutor: ResolutorLecturasRealizadas | null = null;
+
+  registrar(resolutor: ResolutorLecturasRealizadas): void {
+    this.resolutor = resolutor;
+  }
+
+  async realizadasDe(estudianteId: string): Promise<LecturaRealizada[]> {
+    return this.resolutor ? this.resolutor.realizadasDe(estudianteId) : [];
+  }
+}
+
+/** Delegado de los mundos completados: sin Aventura registrada, no hay mundos completados. */
+@Injectable()
+export class RegistroMundosCompletadosDelegado implements RegistroMundosCompletados {
+  private resolutor: ResolutorMundosCompletados | null = null;
+
+  registrar(resolutor: ResolutorMundosCompletados): void {
+    this.resolutor = resolutor;
+  }
+
+  async completadosDe(estudianteId: string): Promise<MundoCompletado[]> {
+    return this.resolutor ? this.resolutor.completadosDe(estudianteId) : [];
   }
 }

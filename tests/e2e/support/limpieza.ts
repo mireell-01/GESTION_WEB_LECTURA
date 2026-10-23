@@ -10,7 +10,8 @@ import { DOMINIO_E2E } from './iam';
  * y todo lo que depende de ellas, para no ensuciar la base del entorno. Las aulas arrastran sus
  * matrículas, asignaciones e invitaciones; las cuentas, sus vínculos familiares. La auditoría
  * (admin.auditoria) no se borra: es de solo agregar por diseño (RF-077). Las misiones con lecturas de
- * prueba, el mapa, los retos y las sesiones de lectura de los niños de prueba también se borran.
+ * prueba, el mapa, los retos, las sesiones de lectura, el perfil lector y la racha y retos del día de los
+ * niños de prueba también se borran.
  */
 export default async function limpieza(): Promise<void> {
   try {
@@ -38,6 +39,16 @@ export default async function limpieza(): Promise<void> {
     await prisma.progresoMundo.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Diagnóstico: los retos de los niños de prueba (arrastran sus respuestas).
     await prisma.diagnostico.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    // Progreso: el perfil lector de los niños de prueba (maestría, historial y recomendaciones).
+    await prisma.historialMaestria.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.maestriaHabilidad.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.recomendacion.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    // Gamificación: racha, retos del día y avances. El libro de puntos, las insignias otorgadas y los
+    // canjes no se borran: son de solo agregar por diseño (RN-13, RF-062), como la auditoría.
+    await prisma.racha.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.retoDiario.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.avanceInsignia.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.eventoAplicado.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lectura: las sesiones de los niños de prueba (arrastran respuestas, pistas, defensas, decisiones y valoraciones).
     await prisma.sesionLectura.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).

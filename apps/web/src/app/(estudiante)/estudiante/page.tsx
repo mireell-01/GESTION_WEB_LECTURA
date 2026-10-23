@@ -5,13 +5,15 @@ import { AVATARES, Icono, Paisaje } from '@lectoaventura/ui';
 import { MapaMundos } from '@/features/aventura/MapaMundos';
 import { TarjetaReto } from '@/features/diagnostico/TarjetaReto';
 import { MisionesDelDocente } from '@/features/escuela/MisionesDelDocente';
+import { MarcadorLector } from '@/features/gamificacion/MarcadorLector';
+import { RetoDelDia } from '@/features/gamificacion/RetoDelDia';
 import { useSesion } from '@/shared/auth/sesion';
 
 /**
  * Inicio del estudiante con la identidad aprobada. Solo muestra datos reales: alias, avatar, las
- * misiones que deja la docente ("Misión del docente", RF-018), su reto pendiente (RF-034, RF-037) y su
- * mapa de aventuras (RF-030). La
- * racha y las monedas aparecerán cuando existan los módulos que las generan.
+ * misiones que deja la docente ("Misión del docente", RF-018), su reto pendiente (RF-034, RF-037), su
+ * mapa de aventuras (RF-030) y, desde el Módulo 8, su nivel, racha y monedas con el reto del día (RF-057,
+ * RF-060 a RF-062).
  */
 export default function EstudianteHomePage() {
   const { usuario } = useSesion();
@@ -30,10 +32,13 @@ export default function EstudianteHomePage() {
           <Icono nombre="brujula" tamano={30} />
           ¡Tu aventura te espera!
         </p>
+        <MarcadorLector />
         <Paisaje className="est-heroe__paisaje" />
       </section>
 
       <TarjetaReto />
+
+      <RetoDelDia />
 
       <MisionesDelDocente />
 
