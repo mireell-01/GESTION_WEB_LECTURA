@@ -13,7 +13,7 @@
 | 3 · Carga (RF-040, RNF-001) | 11 mediciones | 3 | ✅ 0 % errores · corrección (con maestría y puntos) p95 170 ms · pasaporte p95 46 ms · reto p95 34 ms · canje p95 55 ms | 6 s |
 | 4 · Aceptación (Gherkin en español) | 46 escenarios | 5 (+ 2 completados) | ✅ 46/46 · informe para el Product Owner | 7,6 min |
 
-**Defectos encontrados por las pruebas y corregidos:** 7 · **Brechas con el SRS cerradas:** 16 · **Decisiones documentadas donde el SRS no decía cómo:** 12 (ver §1.3).
+**Defectos encontrados por las pruebas y corregidos:** 8 · **Brechas con el SRS cerradas:** 16 · **Decisiones documentadas donde el SRS no decía cómo:** 12 (ver §1.3).
 
 ---
 
@@ -75,6 +75,7 @@ Otros módulos (solo por su public-api, el shared-kernel o eventos):
 | D-5 | El puerto 3001 estaba ocupado por otro proyecto local; Playwright comprobaba la API siempre en ese puerto | 3 · Playwright | `tests/e2e/support/servidores.ts` toma la API de `API_URL` (la misma con que se compila la web); por defecto sigue en 3001 |
 | D-6 | La limpieza de la suite E2E no borraba el perfil lector de los niños de prueba (Módulo 7) | Auditoría del módulo | Ahora borra maestría, historial y recomendaciones, y la racha, retos y avances de Gamificación |
 | D-7 | La prueba responsiva del Módulo 1 esperaba "Mi perfil" con candado | 3 · `responsivo.spec.ts` | Cambio esperado: ahora es la sección real "Pasaporte", que también se revisa sin desbordes y con objetivos de 48 px |
+| D-8 | En CI (Chromium en Linux) fallaron 10 pruebas del celular, también de módulos anteriores: el clic caía sobre la barra inferior. "Pasaporte", una sola palabra, no se parte en dos líneas como "Mi perfil": la barra de 5 secciones necesitaba 379 px, cabía justo en 390 px con las fuentes de Windows y no con las de Linux, y por debajo de 379 px (el SRS pide desde 360 px, RNF-022) ensanchaba la página. El celular emulado aleja entonces el zoom y los clics caen en otro lugar. La prueba responsiva no lo veía porque comparaba con `innerWidth`, que en ese caso crece con la página | 3 · CI de GitHub (PR) | La etiqueta de la barra se achica en celulares angostos (de 15 a 12 px como mínimo), las secciones pueden encogerse y, si aun así no cupiera, se recorta con "…"; ahora cabe hasta en 340 px. La prueba responsiva compara con `clientWidth` y revisa además la barra a 360 px |
 
 **Brechas con el SRS cerradas (el módulo era solo un andamiaje; todas con pruebas):**
 
@@ -1294,7 +1295,7 @@ describe('Acceso (RNF-012)', () => {
 - **Pasaporte (RF-059):** 9 insignias (ganada, "1 de 5", "1 de 7", "Por ganar"), la lectura terminada, el mundo Explorador completado, sus puntos y sus últimos puntos.
 - **Inicio (RF-057, RF-060, RF-061):** marcador con nivel, "1 día seguido" y sus monedas; el reto del día para "descubrir lo que no se dice" en "1 de 3".
 - **Tienda (RF-062):** el dragón deshabilitado por monedas; la lupa canjeada ("¡Es tuya!"), 5 monedas menos y los mismos puntos.
-- **Diseño responsivo (RNF-022, RNF-023):** el Pasaporte en 1280, 820 y 390 px, sin desbordes y con objetivos de 48 px.
+- **Diseño responsivo (RNF-022, RNF-023):** el Pasaporte en 1280, 820 y 390 px, sin desbordes y con objetivos de 48 px; la barra del estudiante también a 360 px. El desborde se mide ahora contra el ancho real del documento (en un celular emulado, `innerWidth` crece con la página).
 
 ## 6.2 Aplicativos y librerías
 Playwright 1.64 con Microsoft Edge (local) o Chromium (CI) · k6 para carga.

@@ -1321,8 +1321,11 @@ async function revisarPantalla(page: Page): Promise<void> {
       const r = e.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
     });
+    const raiz = document.documentElement;
     return {
-      desborde: document.documentElement.scrollWidth - window.innerWidth,
+      // En un celular emulado, si algo ensancha la página el navegador aleja el zoom y innerWidth crece
+      // con ella: se compara también con el ancho real del documento (clientWidth).
+      desborde: Math.max(raiz.scrollWidth - window.innerWidth, raiz.scrollWidth - raiz.clientWidth),
       pequenos: visibles
         .filter((e) => {
           const r = e.getBoundingClientRect();
@@ -1390,6 +1393,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await expect(nav.getByRole('link', { name: 'Progreso' })).toBeVisible();
     // Un solo botón "Salir" visible en cada diseño.
     await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(1);
+    if (info.project.name === 'celular') {
+      // RNF-022: desde 360 px, la barra de 5 secciones no ensancha la página.
+      await page.setViewportSize({ width: 360, height: 780 });
+      await revisarPantalla(page);
+    }
   });
   test('los paneles del modo escuela se adaptan: docente y familia vinculada (RF-014 a RF-019)', async ({ page, request }) => {
     await sembrarCatalogoE2E();
