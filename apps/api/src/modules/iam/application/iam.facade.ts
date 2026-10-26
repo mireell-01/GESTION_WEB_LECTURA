@@ -1,6 +1,7 @@
 import { NoEncontradoError, RangoEdad } from '../../shared-kernel/public-api';
 import { MedioConsentimiento } from '../domain/entities/consentimiento';
 import { PerfilEstudianteVista, Reloj } from './dto/iam.dto';
+import { CorreoService } from './ports/correo.service';
 import { CuentaRepository } from './ports/cuenta.repository';
 import { PerfilEstudianteRepository } from './ports/perfil-estudiante.repository';
 import { VinculoRepository } from './ports/vinculo.repository';
@@ -43,6 +44,7 @@ export class IamFacade {
     private readonly vincularFamiliarUseCase: VincularFamiliarUseCase,
     private readonly vinculos: VinculoRepository,
     private readonly ahora: Reloj,
+    private readonly correo: CorreoService | null = null,
   ) {}
 
   /** RF-015 / RN-01: el docente declara el consentimiento institucional de su aula. */
@@ -131,6 +133,18 @@ export class IamFacade {
   async estudiantesDeResponsable(cuentaId: string): Promise<PerfilEstudianteVista[]> {
     const ahora = this.ahora();
     return (await this.perfiles.listarPorResponsable(cuentaId)).map((p) => vistaPerfil(p, ahora));
+  }
+
+  /**
+   * RF-065 (Módulo 9): un aviso por correo a una cuenta adulta activa, como el resumen semanal del
+   * docente. La dirección no sale de IAM. Devuelve si se envió.
+   */
+  async notificarCuenta(cuentaId: string, mensaje: { asunto: string; texto: string; enlace?: string }): Promise<boolean> {
+    if (!this.correo) return false;
+    const cuenta = await this.cuentas.buscarPorId(cuentaId);
+    if (!cuenta || cuenta.estado.value !== 'ACTIVA') return false;
+    await this.correo.enviar({ para: cuenta.email.value, ...mensaje });
+    return true;
   }
 
   async resumenCuentas(ids: string[]): Promise<ResumenCuenta[]> {

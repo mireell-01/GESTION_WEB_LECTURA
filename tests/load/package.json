@@ -11,6 +11,7 @@
     "test:biblioteca": "node sembrar-biblioteca.mjs && k6 run scenarios/biblioteca.js",
     "test:aventura": "node sembrar-aventura.mjs && k6 run scenarios/aventura-mapa.js",
     "test:diagnostico": "k6 run scenarios/diagnostico-reto.js",
-    "test:lectura": "k6 run -e LECTURA_ID=$(node sembrar-lectura.mjs) scenarios/lectura-respuestas.js"
+    "test:lectura": "k6 run -e LECTURA_ID=$(node sembrar-lectura.mjs) scenarios/lectura-respuestas.js",
+    "test:seguimiento": "A=$(node sembrar-seguimiento.mjs) && k6 run -e AULA_ID=${A% *} -e EMAIL=${A#* } scenarios/seguimiento-panel.js"
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { FichaLecturaPublicada, FuenteFichasLectura, RegistroFichasLectura } from '../application/fichas-lectura';
+import { RegistroHistorialLectura, ResolutorHistorialLectura, SesionDeHistorial } from '../application/historial-lectura';
 import {
   AvanceLectura,
   LecturaDeMision,
@@ -110,6 +111,20 @@ export class RegistroLecturasRealizadasDelegado implements RegistroLecturasReali
 
   async realizadasDe(estudianteId: string): Promise<LecturaRealizada[]> {
     return this.resolutor ? this.resolutor.realizadasDe(estudianteId) : [];
+  }
+}
+
+/** Delegado del historial de lecturas: sin el Módulo 6, el estudiante no tiene sesiones. */
+@Injectable()
+export class RegistroHistorialLecturaDelegado implements RegistroHistorialLectura {
+  private resolutor: ResolutorHistorialLectura | null = null;
+
+  registrar(resolutor: ResolutorHistorialLectura): void {
+    this.resolutor = resolutor;
+  }
+
+  async historialDe(estudianteId: string, limite: number): Promise<SesionDeHistorial[]> {
+    return this.resolutor ? this.resolutor.historialDe(estudianteId, limite) : [];
   }
 }
 

@@ -53,6 +53,8 @@ export default async function limpieza(): Promise<void> {
     await prisma.sesionLectura.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).
     await prisma.lectura.deleteMany({ where: { autorId: { in: idsCuentas } } });
+    // Seguimiento docente: los resúmenes semanales registrados para las docentes de prueba.
+    await prisma.resumenSemanalEnviado.deleteMany({ where: { docenteId: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });
     await borrarCatalogoE2E(prisma);
   } finally {

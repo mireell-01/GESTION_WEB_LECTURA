@@ -4,6 +4,7 @@ import { BUS_EVENTOS } from './application/bus-eventos';
 import { CATALOGO_ASIGNABLE } from './application/catalogo-asignable';
 import { CONTEXTO_AULA } from './application/contexto-aula';
 import { FICHAS_LECTURA } from './application/fichas-lectura';
+import { HISTORIAL_LECTURA } from './application/historial-lectura';
 import { LECTURAS_REALIZADAS, MUNDOS_COMPLETADOS } from './application/logros-lector';
 import { NIVEL_LECTOR } from './application/nivel-lector';
 import { AVANCE_LECTURAS, DIAGNOSTICO_INICIAL, MAESTRIA_LECTOR, MISION_EN_CURSO } from './application/progreso-lector';
@@ -18,6 +19,7 @@ import {
   RegistroAvanceLecturasDelegado,
   RegistroDiagnosticoInicialDelegado,
   RegistroFichasLecturaDelegado,
+  RegistroHistorialLecturaDelegado,
   RegistroLecturasRealizadasDelegado,
   RegistroMaestriaDelegado,
   RegistroMisionEnCursoDelegado,
@@ -48,6 +50,8 @@ import {
     // Módulo 8: lo que el Pasaporte del Lector muestra de Lectura y Aventura (RF-059).
     { provide: LECTURAS_REALIZADAS, useClass: RegistroLecturasRealizadasDelegado },
     { provide: MUNDOS_COMPLETADOS, useClass: RegistroMundosCompletadosDelegado },
+    // Módulo 9: el historial de lecturas del estudiante para el detalle docente (RF-064).
+    { provide: HISTORIAL_LECTURA, useClass: RegistroHistorialLecturaDelegado },
   ],
   exports: [
     PrismaService,
@@ -63,6 +67,7 @@ import {
     MISION_EN_CURSO,
     LECTURAS_REALIZADAS,
     MUNDOS_COMPLETADOS,
+    HISTORIAL_LECTURA,
   ],
 })
 export class SharedKernelModule {}

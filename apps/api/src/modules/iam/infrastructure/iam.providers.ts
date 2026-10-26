@@ -143,7 +143,7 @@ export function crearCasosUsoIam(
     vincularFamiliar,
     contextoIngreso: new ContextoIngresoUseCase(perfiles, vinculos, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
-    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, vincularFamiliar, vinculos, ahora),
+    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, vincularFamiliar, vinculos, ahora, correo),
     bandejaDesarrollo,
   };
 }

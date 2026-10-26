@@ -106,7 +106,7 @@ export function Letrero({ className }: { className?: string }) {
     ['Crecer', 4, 222, '#c98a4b'],
   ];
   return (
-    <svg viewBox="0 0 240 300" className={['la-ilustracion', className].filter(Boolean).join(' ')} aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 240 304" className={['la-ilustracion', className].filter(Boolean).join(' ')} aria-hidden="true" focusable="false">
       <circle cx="40" cy="74" r="46" fill="#2fa866" />
       <circle cx="92" cy="40" r="40" fill="#3dbe76" />
       <circle cx="208" cy="92" r="44" fill="#2fa866" />

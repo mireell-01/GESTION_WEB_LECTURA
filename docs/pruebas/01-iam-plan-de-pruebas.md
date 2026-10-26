@@ -1421,6 +1421,14 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await page.getByRole('button', { name: 'Varios con CSV' }).click();
     await revisarPantalla(page);
 
+    // Módulo 9: el seguimiento del aula (el mapa de calor se desplaza dentro de su tabla) y el detalle.
+    await page.getByRole('link', { name: 'Ver seguimiento' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Seguimiento del aula' })).toBeVisible();
+    await revisarPantalla(page);
+    await page.getByRole('region', { name: 'Mapa de calor por habilidad' }).getByRole('link', { name: 'Mateo' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mateo' })).toBeVisible();
+    await revisarPantalla(page);
+
     await page.getByRole('link', { name: 'Mis aulas' }).first().click();
     await expect(page.getByRole('link', { name: 'Abrir 3.° B' })).toBeVisible();
     await revisarPantalla(page);
@@ -1546,6 +1554,79 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await abrirAula(page, aula);
     await expect(page.getByRole('region', { name: 'Respuestas por revisar' }).getByRole('listitem', { name: 'Respuesta de Mateo' })).toBeVisible();
     await revisarPantalla(page);
+  });
+
+  test('el área del estudiante se adapta a laptops de distintos tamaños: centrada, sin desbordes y con la barra completa', async ({ page, request }, info) => {
+    test.skip(info.project.name !== 'escritorio', 'Tamaños de laptop: solo en el proyecto de computadora');
+    test.setTimeout(150_000);
+    const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]);
+    await retoTerminado(request, aula, 'Mateo', ['LIT', 'VOC']);
+    await tabletDelAulaActivada(page, request, aula);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Mateo' }).click();
+    await escribirPin(page, PIN_PRUEBA);
+    await esperarAreaEstudiante(page, 'Mateo');
+    // Laptops comunes y dos casos límite: una ventana baja y una de 1366 px con el zoom del navegador al 80 %.
+    for (const [ancho, alto] of [[1280, 720], [1366, 768], [1536, 864], [1920, 1080], [1365, 600], [1707, 750]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      for (const ruta of ['/estudiante', '/estudiante/biblioteca', '/estudiante/mundos', '/estudiante/progreso', '/estudiante/pasaporte']) {
+        await page.goto(ruta);
+        await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+        const m = await page.evaluate(() => {
+          const main = document.querySelector('.est-main') as HTMLElement;
+          const caja = main.getBoundingClientRect();
+          const estilo = getComputedStyle(main);
+          const seccion = (main.firstElementChild as HTMLElement).getBoundingClientRect();
+          const nav = document.querySelector('.est-nav') as HTMLElement;
+          const letrero = document.querySelector('.est-nav__letrero');
+          return {
+            desborde: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            // La sección queda centrada: el mismo espacio libre a cada lado.
+            descentrado: Math.abs(seccion.left - caja.left - parseFloat(estilo.paddingLeft) - (caja.right - parseFloat(estilo.paddingRight) - seccion.right)),
+            barraCortada: nav.scrollHeight - nav.clientHeight,
+            letreroFuera: letrero ? Math.round(letrero.getBoundingClientRect().bottom - window.innerHeight) : 0,
+          };
+        });
+        expect(m, `${ruta} en ${ancho}×${alto}`).toEqual({ desborde: 0, descentrado: expect.any(Number), barraCortada: 0, letreroFuera: expect.any(Number) });
+        expect(m.descentrado, `${ruta} centrada en ${ancho}×${alto}`).toBeLessThanOrEqual(2);
+        expect(m.letreroFuera, `letrero completo en ${ancho}×${alto}`).toBeLessThanOrEqual(0);
+      }
+    }
+  });
+
+  test('los paneles de adultos aprovechan el ancho de las laptops: acciones en una fila y botones a su medida', async ({ page, request }, info) => {
+    test.skip(info.project.name !== 'escritorio', 'Tamaños de laptop: solo en el proyecto de computadora');
+    test.setTimeout(120_000);
+    const familia = await cuentaVerificada(request, { prefijo: 'diseno-laptop' });
+    const auth = await sesionApi(request, familia);
+    await request.post('/api/v1/consentimientos', { headers: auth, data: { otorganteNombre: 'Rosa Prueba', aceptaPolitica: true } });
+    const perfil = await request.post('/api/v1/estudiantes', { headers: auth, data: { alias: 'Lucía', anioNacimiento: 2017, mesNacimiento: 3, avatar: 'koala', pin: '2580' } });
+    expect(perfil.status(), await perfil.text()).toBe(201);
+    await ingresarComoAdulto(page, familia.email, familia.contrasena);
+    await expect(page.getByRole('button', { name: 'Cambiar PIN' })).toBeVisible();
+
+    const arriba = async (nombres: string[], rol: 'button' | 'combobox' | 'textbox') =>
+      Promise.all(nombres.map(async (name) => Math.round((await page.getByRole(rol, { name, exact: true }).boundingBox())!.y)));
+    for (const [ancho, alto] of [[1280, 720], [1366, 768], [1536, 864], [1920, 1080]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto('/familia');
+      await expect(page.getByRole('button', { name: 'Cambiar PIN' })).toBeVisible();
+      await revisarPantalla(page);
+      // Las acciones del perfil del hijo, en una sola fila (no apiladas en una tarjeta angosta).
+      const acciones = await arriba(['Editar', 'Cambiar PIN', 'Desactivar', 'Descargar datos', 'Eliminar'], 'button');
+      expect(new Set(acciones).size, `acciones del perfil en una fila en ${ancho}×${alto}`).toBe(1);
+      // Un botón suelto tiene su ancho natural, no el de toda la tarjeta.
+      const mfa = (await page.getByRole('button', { name: 'Configurar verificación en dos pasos' }).boundingBox())!;
+      const tarjeta = (await page.getByRole('heading', { name: 'Seguridad de tu cuenta' }).locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " la-tarjeta ")][1]').boundingBox())!;
+      expect(mfa.width, `botón de verificación a su medida en ${ancho}×${alto}`).toBeLessThan(tarjeta.width * 0.6);
+
+      // Los 5 filtros de la biblioteca caben en una fila.
+      await page.goto('/familia/biblioteca');
+      await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible();
+      await revisarPantalla(page);
+      const filtros = [...(await arriba(['Temática'], 'textbox')), ...(await arriba(['Edad', 'Nivel', 'Tipo de texto', 'Habilidad'], 'combobox'))];
+      expect(new Set(filtros).size, `filtros en una fila en ${ancho}×${alto}`).toBe(1);
+    }
   });
 });
 ```
@@ -2271,6 +2352,8 @@ jobs:
           escenario diagnostico-reto tests/load/scenarios/diagnostico-reto.js
           LECTURA_ID=$(node tests/load/sembrar-lectura.mjs)
           escenario lectura-respuestas -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
+          AULA=$(node tests/load/sembrar-seguimiento.mjs)
+          escenario seguimiento-panel -e DURACION=30s -e AULA_ID="${AULA% *}" -e EMAIL="${AULA#* }" tests/load/scenarios/seguimiento-panel.js
           if [ -n "$fallidos" ]; then echo "::error title=k6::Umbrales no cumplidos en:$fallidos"; exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()

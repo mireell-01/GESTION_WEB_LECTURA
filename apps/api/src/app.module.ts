@@ -9,6 +9,7 @@ import { AventuraModule } from './modules/aventura/public-api';
 import { DiagnosticoModule } from './modules/diagnostico/public-api';
 import { ProgresoModule } from './modules/progreso/public-api';
 import { GamificacionModule } from './modules/gamificacion/public-api';
+import { ReportingModule } from './modules/reporting/public-api';
 import { AsistenteModule } from './modules/asistente/public-api';
 import { AdministracionModule } from './modules/administracion/public-api';
 
@@ -27,6 +28,7 @@ import { AdministracionModule } from './modules/administracion/public-api';
     DiagnosticoModule,
     ProgresoModule,
     GamificacionModule,
+    ReportingModule,
     AsistenteModule,
     AdministracionModule,
   ],
