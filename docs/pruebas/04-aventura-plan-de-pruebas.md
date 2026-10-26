@@ -112,7 +112,7 @@ Otros módulos (solo por su public-api o por el shared-kernel):
 | :--- | :--- | :--- |
 | Caché del mapa (60 s, SRS) y del catálogo de misiones (24 h) | Hoy cada visita consulta la base (rinde bien: ver §6.3) | Redis cuando se despliegue (ADR-004), invalidando con `MundoDesbloqueado` y `SesionLecturaFinalizada` |
 | "Leer" desde la misión | El niño ve las lecturas de la misión, pero el lector llega con el Módulo 6 | Enlazar cada lectura con la sesión de lectura |
-| Insignia de rango al desbloquear | `aventura.MundoDesbloqueado` ya se publica, nadie lo escucha aún | Gamificación (Módulo 8) |
+| Insignia de rango al desbloquear | `aventura.MundoDesbloqueado` ya se publica, nadie lo escucha aún | Gamificación (Módulo 8) — ✅ resuelto: cada mundo completado otorga su insignia de rango |
 | Retirar misiones | No hay borrado ni archivo | Archivo lógico con su efecto en el avance (Módulo 12) |
 | Mundos sin 3 misiones para una edad | El niño no podría pasar de mundo | El backoffice avisa; meta de contenido antes del piloto (≥ 60 lecturas, SRS) |
 | Heredadas | Outbox no transaccional; límite de tasa en memoria; secreto MFA sin cifrar | Ver informes de los Módulos 1 a 3 |

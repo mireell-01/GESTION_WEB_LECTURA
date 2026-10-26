@@ -14,12 +14,12 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `diagnostico` | 5 · Diagnóstico | 3 | ✅ En uso: banco de 80 ítems (formas A y B para las tres edades), retos y respuestas. Migración [`20261022000000_banco_diagnostico`](../../apps/api/prisma/migrations/20261022000000_banco_diagnostico/migration.sql) |
 | `lectura` | 6 · Lectura interactiva | 6 | ✅ En uso: sesiones de lectura con sus respuestas, pistas, defensas, decisiones de las historias ramificadas y valoraciones docentes. Migración [`20261023000000_lectura_sesiones`](../../apps/api/prisma/migrations/20261023000000_lectura_sesiones/migration.sql) |
 | `progreso` | 7 · Perfil lector y recomendaciones | 3 | ✅ En uso: maestría por habilidad (5 por estudiante), su historial y las recomendaciones vigentes. Migración [`20261024000000_progreso_perfil_lector`](../../apps/api/prisma/migrations/20261024000000_progreso_perfil_lector/migration.sql) |
-| `gamificacion` | 8 · Gamificación | 6 | Lista, con los parámetros por defecto cargados |
+| `gamificacion` | 8 · Gamificación | 10 | ✅ En uso: libro de puntos, insignias (9 en el catálogo) con su avance, racha, reto del día, recompensas (10) y canjes; los parámetros versionados. Migración [`20261025000000_gamificacion_logros`](../../apps/api/prisma/migrations/20261025000000_gamificacion_logros/migration.sql), que agrega 4 tablas al SRS: `evento_aplicado`, `avance_insignia`, `recompensa` y `canje_recompensa` |
 | `asistente` | 11 · Asistente inteligente | 2 | Lista |
 | `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; misiones creadas, editadas y reordenadas; el resto de RF-077 llega con el Módulo 12) |
 | `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 vistas materializadas | Lista |
 
-**Total: 52 tablas y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
+**Total: 56 tablas (52 del SRS + 4 del Módulo 8) y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
 
 ## Cómo verlas en pgAdmin
 
@@ -87,10 +87,12 @@ erDiagram
   respuesta ||--o| justificacion : "defiende tu respuesta"
   respuesta ||--o| valoracion_rubrica : "valoración docente"
   insignia ||--o{ insignia_otorgada : "irrevocable"
+  insignia ||--o{ avance_insignia : "3 de 5"
+  recompensa ||--o{ canje_recompensa : "una vez por niño"
   conversacion ||--o{ turno : "máximo 10 intercambios"
 ```
 
-`maestria_habilidad`, `historial_maestria`, `recomendacion`, `asiento_puntos`, `racha`, `reto_diario` y `parametro_gamificacion` se relacionan con el estudiante por su id (otro schema), sin llave foránea.
+`maestria_habilidad`, `historial_maestria`, `recomendacion`, `asiento_puntos`, `insignia_otorgada`, `avance_insignia`, `racha`, `reto_diario`, `evento_aplicado` y `canje_recompensa` se relacionan con el estudiante por su id (otro schema), sin llave foránea.
 
 ## Reglas del negocio dentro de la base
 
@@ -103,11 +105,12 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
   - revisor distinto del autor (RN-15);
   - actividad "durante" con oración de anclaje (RF-024);
   - límites de imágenes y audio (RF-023);
-  - puntos nunca negativos (RN-10);
+  - puntos nunca negativos (RN-10) y cada asiento con un motivo conocido (`ck_asiento_motivo`, RF-056);
+  - recompensas de tipo personaje o accesorio con costo positivo (RF-062);
   - máximo 10 intercambios del asistente (RF-074);
   - un solo diagnóstico inicial por estudiante.
-- **Registros que solo se agregan:** `admin.auditoria` (RF-077), `gamificacion.asiento_puntos` (libro de puntos) y `gamificacion.insignia_otorgada` (RN-13). Un *trigger* rechaza cualquier modificación o borrado.
-- **Idempotencia:** un mismo evento no puede sumar puntos dos veces (`UNIQUE (evento_origen, motivo)`).
+- **Registros que solo se agregan:** `admin.auditoria` (RF-077), `gamificacion.asiento_puntos` (libro de puntos), `gamificacion.insignia_otorgada` (RN-13) y `gamificacion.canje_recompensa` (RF-062). Un *trigger* rechaza cualquier modificación o borrado.
+- **Idempotencia:** un mismo evento no puede sumar puntos dos veces (`UNIQUE (evento_origen, motivo)`), y Gamificación aplica cada ítem, lectura, subida de nivel o mundo una sola vez (`evento_aplicado`, llave `(tipo, origen_id)`).
 
 ## Datos de catálogo cargados por la migración
 
@@ -118,6 +121,13 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
   4. Crítico: CRI y ARG.
   5. Maestro de la Lectura: las 5.
 - `gamificacion.parametro_gamificacion` versión 1: la tabla de puntos de RN-11, el anti-*farming* de RN-12, el umbral de nivel de RF-057 y las palabras mínimas de RN-19.
+- `gamificacion.insignia` (Módulo 8): 9 insignias con su regla en `regla` (JSON):
+  - Primera lectura (1 lectura terminada).
+  - Detective de Evidencias (5 evidencias correctas, UAT-03).
+  - Maestro de las Inferencias (nivel Destacado declarado en INF).
+  - Lector Perseverante (7 días de racha).
+  - Una de rango por cada mundo completado (Explorador, Detective, Investigador, Crítico y Maestro de la Lectura).
+- `gamificacion.recompensa` (Módulo 8): 5 accesorios (lupa, gorra, chullo, capa y corona) y 5 personajes (llama, cóndor, oso de anteojos, colibrí y dragón), de 5 a 60 monedas.
 
 ## Reportes
 
@@ -167,6 +177,15 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
 | `historial_maestria.origen` / `origen_id` | `DIAGNOSTICO`, `ITEM` (id de la respuesta) o `VALORACION` (id de la respuesta valorada) | Índice único parcial `historial_maestria_origen_unico`: cada reto, respuesta o valoración mueve cada habilidad una sola vez, aunque su evento se reintente |
 | Nivel de lectura (biblioteca RF-028, recomendaciones RN-20) | Calculado, no guardado | El típico de su edad (R1 1, R2 2, R3 3), −1 si su maestría promedio está en inicio, +1 logrado, +2 destacado; entre 1 y 5. Sin nada medido, cada módulo usa el típico de su edad |
 | Recomendaciones vigentes (RF-055, RN-20) | Se calculan al pedirlas y se guardan solo si cambian | Entre 1 y 3 (índice único parcial `recomendacion_vigente_por_prioridad`): la asignación docente primero, la lectura que sigue en su misión en curso y una de su habilidad más débil a su nivel; sin ninguna, una de refuerzo. Las anteriores quedan con `vigente = false` como historial |
+| Saldo de puntos (RF-056, SRS §6) | Suma de `asiento_puntos` (no se guarda un total) | Cada asiento lleva su motivo: `ITEM_CORRECTO` 10, `CORRECTO_TRAS_PISTA` 6, `RESPUESTA_ABIERTA` 10 (RN-19: ≥ 5 palabras en 6–9 años, ≥ 10 en 10–12), `LECTURA_COMPLETADA` 20, `SUBIDA_NIVEL_CNEB` 50 (la primera vez que cada habilidad llega a cada nivel), `RETO_DEL_DIA` 15 y `RACHA_3/7/30` 10/30/100. Equivocarse no genera asiento (RN-10) |
+| `asiento_puntos.evento_origen` | El id de lo que dio los puntos | La respuesta (ítems), la sesión (lectura completada), el reto del día, o un UUID determinista (versión 8) para lo que no tiene id propio: la subida de nivel (estudiante + habilidad + nivel) y la racha (estudiante + fecha) |
+| Anti-*farming* (RN-12) | Al otorgar, dentro de la cuenta | Repetir una lectura terminada (`es_repeticion`) da el 25 % redondeado y no suma a las insignias de lecturas ni de evidencias. El tope de 300 puntos por día de Lima se respeta aunque lleguen muchos logros a la vez: cada estudiante tiene un candado (`pg_advisory_xact_lock`) durante la transacción que aplica un logro |
+| Nivel lector (RF-057) | Calculado desde el saldo | El nivel n pide 100 × n × (n + 1) / 2 puntos (100, 300, 600, 1000…); con menos de 100, nivel 0. La base (100) se lee de la versión vigente de los parámetros |
+| Insignias (RF-058, RN-13) | `insignia.regla` + `avance_insignia` | Las de conteo (lecturas, evidencias) guardan su avance hasta la meta; las de nivel, racha y rango se evalúan con su evento. Una insignia se otorga una sola vez (llave `(estudiante, insignia)`) y nunca se quita. El reto inicial ubica en el mapa pero no otorga rangos: se ganan completando el mundo (evento `aventura.MundoDesbloqueado`) |
+| Racha (RF-061) | `racha` con `comodin_usado_semana` (el lunes de la semana) | Cuenta los días de Lima con una lectura terminada o el reto del día completado. Si pasa un día sin actividad, el comodín de la semana de ese día lo cubre una vez; si no, vuelve a 1. La racha visible es 0 cuando ya se cortó |
+| Reto del día (RF-060, RN-18) | `reto_diario.contenido = { meta, avance, lectura }` | Uno por estudiante y fecha de Lima (`UNIQUE`), para la habilidad de menor maestría: responder bien 3 preguntas de esa habilidad (o una abierta con esfuerzo), unos 5 minutos. Sugiere la lectura más sencilla de su edad que la trabaja y aún no terminó. Completarlo da +15 y cuenta para la racha; el de un día anterior sin completar queda `VENCIDO` |
+| Monedas de recompensa (RF-062) | Calculadas: ⌊puntos / 10⌋ − monedas gastadas en `canje_recompensa` | Canjear descuenta monedas, nunca puntos ni nivel. Cada recompensa se canjea una vez por niño (`UNIQUE (estudiante_id, recompensa_id)`), bajo el mismo candado por estudiante |
+| Parámetros (RF-078) | `parametro_gamificacion`, la versión más alta vigente | Se leen en cada logro, así un cambio aplica solo a lo que ocurre después; un valor ausente o inválido toma el del SRS. La pantalla del administrador llega con el Módulo 12 |
 
 ## Respaldo
 

@@ -823,6 +823,7 @@ model Insignia {
   activa      Boolean @default(true)
 
   otorgadas InsigniaOtorgada[]
+  avances   AvanceInsignia[]
 
   @@map("insignia")
   @@schema("gamificacion")
@@ -879,6 +880,61 @@ model ParametroGamificacion {
   creadoEn     DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
 
   @@map("parametro_gamificacion")
+  @@schema("gamificacion")
+}
+
+/// Módulo 8: eventos ya aplicados por Gamificación. Si el outbox reentrega uno, no suma dos veces.
+model EventoAplicado {
+  tipo         String
+  origenId     String   @map("origen_id") @db.Uuid
+  estudianteId String   @map("estudiante_id") @db.Uuid
+  aplicadoEn   DateTime @default(now()) @map("aplicado_en") @db.Timestamptz(3)
+
+  @@id([tipo, origenId])
+  @@map("evento_aplicado")
+  @@schema("gamificacion")
+}
+
+/// Módulo 8: avance hacia las insignias que se ganan contando logros (RF-058, UAT-03).
+model AvanceInsignia {
+  estudianteId  String   @map("estudiante_id") @db.Uuid
+  insigniaId    String   @map("insignia_id") @db.Uuid
+  insignia      Insignia @relation(fields: [insigniaId], references: [id], onDelete: Restrict)
+  avance        Int      @default(0)
+  actualizadoEn DateTime @default(now()) @map("actualizado_en") @db.Timestamptz(3)
+
+  @@id([estudianteId, insigniaId])
+  @@map("avance_insignia")
+  @@schema("gamificacion")
+}
+
+/// Módulo 8: personajes y accesorios del avatar que se canjean con monedas (RF-062).
+model Recompensa {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codigo String  @unique
+  nombre String
+  tipo   String
+  costo  Int
+  orden  Int     @db.SmallInt
+  activa Boolean @default(true)
+
+  canjes CanjeRecompensa[]
+
+  @@map("recompensa")
+  @@schema("gamificacion")
+}
+
+/// Módulo 8: recompensa canjeada; descuenta monedas, nunca puntos de nivel (RF-062). Solo se agrega.
+model CanjeRecompensa {
+  id           String     @id @db.Uuid
+  estudianteId String     @map("estudiante_id") @db.Uuid
+  recompensaId String     @map("recompensa_id") @db.Uuid
+  recompensa   Recompensa @relation(fields: [recompensaId], references: [id], onDelete: Restrict)
+  monedas      Int
+  canjeadoEn   DateTime   @default(now()) @map("canjeado_en") @db.Timestamptz(3)
+
+  @@unique([estudianteId, recompensaId])
+  @@map("canje_recompensa")
   @@schema("gamificacion")
 }
 

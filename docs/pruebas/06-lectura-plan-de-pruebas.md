@@ -117,7 +117,7 @@ Otros módulos (solo por su public-api o por el shared-kernel):
 | Tema | Riesgo | Propuesta |
 | :--- | :--- | :--- |
 | Dictado sin navegador compatible | Algunos navegadores no reconocen voz | Respaldo en servidor (SRS V1.1, Sprint 13) sin guardar audio; hoy se escribe |
-| Puntos, rachas e insignias (RN-11, UAT-02, UAT-03) | El niño aún no ve puntos | Módulo 8 con los eventos `ItemRespondido` y `SesionLecturaFinalizada` |
+| Puntos, rachas e insignias (RN-11, UAT-02, UAT-03) | El niño aún no ve puntos | Módulo 8 con los eventos `ItemRespondido` y `SesionLecturaFinalizada` — ✅ resuelto: UAT-02 y UAT-03 verifican ahora los 6 puntos y el avance de "Detective de Evidencias" |
 | Maestría (RF-053) | El puntaje del ítem se guarda pero aún no mueve el perfil | Módulo 7 con `ItemRespondido` y `RespuestaAbiertaValorada` |
 | Caché de versiones por instancia | Con varias instancias cada una tiene su copia (no hay riesgo: no cambian) | Redis compartido cuando se escale horizontalmente |
 | Dos toques simultáneos en una misma pregunta | La página deshabilita los botones mientras envía | Bloqueo optimista por versión de la respuesta si hiciera falta |
@@ -1851,6 +1851,8 @@ import { check, fail } from 'k6';
  *   RF-047: cerrar la lectura sin errores.
  *   RF-052, RF-055 (Módulo 7): al terminar ve su perfil lector y sus próximas lecturas → p95 < 300 ms
  *   (RNF-001), con la maestría ya movida por cada respuesta (RF-053).
+ *   RF-056 a RF-062 (Módulo 8): cada respuesta suma puntos bajo el candado de su cuenta; al terminar ve
+ *   su Pasaporte del Lector y su reto del día → p95 < 300 ms, y canjea una recompensa → p95 < 500 ms.
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa) y la lectura publicada:
  *   LECTURA=$(node tests/load/sembrar-lectura.mjs)
@@ -1881,6 +1883,9 @@ export const options = {
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/finalizar}': ['p(95)<800'],
     'http_req_duration{nombre:GET /yo/perfil-lector}': ['p(95)<300'],
     'http_req_duration{nombre:GET /yo/recomendaciones}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/pasaporte}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/reto-del-dia}': ['p(95)<300'],
+    'http_req_duration{nombre:POST /yo/recompensas/{id}/canje}': ['p(95)<500'],
     checks: ['rate>0.995'],
   },
 };
@@ -1981,6 +1986,19 @@ export function leer(datos) {
   check(perfil, { 'perfil con 5 habilidades medidas': (r) => r.status === 200 && r.json('habilidades').length === 5 && r.json('conDatos') === true });
   const recomendaciones = http.get(`${BASE}/yo/recomendaciones`, { headers: yo, tags: { nombre: 'GET /yo/recomendaciones' } });
   check(recomendaciones, { 'entre 0 y 3 recomendaciones': (r) => r.status === 200 && r.json().length <= 3 });
+
+  // Módulo 8: los puntos ya están en el libro al responder (RF-056) y la insignia, al terminar (RF-058).
+  const pasaporte = http.get(`${BASE}/yo/pasaporte`, { headers: yo, tags: { nombre: 'GET /yo/pasaporte' } });
+  check(pasaporte, {
+    'pasaporte con puntos y «Primera lectura»': (r) => r.status === 200 && r.json('puntos.total') > 0 && r.json('insignias').some((i) => i.codigo === 'PRIMERA_LECTURA' && i.ganada),
+  });
+  const reto = http.get(`${BASE}/yo/reto-del-dia`, { headers: yo, tags: { nombre: 'GET /yo/reto-del-dia' } });
+  check(reto, { 'un reto del día': (r) => r.status === 200 && r.json('meta') === 3 });
+  const lupa = pasaporte.status === 200 ? pasaporte.json('recompensas').find((x) => x.codigo === 'LUPA') : null;
+  if (lupa && pasaporte.json('monedas') >= lupa.costo) {
+    const canje = http.post(`${BASE}/yo/recompensas/${lupa.id}/canje`, null, { headers: yo, tags: { nombre: 'POST /yo/recompensas/{id}/canje' } });
+    check(canje, { 'canje con monedas (RF-062)': (r) => r.status === 201 && r.json('recompensa') === 'LUPA' });
+  }
 }
 ```
 
@@ -2000,9 +2018,9 @@ Característica: Lectura interactiva con actividades antes, durante y después
 
   Responsable de aprobación (Product Owner): ______________________  Fecha: ____
 
-  # La maestría ya la recalcula Progreso (Módulo 7). Los 6 puntos por corregir tras una pista (RN-11)
-  # los otorgará Gamificación (Módulo 8) con el mismo evento ItemRespondido.
-  @RF-045 @RN-06 @RN-07 @UAT-02 @camino-feliz @smoke
+  # Progreso recalcula la maestría (Módulo 7) y Gamificación otorga los puntos (Módulo 8, RN-11) con el
+  # mismo evento ItemRespondido.
+  @RF-045 @RN-06 @RN-07 @RN-11 @UAT-02 @camino-feliz @smoke
   Escenario: El estudiante corrige su respuesta después de una pista
     Dado un estudiante en una lectura del mundo "Detective"
     Y un ítem de inferencia con dificultad 3 y tres pistas definidas
@@ -2010,14 +2028,16 @@ Característica: Lectura interactiva con actividades antes, durante y después
     Entonces ve la pista P1 que le indica a qué parte del texto volver
     Y no se muestra la respuesta correcta
     Cuando responde correctamente en el segundo intento
-    Entonces su maestría en INF se actualiza con un puntaje de ítem de 0,75
+    Entonces recibe 6 puntos por corregir tras pista
+    Y su maestría en INF se actualiza con un puntaje de ítem de 0,75
 
-  # El avance hacia la insignia "Detective de Evidencias" lo llevará Gamificación (Módulo 8).
-  @RF-043 @UAT-03
+  # El avance hacia la insignia "Detective de Evidencias" lo lleva Gamificación (Módulo 8, RF-058).
+  @RF-043 @RF-058 @UAT-03
   Escenario: El estudiante respalda su respuesta con la oración correcta
     Dado un ítem "Encuentra la evidencia" cuya clave son las oraciones "Un día Pancho no quiso comer." y "Killa vio que tenía una espina en la pata."
     Cuando el estudiante selecciona la oración "Killa vio que tenía una espina en la pata."
     Entonces la evidencia se considera correcta
+    Y el progreso hacia la insignia "Detective de Evidencias" aumenta en 1
 
   @RF-043 @RN-06 @UAT-03 @negativo
   Escenario: El estudiante selecciona oraciones no relacionadas

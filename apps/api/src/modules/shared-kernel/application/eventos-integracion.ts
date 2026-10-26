@@ -57,6 +57,8 @@ export interface DatosItemRespondido {
   esRepeticion: boolean;
   /** Abiertas: cuántas palabras escribió (RN-19, puntos de esfuerzo). */
   palabras: number | null;
+  /** Tipo de actividad (SELECCION, EVIDENCIA, …): la evidencia correcta suma a "Detective de Evidencias" (UAT-03). */
+  modalidad?: string;
 }
 
 export interface DatosRespuestaAbiertaValorada {
@@ -75,4 +77,13 @@ export interface DatosMaestriaActualizada {
   habilidad?: string;
   valorAnterior?: number;
   valorNuevo?: number;
+  /** RN-08: con 5 ítems o más se declara el nivel CNEB (insignia "Maestro de las Inferencias"). */
+  itemsContados?: number;
+}
+
+export interface DatosMaestriaNivelSubido {
+  estudianteId: string;
+  habilidad: string;
+  nivelAnterior: string;
+  nivelNuevo: string;
 }

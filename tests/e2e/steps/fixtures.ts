@@ -18,6 +18,10 @@ export interface Mundo {
   killa?: { lecturaId: string; titulo: string; tematica: string };
   /** Perfil lector (Módulo 7): las lecturas que leerá en el escenario. */
   lecturas?: string[];
+  /** Gamificación (Módulo 8): puntos y asientos antes de la acción, y la sesión del niño por la API. */
+  puntos?: number;
+  asientos?: number;
+  nino?: Record<string, string>;
 }
 
 /**

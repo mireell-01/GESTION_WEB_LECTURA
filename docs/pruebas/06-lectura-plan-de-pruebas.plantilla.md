@@ -116,7 +116,7 @@ Otros módulos (solo por su public-api o por el shared-kernel):
 | Tema | Riesgo | Propuesta |
 | :--- | :--- | :--- |
 | Dictado sin navegador compatible | Algunos navegadores no reconocen voz | Respaldo en servidor (SRS V1.1, Sprint 13) sin guardar audio; hoy se escribe |
-| Puntos, rachas e insignias (RN-11, UAT-02, UAT-03) | El niño aún no ve puntos | Módulo 8 con los eventos `ItemRespondido` y `SesionLecturaFinalizada` |
+| Puntos, rachas e insignias (RN-11, UAT-02, UAT-03) | El niño aún no ve puntos | Módulo 8 con los eventos `ItemRespondido` y `SesionLecturaFinalizada` — ✅ resuelto: UAT-02 y UAT-03 verifican ahora los 6 puntos y el avance de "Detective de Evidencias" |
 | Maestría (RF-053) | El puntaje del ítem se guarda pero aún no mueve el perfil | Módulo 7 con `ItemRespondido` y `RespuestaAbiertaValorada` |
 | Caché de versiones por instancia | Con varias instancias cada una tiene su copia (no hay riesgo: no cambian) | Redis compartido cuando se escale horizontalmente |
 | Dos toques simultáneos en una misma pregunta | La página deshabilita los botones mientras envía | Bloqueo optimista por versión de la respuesta si hiciera falta |

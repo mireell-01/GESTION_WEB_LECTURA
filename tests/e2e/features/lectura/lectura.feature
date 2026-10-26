@@ -7,9 +7,9 @@ Característica: Lectura interactiva con actividades antes, durante y después
 
   Responsable de aprobación (Product Owner): ______________________  Fecha: ____
 
-  # La maestría ya la recalcula Progreso (Módulo 7). Los 6 puntos por corregir tras una pista (RN-11)
-  # los otorgará Gamificación (Módulo 8) con el mismo evento ItemRespondido.
-  @RF-045 @RN-06 @RN-07 @UAT-02 @camino-feliz @smoke
+  # Progreso recalcula la maestría (Módulo 7) y Gamificación otorga los puntos (Módulo 8, RN-11) con el
+  # mismo evento ItemRespondido.
+  @RF-045 @RN-06 @RN-07 @RN-11 @UAT-02 @camino-feliz @smoke
   Escenario: El estudiante corrige su respuesta después de una pista
     Dado un estudiante en una lectura del mundo "Detective"
     Y un ítem de inferencia con dificultad 3 y tres pistas definidas
@@ -17,14 +17,16 @@ Característica: Lectura interactiva con actividades antes, durante y después
     Entonces ve la pista P1 que le indica a qué parte del texto volver
     Y no se muestra la respuesta correcta
     Cuando responde correctamente en el segundo intento
-    Entonces su maestría en INF se actualiza con un puntaje de ítem de 0,75
+    Entonces recibe 6 puntos por corregir tras pista
+    Y su maestría en INF se actualiza con un puntaje de ítem de 0,75
 
-  # El avance hacia la insignia "Detective de Evidencias" lo llevará Gamificación (Módulo 8).
-  @RF-043 @UAT-03
+  # El avance hacia la insignia "Detective de Evidencias" lo lleva Gamificación (Módulo 8, RF-058).
+  @RF-043 @RF-058 @UAT-03
   Escenario: El estudiante respalda su respuesta con la oración correcta
     Dado un ítem "Encuentra la evidencia" cuya clave son las oraciones "Un día Pancho no quiso comer." y "Killa vio que tenía una espina en la pata."
     Cuando el estudiante selecciona la oración "Killa vio que tenía una espina en la pata."
     Entonces la evidencia se considera correcta
+    Y el progreso hacia la insignia "Detective de Evidencias" aumenta en 1
 
   @RF-043 @RN-06 @UAT-03 @negativo
   Escenario: El estudiante selecciona oraciones no relacionadas

@@ -152,6 +152,7 @@ export class SesionesUseCase {
       puntajeItem: r.puntajeItem,
       esRepeticion: s.esRepeticion,
       palabras: palabrasDeRespuesta(r),
+      modalidad: r.modalidad,
     });
   }
 

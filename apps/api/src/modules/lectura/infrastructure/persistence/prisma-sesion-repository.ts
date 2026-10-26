@@ -179,6 +179,18 @@ export class PrismaSesionRepository implements SesionRepository {
     return (await this.prisma.sesionLectura.count({ where: { estudianteId, lecturaId, estado: 'FINALIZADA' } })) > 0;
   }
 
+  /** RF-059: cada lectura terminada una vez, con su primer cierre, de la más reciente a la más antigua. */
+  async realizadasDe(estudianteId: string): Promise<{ lecturaId: string; finalizadaEn: Date }[]> {
+    const filas = await this.prisma.sesionLectura.groupBy({
+      by: ['lecturaId'],
+      where: { estudianteId, estado: 'FINALIZADA', finalizadaEn: { not: null } },
+      _min: { finalizadaEn: true },
+    });
+    return filas
+      .map((f) => ({ lecturaId: f.lecturaId, finalizadaEn: f._min.finalizadaEn as Date }))
+      .sort((a, b) => b.finalizadaEn.getTime() - a.finalizadaEn.getTime());
+  }
+
   async avanceDe(estudianteId: string, lecturaIds: string[], activaDesde: Date): Promise<Map<string, 'EN_CURSO' | 'FINALIZADA'>> {
     const ids = lecturaIds.filter(esUuid);
     const avance = new Map<string, 'EN_CURSO' | 'FINALIZADA'>();

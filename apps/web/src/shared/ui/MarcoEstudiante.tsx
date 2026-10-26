@@ -21,7 +21,7 @@ const SECCIONES: Seccion[] = [
   { texto: 'Biblioteca', icono: 'libro', href: '/estudiante/biblioteca' },
   { texto: 'Mundos', icono: 'globo', href: '/estudiante/mundos' },
   { texto: 'Progreso', icono: 'progreso', href: '/estudiante/progreso' },
-  { texto: 'Mi perfil', icono: 'perfil' },
+  { texto: 'Pasaporte', icono: 'perfil', href: '/estudiante/pasaporte' },
 ];
 
 /**
@@ -78,7 +78,7 @@ export function MarcoEstudiante({ children }: { children: ReactNode }) {
                   <span className="est-nav__icono">
                     <Icono nombre={s.icono} tamano={28} />
                   </span>
-                  <span>{s.texto}</span>
+                  <span className="est-nav__texto">{s.texto}</span>
                 </Link>
               ) : (
                 <button type="button" className="est-nav__item" data-bloqueado="" onClick={() => proximamente(s.texto)}>
@@ -88,7 +88,7 @@ export function MarcoEstudiante({ children }: { children: ReactNode }) {
                       <Icono nombre="candado" tamano={14} />
                     </span>
                   </span>
-                  <span>{s.texto}</span>
+                  <span className="est-nav__texto">{s.texto}</span>
                   <span className="sr-only">, muy pronto</span>
                 </button>
               )}

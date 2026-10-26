@@ -109,7 +109,7 @@ Otros módulos (solo por su public-api, el shared-kernel o eventos):
 | Tema | Riesgo | Propuesta |
 | :--- | :--- | :--- |
 | Perfil para la docente y la familia | Hoy solo lo ve el niño | Paneles docente y familiar (RF-063, RF-064, RF-068) con una fachada de Progreso |
-| +50 por subir de nivel (RN-11) | El evento ya se publica, nadie lo escucha | Gamificación (Módulo 8) |
+| +50 por subir de nivel (RN-11) | El evento ya se publica, nadie lo escucha | Gamificación (Módulo 8) — ✅ resuelto: +50 la primera vez que cada habilidad llega a cada nivel |
 | Tiempo de respuesta al corregir | Subió de 67 a 154 ms (p95) por calcular la maestría y el desbloqueo en el mismo pedido | Dentro de la meta (300 ms); si hiciera falta, evaluar el desbloqueo de Aventura fuera del pedido |
 | Heredadas | Outbox no transaccional; límite de tasa en memoria | Ver informes de los Módulos 1 a 6 |
 
@@ -1136,6 +1136,8 @@ import { check, fail } from 'k6';
  *   RF-047: cerrar la lectura sin errores.
  *   RF-052, RF-055 (Módulo 7): al terminar ve su perfil lector y sus próximas lecturas → p95 < 300 ms
  *   (RNF-001), con la maestría ya movida por cada respuesta (RF-053).
+ *   RF-056 a RF-062 (Módulo 8): cada respuesta suma puntos bajo el candado de su cuenta; al terminar ve
+ *   su Pasaporte del Lector y su reto del día → p95 < 300 ms, y canjea una recompensa → p95 < 500 ms.
  *
  * Requisitos: API en modo desarrollo (bandeja de correos activa) y la lectura publicada:
  *   LECTURA=$(node tests/load/sembrar-lectura.mjs)
@@ -1166,6 +1168,9 @@ export const options = {
     'http_req_duration{nombre:POST /sesiones-lectura/{id}/finalizar}': ['p(95)<800'],
     'http_req_duration{nombre:GET /yo/perfil-lector}': ['p(95)<300'],
     'http_req_duration{nombre:GET /yo/recomendaciones}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/pasaporte}': ['p(95)<300'],
+    'http_req_duration{nombre:GET /yo/reto-del-dia}': ['p(95)<300'],
+    'http_req_duration{nombre:POST /yo/recompensas/{id}/canje}': ['p(95)<500'],
     checks: ['rate>0.995'],
   },
 };
@@ -1266,6 +1271,19 @@ export function leer(datos) {
   check(perfil, { 'perfil con 5 habilidades medidas': (r) => r.status === 200 && r.json('habilidades').length === 5 && r.json('conDatos') === true });
   const recomendaciones = http.get(`${BASE}/yo/recomendaciones`, { headers: yo, tags: { nombre: 'GET /yo/recomendaciones' } });
   check(recomendaciones, { 'entre 0 y 3 recomendaciones': (r) => r.status === 200 && r.json().length <= 3 });
+
+  // Módulo 8: los puntos ya están en el libro al responder (RF-056) y la insignia, al terminar (RF-058).
+  const pasaporte = http.get(`${BASE}/yo/pasaporte`, { headers: yo, tags: { nombre: 'GET /yo/pasaporte' } });
+  check(pasaporte, {
+    'pasaporte con puntos y «Primera lectura»': (r) => r.status === 200 && r.json('puntos.total') > 0 && r.json('insignias').some((i) => i.codigo === 'PRIMERA_LECTURA' && i.ganada),
+  });
+  const reto = http.get(`${BASE}/yo/reto-del-dia`, { headers: yo, tags: { nombre: 'GET /yo/reto-del-dia' } });
+  check(reto, { 'un reto del día': (r) => r.status === 200 && r.json('meta') === 3 });
+  const lupa = pasaporte.status === 200 ? pasaporte.json('recompensas').find((x) => x.codigo === 'LUPA') : null;
+  if (lupa && pasaporte.json('monedas') >= lupa.costo) {
+    const canje = http.post(`${BASE}/yo/recompensas/${lupa.id}/canje`, null, { headers: yo, tags: { nombre: 'POST /yo/recompensas/{id}/canje' } });
+    check(canje, { 'canje con monedas (RF-062)': (r) => r.status === 201 && r.json('recompensa') === 'LUPA' });
+  }
 }
 ```
 
