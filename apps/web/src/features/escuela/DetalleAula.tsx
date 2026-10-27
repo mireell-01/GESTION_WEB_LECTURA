@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Boton, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, Boton, Cargando, Chip, clasesBoton, Icono, Tarjeta } from '@lectoaventura/ui';
 
 import { ReevaluacionAula } from '@/features/diagnostico/ReevaluacionAula';
 import { RespuestasAbiertasAula } from '@/features/lectura/RespuestasAbiertasAula';
@@ -120,6 +120,20 @@ export function DetalleAula({ aulaId }: { aulaId: string }) {
       </header>
 
       {!editable ? <Alerta tipo="info">Esta aula está archivada: puedes consultarla, pero ya no se modifica.</Alerta> : null}
+
+      {/* Módulo 9: el seguimiento del aula por habilidad (RF-063 a RF-067). */}
+      <section className="seg-acceso" aria-labelledby="seguimiento-titulo">
+        <span className="seg-acceso__icono" aria-hidden="true">
+          <Icono nombre="progreso" tamano={32} />
+        </span>
+        <div className="pila-sm">
+          <h2 id="seguimiento-titulo">Seguimiento del aula</h2>
+          <p className="texto-suave">Mapa de calor por habilidad, estudiantes para acompañar, refuerzos para el grupo y reportes en PDF o CSV.</p>
+        </div>
+        <Link href={`/docente/aulas/${aula.id}/seguimiento`} className={clasesBoton('primario')}>
+          Ver seguimiento
+        </Link>
+      </section>
 
       <EstudiantesAula
         key={version}

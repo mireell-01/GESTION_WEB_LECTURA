@@ -713,6 +713,45 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
       expect(await e.revision.respuestas(DOCENTE, 'aula-vacia')).toEqual([]);
     });
   });
+
+  describe('RF-064 (Módulo 9): historial para el detalle docente', () => {
+    it('las sesiones más recientes primero, con lo que respondió, sus evidencias y sus pistas', async () => {
+      const s1 = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
+      await e.sesiones.predecir(NINO, s1.id, { texto: 'La llama se enfermará' });
+      await responder(s1.id, 'it-antes', { indice: 0 });
+      await responder(s1.id, 'it-sel', { indice: 0 }); // error: P1
+      await responder(s1.id, 'it-sel', { indice: 1 });
+      await responder(s1.id, 'it-evid', { oraciones: ['o4'] });
+      await responder(s1.id, 'it-ord', { orden: [0, 1, 2].map((k) => ordenMostrado(3, `${s1.id}:it-ord`).indexOf(k)) });
+      await responder(s1.id, 'it-esc', { texto: 'Porque tenía una espina en la pata' });
+      await responder(s1.id, 'it-def', { indice: 0 });
+      await e.sesiones.finalizar(NINO, s1.id, 'Era una espina');
+
+      // La repite y, en la inferencia, se equivoca hasta ver la explicación (RF-045).
+      e.reloj.avanzarMin(1);
+      const s2 = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
+      await e.sesiones.predecir(NINO, s2.id, { texto: 'Otra vez' });
+      await responder(s2.id, 'it-antes', { indice: 0 });
+      for (let i = 0; i < 5; i++) if ((await responder(s2.id, 'it-sel', { indice: 0 })).explicacion) break;
+
+      const h = await e.historial.historialDe(NINO, 20);
+      expect(h.map((x) => [x.sesionId, x.estado, x.esRepeticion, x.titulo])).toEqual([[s2.id, 'EN_CURSO', true, 'Killa y la llama'], [s1.id, 'FINALIZADA', false, 'Killa y la llama']]);
+      expect(h[1]!.respuestas.map((r) => [r.itemId, r.esCorrecta, r.pistasUsadas, r.respuesta])).toEqual([
+        ['it-antes', true, 0, 'Un animal'],
+        ['it-sel', true, 1, 'Le dolía algo'],
+        ['it-evid', true, 0, 'Killa vio que tenía una espina en la pata.'],
+        ['it-ord', true, 0, 'No quiso comer → Vio la espina → Le quitó la espina'],
+        ['it-esc', null, 0, 'Porque tenía una espina en la pata'],
+        ['it-def', true, 0, 'Porque lo dice el texto'],
+      ]);
+      expect(h[1]!.respuestas[1]!.pistas).toEqual([{ nivel: 'P1', texto: 'P1 de sel' }]);
+      expect(h[1]!.respuestas[2]!.evidencias).toEqual(['Killa vio que tenía una espina en la pata.']);
+      expect(h[0]!.respuestas.find((r) => r.itemId === 'it-sel')!.pistas.at(-1)).toEqual({ nivel: 'EXPLICACION', texto: 'Explicación de it-sel: vuelve al texto.' });
+      expect(JSON.stringify(h)).not.toMatch(/indicesCorrectos|clavesEvidencia/);
+      expect(await e.historial.historialDe(NINO, 1)).toHaveLength(1);
+      expect(await e.historial.historialDe('otro-nino', 20)).toEqual([]);
+    });
+  });
 });
 ```
 
@@ -727,6 +766,7 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
  */
 import type { RangoEdad } from '../../../src/modules/shared-kernel/public-api';
 import type { ContenidoLecturas, EscuelaLectura, IdentidadEstudiantes, SesionRepository } from '../../../src/modules/lectura/application/ports/lectura.ports';
+import { HistorialUseCase } from '../../../src/modules/lectura/application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../../../src/modules/lectura/application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../../../src/modules/lectura/application/use-cases/sesiones.use-case';
 import { EstadoRespuesta, SesionLectura } from '../../../src/modules/lectura/domain/entities/sesion-lectura';
@@ -777,6 +817,14 @@ export class SesionesEnMemoria implements SesionRepository {
       else if ((s.estado === 'INICIADA' || s.estado === 'EN_CURSO') && s.ultimaActividadEn >= activaDesde && !avance.has(s.lecturaId)) avance.set(s.lecturaId, 'EN_CURSO');
     }
     return avance;
+  }
+  /** RF-064 (Módulo 9): las últimas sesiones del estudiante, de la más reciente a la más antigua. */
+  async ultimasDe(estudianteId: string, limite: number) {
+    return [...this.filas.values()]
+      .filter((s) => s.estudianteId === estudianteId)
+      .sort((a, b) => b.propsSnapshot.iniciadaEn.getTime() - a.propsSnapshot.iniciadaEn.getTime())
+      .slice(0, limite)
+      .map(copiar);
   }
   async conRespuestasAbiertas(estudianteIds: string[], estado: EstadoRespuesta) {
     return [...this.filas.values()].filter((s) => estudianteIds.includes(s.estudianteId) && s.respuestas.some((r) => r.estado === estado)).map(copiar);
@@ -924,6 +972,7 @@ export function crearEntornoLectura() {
     bus,
     sesiones: new SesionesUseCase(repo, contenido, identidad, escuela, bus, generarId, reloj.ahora),
     revision: new RevisionUseCase(repo, contenido, identidad, escuela, bus, reloj.ahora),
+    historial: new HistorialUseCase(repo, contenido),
   };
 }
 

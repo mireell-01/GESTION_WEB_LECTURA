@@ -210,6 +210,13 @@ export class PrismaSesionRepository implements SesionRepository {
     return avance;
   }
 
+  /** RF-064: las últimas sesiones del estudiante, de la más reciente a la más antigua. */
+  async ultimasDe(estudianteId: string, limite: number): Promise<SesionLectura[]> {
+    if (!esUuid(estudianteId)) return [];
+    const filas = await this.prisma.sesionLectura.findMany({ where: { estudianteId }, include: COMPLETA, orderBy: { iniciadaEn: 'desc' }, take: limite });
+    return filas.map(aDominio);
+  }
+
   async conRespuestasAbiertas(estudianteIds: string[], estado: EstadoRespuesta): Promise<SesionLectura[]> {
     if (estudianteIds.length === 0) return [];
     const filas = await this.prisma.sesionLectura.findMany({

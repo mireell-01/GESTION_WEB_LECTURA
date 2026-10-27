@@ -6,6 +6,7 @@
  */
 import type { RangoEdad } from '../../../src/modules/shared-kernel/public-api';
 import type { ContenidoLecturas, EscuelaLectura, IdentidadEstudiantes, SesionRepository } from '../../../src/modules/lectura/application/ports/lectura.ports';
+import { HistorialUseCase } from '../../../src/modules/lectura/application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../../../src/modules/lectura/application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../../../src/modules/lectura/application/use-cases/sesiones.use-case';
 import { EstadoRespuesta, SesionLectura } from '../../../src/modules/lectura/domain/entities/sesion-lectura';
@@ -56,6 +57,14 @@ export class SesionesEnMemoria implements SesionRepository {
       else if ((s.estado === 'INICIADA' || s.estado === 'EN_CURSO') && s.ultimaActividadEn >= activaDesde && !avance.has(s.lecturaId)) avance.set(s.lecturaId, 'EN_CURSO');
     }
     return avance;
+  }
+  /** RF-064 (Módulo 9): las últimas sesiones del estudiante, de la más reciente a la más antigua. */
+  async ultimasDe(estudianteId: string, limite: number) {
+    return [...this.filas.values()]
+      .filter((s) => s.estudianteId === estudianteId)
+      .sort((a, b) => b.propsSnapshot.iniciadaEn.getTime() - a.propsSnapshot.iniciadaEn.getTime())
+      .slice(0, limite)
+      .map(copiar);
   }
   async conRespuestasAbiertas(estudianteIds: string[], estado: EstadoRespuesta) {
     return [...this.filas.values()].filter((s) => estudianteIds.includes(s.estudianteId) && s.respuestas.some((r) => r.estado === estado)).map(copiar);
@@ -203,6 +212,7 @@ export function crearEntornoLectura() {
     bus,
     sesiones: new SesionesUseCase(repo, contenido, identidad, escuela, bus, generarId, reloj.ahora),
     revision: new RevisionUseCase(repo, contenido, identidad, escuela, bus, reloj.ahora),
+    historial: new HistorialUseCase(repo, contenido),
   };
 }
 

@@ -1012,3 +1012,30 @@ model OutboxEvento {
   @@map("outbox_evento")
   @@schema("admin")
 }
+
+// ===========================================================================
+// REPORTING — Paneles de seguimiento (RF-063 a RF-067). Las vistas materializadas del schema
+// (mv_desempeno_aula, mv_actividad_semanal, mv_maestria_estudiante, mv_actividad_estudiante) se
+// crean por SQL en las migraciones: Prisma no las modela.
+// ===========================================================================
+
+/// Cuándo se refrescaron por última vez las vistas de reportes (cada 5 minutos, SRS §7).
+model RefrescoVistas {
+  id           Int      @id @default(1) @db.SmallInt
+  refrescadoEn DateTime @map("refrescado_en") @db.Timestamptz(3)
+
+  @@map("refresco_vistas")
+  @@schema("reporting")
+}
+
+/// RF-065: resumen semanal ya enviado a cada docente (uno por semana de Lima, que empieza en lunes).
+model ResumenSemanalEnviado {
+  docenteId String   @map("docente_id") @db.Uuid
+  semana    DateTime @db.Date
+  aulas     Int      @db.SmallInt
+  enviadoEn DateTime @default(now()) @map("enviado_en") @db.Timestamptz(3)
+
+  @@id([docenteId, semana])
+  @@map("resumen_semanal_enviado")
+  @@schema("reporting")
+}

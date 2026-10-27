@@ -7,13 +7,16 @@ import {
   AVANCE_LECTURAS,
   BUS_EVENTOS,
   BusEventos,
+  HISTORIAL_LECTURA,
   LECTURAS_REALIZADAS,
   PrismaService,
   RegistroAvanceLecturas,
+  RegistroHistorialLectura,
   RegistroLecturasRealizadas,
   uuidV7,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_LECTURA, CasosUsoLectura } from '../application/casos-uso-lectura';
+import { HistorialUseCase } from '../application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../application/use-cases/sesiones.use-case';
 import { DIAS_PARA_ABANDONO } from '../domain/entities/sesion-lectura';
@@ -31,12 +34,14 @@ export function crearCasosUsoLectura(prisma: PrismaService, bus: BusEventos, iam
   return {
     sesiones: new SesionesUseCase(repo, contenidos, identidad, aulas, bus, generarId, ahora),
     revision: new RevisionUseCase(repo, contenidos, identidad, aulas, bus, ahora),
+    historial: new HistorialUseCase(repo, contenidos),
   };
 }
 
 /**
  * RF-032: Aventura consulta por el shared-kernel qué lecturas empezó o terminó el niño.
  * RF-059 (Módulo 8): el Pasaporte del Lector muestra las lecturas que terminó.
+ * RF-064 (Módulo 9): el detalle docente muestra sus últimas sesiones con evidencias y pistas.
  */
 @Injectable()
 export class AvanceLecturasRegistro implements OnModuleInit {
@@ -46,6 +51,8 @@ export class AvanceLecturasRegistro implements OnModuleInit {
     prisma: PrismaService,
     @Inject(AVANCE_LECTURAS) private readonly registro: RegistroAvanceLecturas,
     @Inject(LECTURAS_REALIZADAS) private readonly realizadas: RegistroLecturasRealizadas,
+    @Inject(HISTORIAL_LECTURA) private readonly historial: RegistroHistorialLectura,
+    @Inject(CASOS_USO_LECTURA) private readonly casos: CasosUsoLectura,
   ) {
     this.repo = new PrismaSesionRepository(prisma);
   }
@@ -56,6 +63,7 @@ export class AvanceLecturasRegistro implements OnModuleInit {
         this.repo.avanceDe(estudianteId, lecturaIds, new Date(Date.now() - DIAS_PARA_ABANDONO * 24 * 60 * 60 * 1000)),
     });
     this.realizadas.registrar({ realizadasDe: (estudianteId) => this.repo.realizadasDe(estudianteId) });
+    this.historial.registrar({ historialDe: (estudianteId, limite) => this.casos.historial.historialDe(estudianteId, limite) });
   }
 }
 

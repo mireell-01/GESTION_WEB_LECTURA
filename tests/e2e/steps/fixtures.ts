@@ -22,6 +22,8 @@ export interface Mundo {
   puntos?: number;
   asientos?: number;
   nino?: Record<string, string>;
+  /** Seguimiento docente (Módulo 9): lo que tardó en responder el panel del aula, en ms. */
+  panelMs?: number;
 }
 
 /**

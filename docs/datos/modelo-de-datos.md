@@ -17,15 +17,15 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `gamificacion` | 8 · Gamificación | 10 | ✅ En uso: libro de puntos, insignias (9 en el catálogo) con su avance, racha, reto del día, recompensas (10) y canjes; los parámetros versionados. Migración [`20261025000000_gamificacion_logros`](../../apps/api/prisma/migrations/20261025000000_gamificacion_logros/migration.sql), que agrega 4 tablas al SRS: `evento_aplicado`, `avance_insignia`, `recompensa` y `canje_recompensa` |
 | `asistente` | 11 · Asistente inteligente | 2 | Lista |
 | `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; misiones creadas, editadas y reordenadas; el resto de RF-077 llega con el Módulo 12) |
-| `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 vistas materializadas | Lista |
+| `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 + 4 vistas materializadas y 2 vistas | ✅ En uso (Módulo 9): mapa de calor, alertas, refuerzos y reportes del aula; el último refresco de las vistas y los resúmenes semanales enviados. Migración [`20261026000000_reporting_seguimiento_docente`](../../apps/api/prisma/migrations/20261026000000_reporting_seguimiento_docente/migration.sql), que agrega 2 tablas (`refresco_vistas` y `resumen_semanal_enviado`), 2 vistas materializadas y 2 vistas |
 
-**Total: 56 tablas (52 del SRS + 4 del Módulo 8) y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
+**Total: 58 tablas (52 del SRS + 4 del Módulo 8 + 2 del Módulo 9), 4 vistas materializadas y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
 
 ## Cómo verlas en pgAdmin
 
 1. **Servers → PostgreSQL 16 → Databases → `lectoaventura` → Schemas**: verás los 11 schemas.
 2. Abre cualquiera, por ejemplo **`iam` → Tables**, y luego clic derecho en una tabla → **View/Edit Data → All Rows**.
-3. Las vistas de reportes están en **`reporting` → Materialized Views**.
+3. Las vistas de reportes están en **`reporting` → Materialized Views** (y las simples en **Views**).
 4. Desde la consola (PSQL o Query Tool), el nombre lleva el schema delante:
 
    ```sql
@@ -131,7 +131,20 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
 
 ## Reportes
 
-`reporting.mv_desempeno_aula` (aula × habilidad, con la distribución por nivel CNEB) y `reporting.mv_actividad_semanal` (estudiante × semana de Lima). Se actualizan con `SELECT reporting.refrescar_vistas();`, sin bloquear las lecturas. El SRS pide refrescarlas cada 5 minutos: lo hará el *worker* de reportes del Módulo 9.
+Los paneles leen solo del schema `reporting` (SAD §5): ningún módulo consulta las tablas de otro.
+
+| Objeto | Qué tiene | Para qué |
+| :--- | :--- | :--- |
+| `mv_desempeno_aula` | Aula × habilidad, con la distribución por nivel CNEB | "El aula por habilidad" (RF-063) |
+| `mv_actividad_semanal` | Estudiante × semana de Lima: lecturas terminadas, minutos de lectura y respuestas | Resumen de la semana (RF-065) |
+| `mv_maestria_estudiante` (Módulo 9) | Aula × estudiante × habilidad con su maestría y los ítems contados | Mapa de calor estudiantes × habilidades (RF-063) |
+| `mv_actividad_estudiante` (Módulo 9) | La última actividad de cada estudiante (lectura o reto inicial) | "7 días sin actividad" (RF-065) |
+| `v_estudiantes_aula` (Módulo 9) | Matrículas activas de cada aula y desde cuándo | Vista simple, siempre al día: un estudiante nuevo aparece al instante |
+| `v_aulas_activas` (Módulo 9) | Aulas activas con estudiantes y su docente | Resumen semanal de cada docente (RF-065) |
+| `refresco_vistas` (Módulo 9) | Una sola fila (`CHECK id = 1`): cuándo se refrescaron las vistas | El panel muestra "Datos actualizados a las …" |
+| `resumen_semanal_enviado` (Módulo 9) | Docente × semana (lunes, `CHECK`) y cuántas aulas | El resumen semanal sale una sola vez por docente y semana |
+
+Se actualizan con `SELECT reporting.refrescar_vistas();` (las 4 vistas materializadas, sin bloquear las lecturas, y la hora en `refresco_vistas`). El *worker* de reportes del Módulo 9 lo hace cada 5 minutos, como pide el SRS, con un candado (`pg_try_advisory_xact_lock`) para que dos instancias no refresquen a la vez.
 
 ## Equivalencias y decisiones
 
@@ -186,6 +199,14 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
 | Reto del día (RF-060, RN-18) | `reto_diario.contenido = { meta, avance, lectura }` | Uno por estudiante y fecha de Lima (`UNIQUE`), para la habilidad de menor maestría: responder bien 3 preguntas de esa habilidad (o una abierta con esfuerzo), unos 5 minutos. Sugiere la lectura más sencilla de su edad que la trabaja y aún no terminó. Completarlo da +15 y cuenta para la racha; el de un día anterior sin completar queda `VENCIDO` |
 | Monedas de recompensa (RF-062) | Calculadas: ⌊puntos / 10⌋ − monedas gastadas en `canje_recompensa` | Canjear descuenta monedas, nunca puntos ni nivel. Cada recompensa se canjea una vez por niño (`UNIQUE (estudiante_id, recompensa_id)`), bajo el mismo candado por estudiante |
 | Parámetros (RF-078) | `parametro_gamificacion`, la versión más alta vigente | Se leen en cada logro, así un cambio aplica solo a lo que ocurre después; un valor ausente o inválido toma el del SRS. La pantalla del administrador llega con el Módulo 12 |
+| Panel del aula con 40 estudiantes en p95 < 1,5 s (RF-063, RNF-003) | Vistas materializadas refrescadas cada 5 minutos | El panel lee 4 consultas sobre `reporting` en vez de recorrer respuestas y sesiones. Con 40 estudiantes y 10 docentes a la vez: p95 de 232 ms en local |
+| Nivel CNEB del mapa de calor | El nivel **declarado** (RN-08: ≥ 5 ítems) | Con menos ítems la celda muestra el valor como "Aún descubriendo", como el perfil del niño (Módulo 7) |
+| Estudiante en riesgo (RF-065) | 7 días sin actividad **o** ≥ 2 habilidades en nivel C | Quien nunca empezó cuenta desde su matrícula: un aula recién creada no aparece entera en riesgo |
+| Refuerzo grupal (RF-066) | Habilidad en nivel C para el 30 % del aula o más | Sugiere la lectura publicada más sencilla de la edad del aula que trabaja esa habilidad; asignarla con un clic crea una asignación de Escuela solo para esos estudiantes, con fecha límite en 7 días |
+| Detalle del estudiante (RF-064) | Sus últimas 20 sesiones, leídas por el puerto `HISTORIAL_LECTURA` del shared-kernel | Reporting no lee las tablas de `lectura`: el módulo Lectura entrega cada respuesta legible (opción, orden, evidencias o texto) con sus pistas, y la tasa de acierto sin pista se calcula sobre las cerradas |
+| Reporte del aula (RF-067) | CSV (UTF-8 con BOM, CRLF) y PDF A4 generados al pedirlos | No se guardan: salen con `Cache-Control: no-store`. En el CSV, las celdas que empiezan con `=`, `+`, `-` o `@` se neutralizan para que una hoja de cálculo no las ejecute |
+| Resumen semanal (RF-065) | Desde el lunes a las 07:00 de Lima, una vez por docente y semana | Se registra en `resumen_semanal_enviado` antes de enviar, así sale a lo sumo una vez aunque dos procesos coincidan; las cuentas que no están activas no lo reciben |
+| Aula de otra docente (RN-17) | Responde 404, como si no existiera | El panel, el detalle y el reporte comprueban primero que el aula sea de la docente, y el detalle que el estudiante esté matriculado en ella |
 
 ## Respaldo
 
