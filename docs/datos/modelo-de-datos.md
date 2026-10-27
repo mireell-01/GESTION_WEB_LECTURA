@@ -17,9 +17,9 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `gamificacion` | 8 · Gamificación | 10 | ✅ En uso: libro de puntos, insignias (9 en el catálogo) con su avance, racha, reto del día, recompensas (10) y canjes; los parámetros versionados. Migración [`20261025000000_gamificacion_logros`](../../apps/api/prisma/migrations/20261025000000_gamificacion_logros/migration.sql), que agrega 4 tablas al SRS: `evento_aplicado`, `avance_insignia`, `recompensa` y `canje_recompensa` |
 | `asistente` | 11 · Asistente inteligente | 2 | Lista |
 | `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; misiones creadas, editadas y reordenadas; el resto de RF-077 llega con el Módulo 12) |
-| `reporting` | 9 y 10 · Seguimiento docente y familiar | 2 + 4 vistas materializadas y 2 vistas | ✅ En uso (Módulo 9): mapa de calor, alertas, refuerzos y reportes del aula; el último refresco de las vistas y los resúmenes semanales enviados. Migración [`20261026000000_reporting_seguimiento_docente`](../../apps/api/prisma/migrations/20261026000000_reporting_seguimiento_docente/migration.sql), que agrega 2 tablas (`refresco_vistas` y `resumen_semanal_enviado`), 2 vistas materializadas y 2 vistas |
+| `reporting` | 9 y 10 · Seguimiento docente y familiar | 4 tablas, 6 vistas materializadas y 3 vistas | ✅ En uso. Módulo 9: mapa de calor, alertas, refuerzos y reportes del aula; el último refresco de las vistas y los resúmenes semanales a docentes. Migración [`20261026000000_reporting_seguimiento_docente`](../../apps/api/prisma/migrations/20261026000000_reporting_seguimiento_docente/migration.sql). Módulo 10: el panel de cada hijo, las preferencias de la familia y sus resúmenes semanales. Migración [`20261027000000_reporting_acompanamiento_familiar`](../../apps/api/prisma/migrations/20261027000000_reporting_acompanamiento_familiar/migration.sql), que agrega 2 tablas (`preferencia_familiar` y `resumen_familiar_enviado`), 2 vistas materializadas y 1 vista |
 
-**Total: 58 tablas (52 del SRS + 4 del Módulo 8 + 2 del Módulo 9), 4 vistas materializadas y 2 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
+**Total: 60 tablas (52 del SRS + 4 del Módulo 8 + 2 del Módulo 9 + 2 del Módulo 10), 6 vistas materializadas y 3 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
 
 ## Cómo verlas en pgAdmin
 
@@ -143,8 +143,13 @@ Los paneles leen solo del schema `reporting` (SAD §5): ningún módulo consulta
 | `v_aulas_activas` (Módulo 9) | Aulas activas con estudiantes y su docente | Resumen semanal de cada docente (RF-065) |
 | `refresco_vistas` (Módulo 9) | Una sola fila (`CHECK id = 1`): cuándo se refrescaron las vistas | El panel muestra "Datos actualizados a las …" |
 | `resumen_semanal_enviado` (Módulo 9) | Docente × semana (lunes, `CHECK`) y cuántas aulas | El resumen semanal sale una sola vez por docente y semana |
+| `mv_maestria_perfil` (Módulo 10) | Estudiante × habilidad con su maestría y los ítems contados, esté o no en un aula (solo perfiles vigentes) | Habilidades del panel de cada hijo (RF-068) |
+| `mv_avance_estudiante` (Módulo 10) | Por estudiante: lecturas terminadas, mundos completados, mundo en que va, puntos e insignias | "Su avance" en el panel de cada hijo (RF-068) |
+| `v_hijos_familia` (Módulo 10) | Familias activas con sus hijos activos, propios o acompañados por invitación de su docente | A quién enviar el resumen semanal (RF-070) |
+| `preferencia_familiar` (Módulo 10) | Si la familia recibe el resumen semanal (sin fila: sí) | Baja con un clic y desde el panel (RF-070) |
+| `resumen_familiar_enviado` (Módulo 10) | Familia × semana (lunes, `CHECK`) y cuántos hijos | El resumen del domingo sale una sola vez por familia y semana |
 
-Se actualizan con `SELECT reporting.refrescar_vistas();` (las 4 vistas materializadas, sin bloquear las lecturas, y la hora en `refresco_vistas`). El *worker* de reportes del Módulo 9 lo hace cada 5 minutos, como pide el SRS, con un candado (`pg_try_advisory_xact_lock`) para que dos instancias no refresquen a la vez.
+Se actualizan con `SELECT reporting.refrescar_vistas();` (las 6 vistas materializadas, sin bloquear las lecturas, y la hora en `refresco_vistas`). El *worker* de reportes lo hace cada 5 minutos, como pide el SRS, con un candado (`pg_try_advisory_xact_lock`) para que dos instancias no refresquen a la vez.
 
 ## Equivalencias y decisiones
 
@@ -207,6 +212,12 @@ Se actualizan con `SELECT reporting.refrescar_vistas();` (las 4 vistas materiali
 | Reporte del aula (RF-067) | CSV (UTF-8 con BOM, CRLF) y PDF A4 generados al pedirlos | No se guardan: salen con `Cache-Control: no-store`. En el CSV, las celdas que empiezan con `=`, `+`, `-` o `@` se neutralizan para que una hoja de cálculo no las ejecute |
 | Resumen semanal (RF-065) | Desde el lunes a las 07:00 de Lima, una vez por docente y semana | Se registra en `resumen_semanal_enviado` antes de enviar, así sale a lo sumo una vez aunque dos procesos coincidan; las cuentas que no están activas no lo reciben |
 | Aula de otra docente (RN-17) | Responde 404, como si no existiera | El panel, el detalle y el reporte comprueban primero que el aula sea de la docente, y el detalle que el estudiante esté matriculado en ella |
+| Panel por hijo (RF-068) | Solo de los hijos vinculados a la cuenta: los propios y los que acompaña por invitación de su docente (RN-17) | Cualquier otro responde 404. Lee las vistas de `reporting` (refrescadas cada 5 minutos, como pide el SRS para el panel familiar): su semana (minutos, lecturas y respuestas de `mv_actividad_semanal`), su avance, sus 5 habilidades y su última actividad |
+| Habilidades a reforzar (RF-068) | Las medidas por debajo de "Logrado" (65), de la más baja a la más alta, hasta 3 | Se usa el valor desde el reto inicial, aunque aún no haya nivel declarado (RN-08 solo condiciona el nivel que se muestra): así la familia puede ayudar desde el principio |
+| Recomendaciones para casa (RF-069) | Catálogo en el dominio: 4 consejos por habilidad, algunos solo para ciertas edades; se muestran 2 | Actividades de 5 a 10 minutos con lo que hay en casa, sin términos técnicos (las pruebas lo verifican). Más una lectura publicada de su edad que trabaja esa habilidad y que aún no terminó |
+| Resumen semanal de la familia (RF-070) | Domingos desde las 18:00 de Lima, una vez por familia y semana | Cada hijo activo: su semana, su avance y un consejo por habilidad a reforzar. El correo lo envía IAM (la dirección no sale de IAM). Si falla, se libera el registro y se reintenta en 5 minutos |
+| "Baja con un clic" (RF-070) | Enlace firmado en el correo + cabeceras `List-Unsubscribe` (RFC 8058) | El enlace lleva la cuenta y una firma HMAC-SHA256 con una clave derivada del secreto de la API, solo para esta preferencia. Abrirlo da de baja al instante (la página hace un POST) y permite deshacerlo; el botón "Cancelar suscripción" del programa de correo hace el mismo POST. También se cambia desde el panel |
+| Pruebas del envío del domingo | `POST /api/v1/dev/reportes/ejecutar` con un momento dado | Solo desarrollo y CI (como la bandeja de correos): responde 404 en producción o con un SMTP real |
 
 ## Respaldo
 

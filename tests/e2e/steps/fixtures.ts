@@ -24,6 +24,8 @@ export interface Mundo {
   nino?: Record<string, string>;
   /** Seguimiento docente (Módulo 9): lo que tardó en responder el panel del aula, en ms. */
   panelMs?: number;
+  /** Acompañamiento familiar (Módulo 10): la familia del escenario y los ids de sus hijos por alias. */
+  familia?: { email: string; contrasena: string; headers: Record<string, string>; hijos: Record<string, string> };
 }
 
 /**

@@ -1039,3 +1039,25 @@ model ResumenSemanalEnviado {
   @@map("resumen_semanal_enviado")
   @@schema("reporting")
 }
+
+/// RF-070: si la familia recibe el resumen semanal por correo. Sin fila, lo recibe (baja con un clic).
+model PreferenciaFamiliar {
+  cuentaId       String   @id @map("cuenta_id") @db.Uuid
+  resumenSemanal Boolean  @default(true) @map("resumen_semanal")
+  actualizadoEn  DateTime @default(now()) @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  @@map("preferencia_familiar")
+  @@schema("reporting")
+}
+
+/// RF-070: resumen semanal ya enviado a cada familia (uno por semana de Lima, que empieza en lunes).
+model ResumenFamiliarEnviado {
+  cuentaId  String   @map("cuenta_id") @db.Uuid
+  semana    DateTime @db.Date
+  hijos     Int      @db.SmallInt
+  enviadoEn DateTime @default(now()) @map("enviado_en") @db.Timestamptz(3)
+
+  @@id([cuentaId, semana])
+  @@map("resumen_familiar_enviado")
+  @@schema("reporting")
+}

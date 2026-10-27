@@ -1441,6 +1441,11 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await ingresarComoAdulto(page, familia.email, familia.contrasena);
     await expect(page.getByRole('heading', { name: 'Desde su aula (1)' })).toBeVisible();
     await revisarPantalla(page);
+
+    // Módulo 10: el avance de Mateo para su familia.
+    await page.getByRole('link', { name: 'Ver el avance de Mateo' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Sus habilidades' })).toBeVisible();
+    await revisarPantalla(page);
   });
   test('el backoffice de contenido y la biblioteca se adaptan (RF-021 a RF-028)', async ({ page, request }) => {
     test.setTimeout(150_000); // dos cuentas con MFA, una lectura publicada, un aula y siete pantallas
@@ -1626,6 +1631,16 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
       await revisarPantalla(page);
       const filtros = [...(await arriba(['Temática'], 'textbox')), ...(await arriba(['Edad', 'Nivel', 'Tipo de texto', 'Habilidad'], 'combobox'))];
       expect(new Set(filtros).size, `filtros en una fila en ${ancho}×${alto}`).toBe(1);
+
+      // Módulo 10: el avance de la hija usa el ancho — su semana y sus habilidades lado a lado.
+      await page.goto('/familia');
+      await page.getByRole('link', { name: 'Ver el avance de Lucía' }).click();
+      await expect(page.getByRole('heading', { level: 2, name: 'Sus habilidades' })).toBeVisible();
+      await revisarPantalla(page);
+      const semana = (await page.getByRole('heading', { level: 2, name: 'Esta semana' }).boundingBox())!;
+      const habilidades = (await page.getByRole('heading', { level: 2, name: 'Sus habilidades' }).boundingBox())!;
+      expect(Math.abs(semana.y - habilidades.y), `semana y habilidades en la misma fila en ${ancho}×${alto}`).toBeLessThan(4);
+      expect(habilidades.x, `habilidades a la derecha en ${ancho}×${alto}`).toBeGreaterThan(semana.x + 300);
     }
   });
 });
@@ -2354,6 +2369,8 @@ jobs:
           escenario lectura-respuestas -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
           AULA=$(node tests/load/sembrar-seguimiento.mjs)
           escenario seguimiento-panel -e DURACION=30s -e AULA_ID="${AULA% *}" -e EMAIL="${AULA#* }" tests/load/scenarios/seguimiento-panel.js
+          FAMILIA=$(node tests/load/sembrar-familia.mjs)
+          escenario familia-panel -e DURACION=30s -e EMAIL="$FAMILIA" tests/load/scenarios/familia-panel.js
           if [ -n "$fallidos" ]; then echo "::error title=k6::Umbrales no cumplidos en:$fallidos"; exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()

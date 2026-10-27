@@ -1,11 +1,12 @@
 import { NoEncontradoError, RangoEdad } from '../../shared-kernel/public-api';
 import { MedioConsentimiento } from '../domain/entities/consentimiento';
-import { PerfilEstudianteVista, Reloj } from './dto/iam.dto';
+import { PerfilEstudianteVista, PerfilFamiliaVista, Reloj } from './dto/iam.dto';
 import { CorreoService } from './ports/correo.service';
 import { CuentaRepository } from './ports/cuenta.repository';
 import { PerfilEstudianteRepository } from './ports/perfil-estudiante.repository';
 import { VinculoRepository } from './ports/vinculo.repository';
 import { CrearPerfilEstudianteUseCase } from './use-cases/crear-perfil-estudiante.use-case';
+import { ListarPerfilesUseCase } from './use-cases/listar-perfiles.use-case';
 import { RegistrarConsentimientoUseCase } from './use-cases/registrar-consentimiento.use-case';
 import { RestablecerPinUseCase } from './use-cases/restablecer-pin.use-case';
 import { VincularFamiliarUseCase } from './use-cases/vincular-familiar.use-case';
@@ -130,6 +131,14 @@ export class IamFacade {
     return resumen;
   }
 
+  /**
+   * RF-068 (Módulo 10): los hijos que la familia acompaña — los propios y los vinculados por invitación
+   * de su docente (RF-019) —, como en su panel. RN-17: solo esos.
+   */
+  hijosDeFamilia(cuentaId: string): Promise<PerfilFamiliaVista[]> {
+    return new ListarPerfilesUseCase(this.perfiles, this.vinculos, this.ahora).ejecutar(cuentaId);
+  }
+
   async estudiantesDeResponsable(cuentaId: string): Promise<PerfilEstudianteVista[]> {
     const ahora = this.ahora();
     return (await this.perfiles.listarPorResponsable(cuentaId)).map((p) => vistaPerfil(p, ahora));
@@ -139,7 +148,7 @@ export class IamFacade {
    * RF-065 (Módulo 9): un aviso por correo a una cuenta adulta activa, como el resumen semanal del
    * docente. La dirección no sale de IAM. Devuelve si se envió.
    */
-  async notificarCuenta(cuentaId: string, mensaje: { asunto: string; texto: string; enlace?: string }): Promise<boolean> {
+  async notificarCuenta(cuentaId: string, mensaje: { asunto: string; texto: string; enlace?: string; bajaUrl?: string }): Promise<boolean> {
     if (!this.correo) return false;
     const cuenta = await this.cuentas.buscarPorId(cuentaId);
     if (!cuenta || cuenta.estado.value !== 'ACTIVA') return false;

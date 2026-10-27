@@ -51,7 +51,7 @@ describe('Organización de la base (SRS §7)', () => {
     expect(porSchema('admin')).toEqual(['auditoria', 'outbox_evento']);
 
     const vistas = await prisma.$queryRaw<{ matviewname: string }[]>`SELECT matviewname FROM pg_matviews WHERE schemaname = 'reporting' ORDER BY 1`;
-    expect(vistas.map((v) => v.matviewname)).toEqual(['mv_actividad_estudiante', 'mv_actividad_semanal', 'mv_desempeno_aula', 'mv_maestria_estudiante']);
+    expect(vistas.map((v) => v.matviewname)).toEqual(['mv_actividad_estudiante', 'mv_actividad_semanal', 'mv_avance_estudiante', 'mv_desempeno_aula', 'mv_maestria_estudiante', 'mv_maestria_perfil']);
   });
 
   it('los identificadores son UUID y las fechas TIMESTAMPTZ', async () => {

@@ -37,6 +37,8 @@ export class SmtpCorreoService implements CorreoService {
       to: mensaje.para,
       subject: mensaje.asunto,
       text: textoPlano(mensaje),
+      // RF-070 / RFC 8058: el botón "Cancelar suscripción" del programa de correo da de baja con un POST.
+      headers: mensaje.bajaUrl ? { 'List-Unsubscribe': `<${mensaje.bajaUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } : undefined,
     });
   }
 }
