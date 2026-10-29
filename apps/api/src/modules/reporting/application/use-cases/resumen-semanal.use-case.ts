@@ -41,8 +41,8 @@ export class ResumenSemanalUseCase {
    * Devuelve a cuántas docentes se les envió. Si el correo de una falla, se libera su registro (se
    * reintenta en el próximo ciclo), se sigue con las demás y al final se informa el error.
    */
-  async enviarPendientes(): Promise<number> {
-    const semana = semanaPorResumir(this.ahora());
+  async enviarPendientes(ahora = this.ahora()): Promise<number> {
+    const semana = semanaPorResumir(ahora);
     if (!semana) return 0;
     const porDocente = new Map<string, string[]>();
     for (const a of await this.repo.aulasActivas()) porDocente.set(a.docenteId, [...(porDocente.get(a.docenteId) ?? []), a.aulaId]);

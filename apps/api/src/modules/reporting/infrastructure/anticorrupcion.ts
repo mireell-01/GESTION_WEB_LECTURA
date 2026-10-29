@@ -1,6 +1,7 @@
 import { EscuelaFacade } from '../../escuela/public-api';
 import { IamFacade } from '../../iam/public-api';
 import { esUuid } from '../../shared-kernel/public-api';
+import { HijosFamilia, NotificadorFamilia } from '../application/ports/familia.ports';
 import { AulasDocente, IdentidadEstudiantes, NotificadorDocente } from '../application/ports/reporting.ports';
 
 /** Anticorrupción hacia Escuela: el aula (activa o archivada) y su docente (RN-17). */
@@ -35,5 +36,30 @@ export class NotificadorDocenteIam implements NotificadorDocente {
 
   notificar(docenteId: string, mensaje: { asunto: string; texto: string; enlace?: string }) {
     return this.iam.notificarCuenta(docenteId, mensaje);
+  }
+}
+
+/** Anticorrupción hacia IAM: los hijos que la familia acompaña, propios o por invitación (RN-17). */
+export class HijosFamiliaIam implements HijosFamilia {
+  constructor(private readonly iam: IamFacade) {}
+
+  async hijosDe(cuentaId: string) {
+    return (await this.iam.hijosDeFamilia(cuentaId)).map((h) => ({
+      id: h.id,
+      alias: h.alias,
+      avatar: h.avatar,
+      rangoEdad: h.rangoEdad,
+      activo: h.activo,
+      relacion: h.relacion,
+    }));
+  }
+}
+
+/** Anticorrupción hacia IAM: el correo de la familia lo resuelve y envía IAM. */
+export class NotificadorFamiliaIam implements NotificadorFamilia {
+  constructor(private readonly iam: IamFacade) {}
+
+  notificar(cuentaId: string, mensaje: { asunto: string; texto: string; enlace?: string; bajaUrl?: string }) {
+    return this.iam.notificarCuenta(cuentaId, mensaje);
   }
 }

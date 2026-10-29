@@ -1,4 +1,5 @@
 import { esUuid, PrismaService } from '../../../shared-kernel/public-api';
+import { AvanceEstudiante, ReportesFamiliaRepository } from '../../application/ports/familia.ports';
 import { AulaActiva, DesempenoHabilidad, ReportesRepository } from '../../application/ports/reporting.ports';
 import { MaestriaMedida } from '../../domain/services/mapa-calor';
 import { ActividadSemanal } from '../../domain/services/resumen-semanal';
@@ -7,7 +8,7 @@ import { ActividadSemanal } from '../../domain/services/resumen-semanal';
  * Adaptador de lectura sobre el schema `reporting` (SAD §5): vistas materializadas refrescadas cada
  * 5 minutos y vistas simples de matrícula. Ninguna escritura en los schemas de otros módulos.
  */
-export class PrismaReportesRepository implements ReportesRepository {
+export class PrismaReportesRepository implements ReportesRepository, ReportesFamiliaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async refrescadoEn(): Promise<Date | null> {
@@ -93,5 +94,63 @@ export class PrismaReportesRepository implements ReportesRepository {
 
   async liberarResumen(docenteId: string, semana: string): Promise<void> {
     await this.prisma.resumenSemanalEnviado.deleteMany({ where: { docenteId, semana: new Date(`${semana}T00:00:00Z`) } });
+  }
+
+  // ── Módulo 10: acompañamiento familiar ────────────────────────────────────
+
+  async maestriasPerfil(estudianteId: string): Promise<MaestriaMedida[]> {
+    if (!esUuid(estudianteId)) return [];
+    const filas = await this.prisma.$queryRaw<{ habilidad: string; valor: number; items_contados: number }[]>`
+      SELECT habilidad, valor::float8 AS valor, items_contados
+      FROM "reporting"."mv_maestria_perfil" WHERE estudiante_id = ${estudianteId}::uuid`;
+    return filas.map((f) => ({ habilidad: f.habilidad, valor: f.valor, items: f.items_contados }));
+  }
+
+  async avance(estudianteId: string): Promise<AvanceEstudiante | null> {
+    if (!esUuid(estudianteId)) return null;
+    const [f] = await this.prisma.$queryRaw<
+      { lecturas_terminadas: number; mundos_completados: number; mundo_actual: number | null; mundo_actual_nombre: string | null; puntos: number; insignias: number }[]
+    >`
+      SELECT lecturas_terminadas, mundos_completados, mundo_actual, mundo_actual_nombre, puntos, insignias
+      FROM "reporting"."mv_avance_estudiante" WHERE estudiante_id = ${estudianteId}::uuid`;
+    if (!f) return null;
+    return {
+      lecturasTerminadas: f.lecturas_terminadas,
+      mundosCompletados: f.mundos_completados,
+      mundoActual: f.mundo_actual !== null && f.mundo_actual_nombre !== null ? { numero: f.mundo_actual, nombre: f.mundo_actual_nombre } : null,
+      puntos: f.puntos,
+      insignias: f.insignias,
+    };
+  }
+
+  async hijosPorFamilia(): Promise<Map<string, string[]>> {
+    const filas = await this.prisma.$queryRaw<{ cuenta_id: string; estudiante_id: string }[]>`
+      SELECT cuenta_id, estudiante_id FROM "reporting"."v_hijos_familia" ORDER BY cuenta_id`;
+    const familias = new Map<string, string[]>();
+    for (const f of filas) familias.set(f.cuenta_id, [...(familias.get(f.cuenta_id) ?? []), f.estudiante_id]);
+    return familias;
+  }
+
+  async preferencias(cuentaIds: string[]): Promise<Map<string, boolean>> {
+    const ids = cuentaIds.filter(esUuid);
+    if (ids.length === 0) return new Map();
+    const filas = await this.prisma.preferenciaFamiliar.findMany({ where: { cuentaId: { in: ids } } });
+    return new Map(filas.map((f) => [f.cuentaId, f.resumenSemanal]));
+  }
+
+  async guardarPreferencia(cuentaId: string, resumenSemanal: boolean): Promise<void> {
+    await this.prisma.preferenciaFamiliar.upsert({ where: { cuentaId }, create: { cuentaId, resumenSemanal }, update: { resumenSemanal } });
+  }
+
+  async registrarResumenFamiliar(cuentaId: string, semana: string, hijos: number): Promise<boolean> {
+    const { count } = await this.prisma.resumenFamiliarEnviado.createMany({
+      data: [{ cuentaId, semana: new Date(`${semana}T00:00:00Z`), hijos }],
+      skipDuplicates: true,
+    });
+    return count === 1;
+  }
+
+  async liberarResumenFamiliar(cuentaId: string, semana: string): Promise<void> {
+    await this.prisma.resumenFamiliarEnviado.deleteMany({ where: { cuentaId, semana: new Date(`${semana}T00:00:00Z`) } });
   }
 }

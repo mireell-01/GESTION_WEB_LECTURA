@@ -24,10 +24,13 @@ export function TarjetaPerfil({
   perfil,
   onCambio,
   extra,
+  accion,
 }: {
   perfil: PerfilEstudiante;
   onCambio: () => void;
   extra?: ReactNode;
+  /** Acción principal junto al nombre (Módulo 10: "Ver su avance"). */
+  accion?: ReactNode;
 }) {
   const [modo, setModo] = useState<Modo>('ver');
   const [alias, setAlias] = useState(perfil.alias);
@@ -93,6 +96,7 @@ export function TarjetaPerfil({
             {perfil.bloqueadoHasta ? <Chip tipo="error">Bloqueado por PIN</Chip> : null}
           </div>
         </div>
+        {accion}
       </div>
 
       {mensaje ? <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta> : null}

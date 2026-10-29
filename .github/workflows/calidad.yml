@@ -127,6 +127,8 @@ jobs:
           escenario lectura-respuestas -e LECTURA_ID="$LECTURA_ID" tests/load/scenarios/lectura-respuestas.js
           AULA=$(node tests/load/sembrar-seguimiento.mjs)
           escenario seguimiento-panel -e DURACION=30s -e AULA_ID="${AULA% *}" -e EMAIL="${AULA#* }" tests/load/scenarios/seguimiento-panel.js
+          FAMILIA=$(node tests/load/sembrar-familia.mjs)
+          escenario familia-panel -e DURACION=30s -e EMAIL="$FAMILIA" tests/load/scenarios/familia-panel.js
           if [ -n "$fallidos" ]; then echo "::error title=k6::Umbrales no cumplidos en:$fallidos"; exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()

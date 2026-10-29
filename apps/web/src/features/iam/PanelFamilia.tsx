@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Avatar, Boton, Campo, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, Avatar, Boton, Campo, Cargando, Chip, clasesBoton, Icono, Tarjeta } from '@lectoaventura/ui';
+
+import { PreferenciaResumen } from '@/features/acompanamiento/PreferenciaResumen';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 import { guardarTokenDispositivo, leerTokenDispositivo } from '@/shared/auth/dispositivo';
@@ -176,6 +179,15 @@ function VincularConCodigo({ onVinculado }: { onVinculado: () => void }) {
   );
 }
 
+/** Módulo 10 (RF-068): el panel de avance de cada hijo. */
+function VerAvance({ perfil }: { perfil: PerfilEstudiante }) {
+  return (
+    <Link href={`/familia/hijos/${perfil.id}`} className={clasesBoton('primario', { tamano: 'pequeno' })} aria-label={`Ver el avance de ${perfil.alias}`}>
+      Ver su avance
+    </Link>
+  );
+}
+
 /** RN-17: un estudiante del aula que la familia acompaña; su perfil y PIN los gestiona su docente. */
 function TarjetaVinculado({ perfil }: { perfil: PerfilEstudiante }) {
   return (
@@ -189,6 +201,7 @@ function TarjetaVinculado({ perfil }: { perfil: PerfilEstudiante }) {
             <Chip tipo="exito">Desde su aula</Chip>
           </div>
         </div>
+        <VerAvance perfil={perfil} />
       </div>
       <p className="texto-suave" style={{ margin: 0 }}>
         Su docente gestiona su perfil y su PIN. Puede entrar en este dispositivo si lo vinculas.
@@ -261,7 +274,7 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
             ) : (
               <div className="rejilla">
                 {propios.map((p) => (
-                  <TarjetaPerfil key={p.id} perfil={p} onCambio={cargar} extra={renderExtraPerfil?.(p)} />
+                  <TarjetaPerfil key={p.id} perfil={p} onCambio={cargar} extra={renderExtraPerfil?.(p)} accion={<VerAvance perfil={p} />} />
                 ))}
               </div>
             )}
@@ -280,6 +293,7 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
       ) : null}
       <VincularConCodigo onVinculado={cargar} />
       {propios.length + vinculados.length > 0 ? <VincularDispositivo /> : null}
+      {propios.length + vinculados.length > 0 ? <PreferenciaResumen /> : null}
 
       <Tarjeta
         titulo={
