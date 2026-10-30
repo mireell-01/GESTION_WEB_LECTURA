@@ -51,6 +51,9 @@ export default async function limpieza(): Promise<void> {
     await prisma.eventoAplicado.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lectura: las sesiones de los niños de prueba (arrastran respuestas, pistas, defensas, decisiones y valoraciones).
     await prisma.sesionLectura.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    // Asistente de lectura: conversaciones (arrastran sus turnos) y quién lo activó.
+    await prisma.conversacion.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
+    await prisma.activacionAsistente.deleteMany({ where: { estudianteId: { in: idsPerfiles } } });
     // Lecturas escritas por cuentas de prueba (arrastran versiones, oraciones, actividades y recursos).
     await prisma.lectura.deleteMany({ where: { autorId: { in: idsCuentas } } });
     // Seguimiento docente y familiar: resúmenes semanales registrados y preferencias de las cuentas de prueba.

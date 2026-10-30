@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
+import { PREGUNTA_EN_CURSO, RESPUESTAS_ABIERTAS } from './application/asistencia-lectura';
 import { BUS_EVENTOS } from './application/bus-eventos';
 import { CATALOGO_ASIGNABLE } from './application/catalogo-asignable';
 import { CONTEXTO_AULA } from './application/contexto-aula';
@@ -24,6 +25,8 @@ import {
   RegistroMaestriaDelegado,
   RegistroMisionEnCursoDelegado,
   RegistroMundosCompletadosDelegado,
+  RegistroPreguntaEnCursoDelegado,
+  RegistroRespuestasAbiertasDelegado,
 } from './infrastructure/registros-integracion';
 
 /**
@@ -52,6 +55,9 @@ import {
     { provide: MUNDOS_COMPLETADOS, useClass: RegistroMundosCompletadosDelegado },
     // Módulo 9: el historial de lecturas del estudiante para el detalle docente (RF-064).
     { provide: HISTORIAL_LECTURA, useClass: RegistroHistorialLecturaDelegado },
+    // Módulo 11: la pregunta en curso y las respuestas abiertas para el asistente de lectura.
+    { provide: PREGUNTA_EN_CURSO, useClass: RegistroPreguntaEnCursoDelegado },
+    { provide: RESPUESTAS_ABIERTAS, useClass: RegistroRespuestasAbiertasDelegado },
   ],
   exports: [
     PrismaService,
@@ -68,6 +74,8 @@ import {
     LECTURAS_REALIZADAS,
     MUNDOS_COMPLETADOS,
     HISTORIAL_LECTURA,
+    PREGUNTA_EN_CURSO,
+    RESPUESTAS_ABIERTAS,
   ],
 })
 export class SharedKernelModule {}

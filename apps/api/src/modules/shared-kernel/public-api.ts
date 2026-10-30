@@ -4,6 +4,8 @@ export * from './domain/events/domain-event';
 export * from './domain/errors/error-de-negocio';
 export * from './domain/ids';
 export * from './domain/value-objects';
+export * from './domain/services/filtro-palabras';
+export * from './application/asistencia-lectura';
 export * from './application/bus-eventos';
 export * from './application/catalogo-asignable';
 export * from './application/contexto-aula';

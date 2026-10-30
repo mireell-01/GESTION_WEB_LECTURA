@@ -954,9 +954,22 @@ model Conversacion {
 
   turnos Turno[]
 
+  @@unique([sesionLecturaId])
   @@index([estudianteId])
   @@index([expiraEn])
   @@map("conversacion")
+  @@schema("asistente")
+}
+
+/// RF-072: el asistente activado para un estudiante por su familia o su docente (último cambio).
+model ActivacionAsistente {
+  estudianteId String   @id @map("estudiante_id") @db.Uuid
+  activo       Boolean  @default(false)
+  cambiadoPor  String   @map("cambiado_por") @db.Uuid
+  rol          String
+  cambiadoEn   DateTime @default(now()) @map("cambiado_en") @db.Timestamptz(3)
+
+  @@map("activacion")
   @@schema("asistente")
 }
 

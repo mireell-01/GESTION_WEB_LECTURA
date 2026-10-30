@@ -112,6 +112,29 @@ export async function apiArchivo(ruta: string, opciones: Opciones = {}): Promise
   return { archivo: await res.blob(), nombre };
 }
 
+/**
+ * Lee una respuesta en flujo SSE (Módulo 11): llama a `alEvento` con cada evento `data: {...}` en
+ * cuanto llega. Los errores (400, 403, 404…) llegan antes del flujo, como en `api`.
+ */
+export async function apiFlujo<E>(ruta: string, opciones: Opciones, alEvento: (evento: E) => void): Promise<void> {
+  const res = await solicitar(ruta, opciones);
+  if (!res.body) return;
+  const lector = res.body.getReader();
+  const decodificador = new TextDecoder();
+  let pendiente = '';
+  for (;;) {
+    const { value, done } = await lector.read();
+    if (done) break;
+    pendiente += decodificador.decode(value, { stream: true });
+    const eventos = pendiente.split('\n\n');
+    pendiente = eventos.pop() ?? '';
+    for (const e of eventos) {
+      const datos = e.split('\n').find((linea) => linea.startsWith('data: '));
+      if (datos) alEvento(JSON.parse(datos.slice(6)) as E);
+    }
+  }
+}
+
 /** Mensaje legible de cualquier error capturado. */
 export function mensajeDeError(error: unknown): string {
   if (error instanceof ErrorApi) return error.message;

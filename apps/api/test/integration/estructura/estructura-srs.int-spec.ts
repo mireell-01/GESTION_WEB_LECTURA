@@ -37,8 +37,8 @@ describe('Organización de la base (SRS §7)', () => {
       WHERE table_type = 'BASE TABLE' AND table_schema = ANY(${SCHEMAS})`;
     const porSchema = (s: string) => filas.filter((f) => f.esquema === s).map((f) => f.tabla).sort();
 
-    // 52 del SRS + 4 del Módulo 8 (idempotencia, avance de insignias y recompensas).
-    expect(filas).toHaveLength(56);
+    // 52 del SRS + 4 del Módulo 8 (idempotencia, avance de insignias y recompensas) + 1 del Módulo 11 (activación del asistente).
+    expect(filas).toHaveLength(57);
     expect(porSchema('iam')).toEqual(expect.arrayContaining(['cuenta_adulta', 'perfil_estudiante', 'consentimiento', 'vinculo_responsable', 'factor_mfa', 'refresh_token']));
     expect(porSchema('escuela')).toEqual(['asignacion', 'asignacion_destinatario', 'aula', 'institucion', 'invitacion_familiar', 'matricula']);
     expect(porSchema('contenido')).toEqual(['actividad', 'clave_evidencia', 'item', 'lectura', 'nodo_historia', 'oracion', 'pista', 'recurso', 'version_lectura']);
@@ -47,7 +47,7 @@ describe('Organización de la base (SRS §7)', () => {
     expect(porSchema('lectura')).toEqual(['decision_ruta', 'justificacion', 'respuesta', 'sesion_lectura', 'uso_pista', 'valoracion_rubrica']);
     expect(porSchema('progreso')).toEqual(['historial_maestria', 'maestria_habilidad', 'recomendacion']);
     expect(porSchema('gamificacion')).toEqual(['asiento_puntos', 'avance_insignia', 'canje_recompensa', 'evento_aplicado', 'insignia', 'insignia_otorgada', 'parametro_gamificacion', 'racha', 'recompensa', 'reto_diario']);
-    expect(porSchema('asistente')).toEqual(['conversacion', 'turno']);
+    expect(porSchema('asistente')).toEqual(['activacion', 'conversacion', 'turno']);
     expect(porSchema('admin')).toEqual(['auditoria', 'outbox_evento']);
 
     const vistas = await prisma.$queryRaw<{ matviewname: string }[]>`SELECT matviewname FROM pg_matviews WHERE schemaname = 'reporting' ORDER BY 1`;
@@ -121,6 +121,13 @@ describe('Reglas del negocio en la base', () => {
         data: { estudianteId: uuidV7(), sesionLecturaId: uuidV7(), intercambios: 11, expiraEn: new Date(Date.now() + 86_400_000) },
       }),
     ).rejects.toThrow(/ck_conversacion_intercambios/);
+    // Módulo 11: una conversación por sesión, turnos de 1 a 20 con texto, y solo la familia o la docente activan.
+    const sesionLecturaId = uuidV7();
+    const conversacion = await prisma.conversacion.create({ data: { estudianteId: uuidV7(), sesionLecturaId, expiraEn: new Date(Date.now() + 86_400_000) } });
+    await expect(prisma.conversacion.create({ data: { estudianteId: uuidV7(), sesionLecturaId, expiraEn: new Date() } })).rejects.toThrow(/sesion_lectura_id|Unique/);
+    await expect(prisma.turno.create({ data: { conversacionId: conversacion.id, orden: 21, emisor: 'ESTUDIANTE', texto: 'hola' } })).rejects.toThrow(/ck_turno_orden/);
+    await expect(prisma.turno.create({ data: { conversacionId: conversacion.id, orden: 1, emisor: 'ESTUDIANTE', texto: '' } })).rejects.toThrow(/ck_turno_texto/);
+    await expect(prisma.activacionAsistente.create({ data: { estudianteId: uuidV7(), activo: true, cambiadoPor: uuidV7(), rol: 'ESTUDIANTE' } })).rejects.toThrow(/ck_activacion_rol/);
     // Solo un diagnóstico inicial por estudiante.
     const estudianteId = uuidV7();
     await prisma.diagnostico.create({ data: { estudianteId, rangoEdad: 'R2', totalItems: 15 } });

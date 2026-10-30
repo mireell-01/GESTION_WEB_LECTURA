@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AsistenteController } from './interface/http/asistente.controller';
+
+import { EscuelaModule } from '../escuela/public-api';
+import { IamModule } from '../iam/public-api';
 import { asistenteProviders } from './infrastructure/asistente.providers';
+import { ActivacionAsistenteController, AsistenteLecturaController, BorradorRetroalimentacionController } from './interface/http/asistente.controller';
 
 /**
- * Declaración NestJS del módulo asistente.
+ * Módulo Asistente — el asistente de lectura (Módulo 11, RF-072 a RF-075, ADR-008): orienta al niño con
+ * preguntas socráticas sin dar la respuesta, filtra todo lo que dice, se activa por estudiante y
+ * propone borradores de retroalimentación a la docente. Usa Lectura por el shared-kernel e IAM y
+ * Escuela por su fachada.
  */
 @Module({
-  controllers: [AsistenteController],
+  imports: [IamModule, EscuelaModule],
+  controllers: [AsistenteLecturaController, ActivacionAsistenteController, BorradorRetroalimentacionController],
   providers: [...asistenteProviders],
-  exports: [],
 })
 export class AsistenteModule {}

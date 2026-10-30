@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 import { Boton, Icono } from '@lectoaventura/ui';
 
@@ -40,6 +40,7 @@ export function PreguntaLectura({
   evidencia,
   onResponder,
   onPedirPista,
+  ayuda,
 }: {
   pregunta: Pregunta;
   enviando: boolean;
@@ -48,6 +49,8 @@ export function PreguntaLectura({
   evidencia: string[];
   onResponder: (entrada: EntradaRespuesta) => void;
   onPedirPista: () => void;
+  /** Módulo 11: el asistente de lectura, si un adulto lo activó (RF-072). */
+  ayuda?: ReactNode;
 }) {
   const [marcadas, setMarcadas] = useState<number[]>([]);
   const titulo = useRef<HTMLHeadingElement>(null);
@@ -172,6 +175,7 @@ export function PreguntaLectura({
           </Boton>
         </div>
       ) : null}
+      {ayuda}
     </section>
   );
 }

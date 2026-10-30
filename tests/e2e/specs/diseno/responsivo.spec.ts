@@ -1,8 +1,8 @@
-import { expect, Page, test as base } from '@playwright/test';
+import { expect, Locator, Page, test as base } from '@playwright/test';
 
 import { misionConLecturas, tituloMision } from '../../support/aventura';
 import { cuentaBackoffice, filtrarPorTema, ingresarBackoffice, lecturaPublicada, sesionBackoffice, TEXTO_E2E } from '../../support/contenido';
-import { retoTerminado } from '../../support/diagnostico';
+import { retoTerminado, sesionDelNino } from '../../support/diagnostico';
 import { abrirAula, docenteConAula, PIN_PRUEBA, sembrarCatalogoE2E, sesionApi, tabletDelAulaActivada } from '../../support/escuela';
 import { cuentaVerificada, escribirPin, esperarAreaEstudiante, ingresarComoAdulto, ipSimulada, salirDelPanel } from '../../support/iam';
 import { ENUNCIADOS, lecturaKilla, leerPorApi } from '../../support/lectura';
@@ -265,6 +265,56 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     await abrirAula(page, aula);
     await expect(page.getByRole('region', { name: 'Respuestas por revisar' }).getByRole('listitem', { name: 'Respuesta de Mateo' })).toBeVisible();
     await revisarPantalla(page);
+  });
+
+  test('el asistente de lectura se adapta: el chat del niño y la tarjeta de la docente (RF-072 a RF-075)', async ({ page, request }, info) => {
+    test.setTimeout(150_000);
+    const killa = await lecturaKilla(request);
+    const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }, { alias: 'Ana', avatar: 'buho' }]);
+    await leerPorApi(request, aula, 'Mateo', killa.lecturaId, { nino: await sesionDelNino(request, aula, 'Mateo'), terminar: true });
+
+    // La docente lo activa para su aula y pide un borrador: se lee completo, sin desplazarlo.
+    await abrirAula(page, aula);
+    const tarjeta = page.getByRole('region', { name: 'Asistente de lectura' });
+    await tarjeta.getByRole('button', { name: 'Activar para todos', exact: true }).click();
+    await tarjeta.getByText('Elegir estudiantes').click();
+    const respuesta = page.getByRole('listitem', { name: 'Respuesta de Mateo' });
+    await respuesta.getByRole('button', { name: 'Sugerir un comentario' }).click();
+    const comentario = respuesta.getByLabel('Comentario para el estudiante (opcional)');
+    await expect(comentario).toHaveValue(/^Me gusta que/);
+    expect(await comentario.evaluate((e) => e.scrollHeight - e.clientHeight), 'el borrador se lee completo').toBeLessThanOrEqual(1);
+    await revisarPantalla(page);
+    await salirDelPanel(page);
+
+    // Ana conversa con su guía durante la lectura.
+    await tabletDelAulaActivada(page, request, aula);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Ana' }).click();
+    await escribirPin(page, PIN_PRUEBA);
+    await esperarAreaEstudiante(page, 'Ana');
+    await page.goto(`/estudiante/lecturas/${killa.lecturaId}`);
+    await page.getByLabel('Lo que creo que pasará').fill('Creo que la llama se enfermará');
+    await page.getByRole('button', { name: 'Empezar a leer' }).click();
+    await page.getByRole('button', { name: '¿Necesitas ayuda para pensar?' }).click();
+    await page.getByRole('button', { name: 'No entiendo la pregunta' }).click();
+    await expect(page.getByRole('list', { name: 'Conversación con tu guía' }).getByRole('listitem')).toHaveCount(2);
+    await revisarPantalla(page);
+
+    if (info.project.name !== 'escritorio') return;
+    const centro = async (l: Locator) => {
+      const b = (await l.boundingBox())!;
+      return Math.round(b.y + b.height / 2);
+    };
+    for (const [ancho, alto] of [[1280, 720], [1366, 768], [1536, 864], [1920, 1080], [1365, 600]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await revisarPantalla(page);
+      // En laptop las ayudas rápidas no se apilan (2 filas como mucho) y «Preguntar» va junto a la caja.
+      const atajos = await page.getByRole('group', { name: 'Ayudas rápidas' }).getByRole('button').all();
+      const filas = new Set(await Promise.all(atajos.map(async (b) => Math.round((await b.boundingBox())!.y))));
+      expect(filas.size, `ayudas rápidas en ${ancho}×${alto}`).toBeLessThanOrEqual(2);
+      const fila = Math.abs((await centro(page.getByLabel('Escribe tu pregunta'))) - (await centro(page.getByRole('button', { name: 'Preguntar' }))));
+      expect(fila, `«Preguntar» junto a la caja en ${ancho}×${alto}`).toBeLessThanOrEqual(4);
+    }
   });
 
   test('el área del estudiante se adapta a laptops de distintos tamaños: centrada, sin desbordes y con la barra completa', async ({ page, request }, info) => {
