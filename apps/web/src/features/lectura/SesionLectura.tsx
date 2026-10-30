@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
+import { AsistenteLectura } from '@/features/asistente/AsistenteLectura';
 import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
 import { LogrosDeLectura } from '@/features/gamificacion/LogrosDeLectura';
 import { api, mensajeDeError } from '@/shared/api/client';
@@ -235,7 +236,7 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
               </div>
             </section>
           ) : pregunta ? (
-            <PreguntaLectura key={pregunta.itemId} pregunta={pregunta} enviando={enviando} conVoz={sesion.lectura.leerEnVozAlta} evidencia={evidencia} onResponder={responder} onPedirPista={pedirPista} />
+            <PreguntaLectura key={pregunta.itemId} pregunta={pregunta} enviando={enviando} conVoz={sesion.lectura.leerEnVozAlta} evidencia={evidencia} onResponder={responder} onPedirPista={pedirPista} ayuda={<AsistenteLectura sesionId={sesion.id} />} />
           ) : null}
 
           {fase === 'CIERRE' && sesion.cierre && !explicacion ? (

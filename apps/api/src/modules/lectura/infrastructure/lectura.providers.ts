@@ -9,13 +9,18 @@ import {
   BusEventos,
   HISTORIAL_LECTURA,
   LECTURAS_REALIZADAS,
+  PREGUNTA_EN_CURSO,
   PrismaService,
   RegistroAvanceLecturas,
   RegistroHistorialLectura,
   RegistroLecturasRealizadas,
+  RegistroPreguntaEnCurso,
+  RegistroRespuestasAbiertas,
+  RESPUESTAS_ABIERTAS,
   uuidV7,
 } from '../../shared-kernel/public-api';
 import { CASOS_USO_LECTURA, CasosUsoLectura } from '../application/casos-uso-lectura';
+import { AsistenciaLecturaUseCase } from '../application/use-cases/asistencia.use-case';
 import { HistorialUseCase } from '../application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../application/use-cases/sesiones.use-case';
@@ -35,6 +40,7 @@ export function crearCasosUsoLectura(prisma: PrismaService, bus: BusEventos, iam
     sesiones: new SesionesUseCase(repo, contenidos, identidad, aulas, bus, generarId, ahora),
     revision: new RevisionUseCase(repo, contenidos, identidad, aulas, bus, ahora),
     historial: new HistorialUseCase(repo, contenidos),
+    asistencia: new AsistenciaLecturaUseCase(repo, contenidos, aulas),
   };
 }
 
@@ -42,6 +48,7 @@ export function crearCasosUsoLectura(prisma: PrismaService, bus: BusEventos, iam
  * RF-032: Aventura consulta por el shared-kernel qué lecturas empezó o terminó el niño.
  * RF-059 (Módulo 8): el Pasaporte del Lector muestra las lecturas que terminó.
  * RF-064 (Módulo 9): el detalle docente muestra sus últimas sesiones con evidencias y pistas.
+ * RF-072 a RF-075 (Módulo 11): la pregunta en curso para el asistente y las respuestas abiertas.
  */
 @Injectable()
 export class AvanceLecturasRegistro implements OnModuleInit {
@@ -52,6 +59,8 @@ export class AvanceLecturasRegistro implements OnModuleInit {
     @Inject(AVANCE_LECTURAS) private readonly registro: RegistroAvanceLecturas,
     @Inject(LECTURAS_REALIZADAS) private readonly realizadas: RegistroLecturasRealizadas,
     @Inject(HISTORIAL_LECTURA) private readonly historial: RegistroHistorialLectura,
+    @Inject(PREGUNTA_EN_CURSO) private readonly pregunta: RegistroPreguntaEnCurso,
+    @Inject(RESPUESTAS_ABIERTAS) private readonly abiertas: RegistroRespuestasAbiertas,
     @Inject(CASOS_USO_LECTURA) private readonly casos: CasosUsoLectura,
   ) {
     this.repo = new PrismaSesionRepository(prisma);
@@ -64,6 +73,8 @@ export class AvanceLecturasRegistro implements OnModuleInit {
     });
     this.realizadas.registrar({ realizadasDe: (estudianteId) => this.repo.realizadasDe(estudianteId) });
     this.historial.registrar({ historialDe: (estudianteId, limite) => this.casos.historial.historialDe(estudianteId, limite) });
+    this.pregunta.registrar({ preguntaDe: (estudianteId, sesionId) => this.casos.asistencia.preguntaDe(estudianteId, sesionId) });
+    this.abiertas.registrar({ respuestaParaDocente: (docenteId, respuestaId) => this.casos.asistencia.respuestaParaDocente(docenteId, respuestaId) });
   }
 }
 

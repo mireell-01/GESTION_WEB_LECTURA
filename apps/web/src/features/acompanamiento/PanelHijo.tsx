@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { Alerta, AVATARES, BarraProgreso, Cargando, Chip, Icono } from '@lectoaventura/ui';
 
+import { ActivacionFamilia } from '@/features/asistente/ActivacionFamilia';
 import { NOMBRE_RANGO } from '@/features/iam/tipos';
 import {
   fechaCorta,
@@ -241,6 +242,8 @@ export function PanelHijo({ estudianteId }: { estudianteId: string }) {
           ))}
         </ul>
       </section>
+
+      <ActivacionFamilia estudianteId={e.id} alias={e.alias} responsable={e.relacion === 'RESPONSABLE'} />
     </div>
   );
 }

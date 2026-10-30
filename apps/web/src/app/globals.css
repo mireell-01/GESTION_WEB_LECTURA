@@ -4092,3 +4092,143 @@ p {
   flex: none;
   margin-top: 1px;
 }
+
+/* ── Módulo 11 · Asistente de lectura (RF-072 a RF-075) ─────────────────────────────────── */
+
+/* Dentro de la pregunta: se abre con un toque y no tapa nada de la lectura. */
+.asistente {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--la-color-fondo-alterno);
+}
+
+.asistente__abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: var(--la-target-min);
+  padding: 4px 16px 4px 6px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 999px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+  font: 800 1rem / 1.2 var(--la-font-titulo);
+  text-align: left;
+  cursor: pointer;
+}
+
+.asistente__abrir:focus-visible {
+  outline: 3px solid var(--la-color-secundario);
+  outline-offset: 2px;
+}
+
+.asistente__panel {
+  display: grid;
+  gap: 10px;
+}
+
+.asistente__bienvenida {
+  margin: 0;
+  color: var(--la-color-texto-suave);
+}
+
+.asistente__chat {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.asistente__burbuja {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* El niño a la derecha; su guía, a la izquierda. */
+.asistente__burbuja--nino {
+  justify-self: end;
+  border-bottom-right-radius: 6px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+  font-weight: 700;
+}
+
+.asistente__burbuja--guia {
+  justify-self: start;
+  border: 2px solid var(--la-color-secundario-suave);
+  border-bottom-left-radius: 6px;
+  background: var(--la-color-superficie);
+}
+
+.asistente__atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.asistente__atajo {
+  min-height: var(--la-target-min);
+  padding: 6px 14px;
+  border: 2px solid var(--la-color-fondo-alterno);
+  border-radius: 999px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.asistente__atajo:hover:not(:disabled) {
+  border-color: var(--la-color-primario-borde);
+  background: var(--la-color-primario-suave);
+}
+
+.asistente__atajo:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.asistente__escribir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asistente__escribir .la-entrada {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.asistente__quedan {
+  margin: 0;
+  font-size: var(--la-texto-sm);
+}
+
+/* La docente: el detalle por estudiante, en columnas cuando hay espacio. */
+.asistente-aula__lista summary {
+  min-height: var(--la-target-min);
+  padding: 10px 0;
+  color: var(--la-color-primario-fuerte);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.asistente-aula__estudiantes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

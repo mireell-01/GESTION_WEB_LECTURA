@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { Alerta, Boton, Campo, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
+import { Alerta, AreaTexto, Boton, Cargando, Chip, Icono, Tarjeta } from '@lectoaventura/ui';
 
+import type { BorradorRetroalimentacion } from '@/features/asistente/tipos';
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { HABILIDAD, RespuestaAbierta, RUBRICA } from './tipos';
@@ -16,6 +17,31 @@ function FilaRespuesta({ r, onValorada }: { r: RespuestaAbierta; onValorada: (r:
   const [comentario, setComentario] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sugiriendo, setSugiriendo] = useState(false);
+  const [sugerido, setSugerido] = useState(false);
+  const idComentario = `comentario-${r.respuestaId}`;
+
+  // El comentario crece con su texto: un borrador se lee completo, también en el celular.
+  useEffect(() => {
+    const area = document.getElementById(idComentario);
+    if (!area) return;
+    area.style.height = 'auto';
+    area.style.height = `${area.scrollHeight + area.offsetHeight - area.clientHeight}px`;
+  }, [comentario, idComentario]);
+
+  /** RF-075 (Módulo 11): un borrador del asistente para editar; nunca se guarda solo. */
+  const sugerir = async () => {
+    setSugiriendo(true);
+    setError(null);
+    try {
+      setComentario((await api<BorradorRetroalimentacion>(`/respuestas/${r.respuestaId}/borrador-retroalimentacion`)).borrador);
+      setSugerido(true);
+    } catch (err) {
+      setError(mensajeDeError(err));
+    } finally {
+      setSugiriendo(false);
+    }
+  };
 
   const guardar = async () => {
     if (!nivel) return;
@@ -72,7 +98,21 @@ function FilaRespuesta({ r, onValorada }: { r: RespuestaAbierta; onValorada: (r:
               </label>
             ))}
           </fieldset>
-          <Campo etiqueta="Comentario para el estudiante (opcional)" value={comentario} maxLength={300} onChange={(e) => setComentario(e.target.value)} />
+          <AreaTexto
+            id={idComentario}
+            etiqueta="Comentario para el estudiante (opcional)"
+            value={comentario}
+            rows={2}
+            maxLength={300}
+            onChange={(e) => setComentario(e.target.value)}
+          />
+          <div className="fila">
+            <Boton variante="fantasma" tamano="pequeno" cargando={sugiriendo} onClick={sugerir}>
+              <Icono nombre="brujula" tamano={18} />
+              Sugerir un comentario
+            </Boton>
+            {sugerido ? <span className="texto-suave">Es un borrador: revísalo y cámbialo. El estudiante solo verá lo que guardes.</span> : null}
+          </div>
           {error ? <Alerta tipo="error">{error}</Alerta> : null}
           <div>
             <Boton variante="secundario" disabled={!nivel} cargando={guardando} onClick={guardar}>

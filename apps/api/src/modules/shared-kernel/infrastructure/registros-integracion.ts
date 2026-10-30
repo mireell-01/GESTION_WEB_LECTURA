@@ -1,5 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
+import {
+  PreguntaEnCurso,
+  RegistroPreguntaEnCurso,
+  RegistroRespuestasAbiertas,
+  ResolutorPreguntaEnCurso,
+  ResolutorRespuestasAbiertas,
+  RespuestaAbiertaParaDocente,
+} from '../application/asistencia-lectura';
 import { FichaLecturaPublicada, FuenteFichasLectura, RegistroFichasLectura } from '../application/fichas-lectura';
 import { RegistroHistorialLectura, ResolutorHistorialLectura, SesionDeHistorial } from '../application/historial-lectura';
 import {
@@ -139,5 +147,33 @@ export class RegistroMundosCompletadosDelegado implements RegistroMundosCompleta
 
   async completadosDe(estudianteId: string): Promise<MundoCompletado[]> {
     return this.resolutor ? this.resolutor.completadosDe(estudianteId) : [];
+  }
+}
+
+/** Delegado de la pregunta en curso (Módulo 11): sin Lectura, no hay pregunta para el asistente. */
+@Injectable()
+export class RegistroPreguntaEnCursoDelegado implements RegistroPreguntaEnCurso {
+  private resolutor: ResolutorPreguntaEnCurso | null = null;
+
+  registrar(resolutor: ResolutorPreguntaEnCurso): void {
+    this.resolutor = resolutor;
+  }
+
+  async preguntaDe(estudianteId: string, sesionId: string): Promise<PreguntaEnCurso | null> {
+    return this.resolutor ? this.resolutor.preguntaDe(estudianteId, sesionId) : null;
+  }
+}
+
+/** Delegado de las respuestas abiertas (Módulo 11, RF-075): sin Lectura, no hay respuestas. */
+@Injectable()
+export class RegistroRespuestasAbiertasDelegado implements RegistroRespuestasAbiertas {
+  private resolutor: ResolutorRespuestasAbiertas | null = null;
+
+  registrar(resolutor: ResolutorRespuestasAbiertas): void {
+    this.resolutor = resolutor;
+  }
+
+  async respuestaParaDocente(docenteId: string, respuestaId: string): Promise<RespuestaAbiertaParaDocente | null> {
+    return this.resolutor ? this.resolutor.respuestaParaDocente(docenteId, respuestaId) : null;
   }
 }

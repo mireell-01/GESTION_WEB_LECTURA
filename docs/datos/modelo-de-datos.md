@@ -15,11 +15,11 @@ La base PostgreSQL `lectoaventura` está organizada como pide el SRS: **un schem
 | `lectura` | 6 · Lectura interactiva | 6 | ✅ En uso: sesiones de lectura con sus respuestas, pistas, defensas, decisiones de las historias ramificadas y valoraciones docentes. Migración [`20261023000000_lectura_sesiones`](../../apps/api/prisma/migrations/20261023000000_lectura_sesiones/migration.sql) |
 | `progreso` | 7 · Perfil lector y recomendaciones | 3 | ✅ En uso: maestría por habilidad (5 por estudiante), su historial y las recomendaciones vigentes. Migración [`20261024000000_progreso_perfil_lector`](../../apps/api/prisma/migrations/20261024000000_progreso_perfil_lector/migration.sql) |
 | `gamificacion` | 8 · Gamificación | 10 | ✅ En uso: libro de puntos, insignias (9 en el catálogo) con su avance, racha, reto del día, recompensas (10) y canjes; los parámetros versionados. Migración [`20261025000000_gamificacion_logros`](../../apps/api/prisma/migrations/20261025000000_gamificacion_logros/migration.sql), que agrega 4 tablas al SRS: `evento_aplicado`, `avance_insignia`, `recompensa` y `canje_recompensa` |
-| `asistente` | 11 · Asistente inteligente | 2 | Lista |
+| `asistente` | 11 · Asistente de lectura | 3 | ✅ En uso: las conversaciones (una por sesión de lectura, hasta 10 intercambios, se borran a los 30 días), sus turnos (sin datos personales) y quién activó el asistente para cada estudiante. Migración [`20261029000000_asistente_lectura`](../../apps/api/prisma/migrations/20261029000000_asistente_lectura/migration.sql), que agrega 1 tabla al SRS: `activacion` |
 | `admin` | 12 · Administración | 2 | ✅ En uso: `outbox_evento` y `auditoria` (vinculación familiar, invitaciones y tarjetas; envío a revisión, publicación, rechazo, versión nueva y archivo de lecturas; misiones creadas, editadas y reordenadas; el resto de RF-077 llega con el Módulo 12) |
 | `reporting` | 9 y 10 · Seguimiento docente y familiar | 4 tablas, 6 vistas materializadas y 3 vistas | ✅ En uso. Módulo 9: mapa de calor, alertas, refuerzos y reportes del aula; el último refresco de las vistas y los resúmenes semanales a docentes. Migración [`20261026000000_reporting_seguimiento_docente`](../../apps/api/prisma/migrations/20261026000000_reporting_seguimiento_docente/migration.sql). Módulo 10: el panel de cada hijo, las preferencias de la familia y sus resúmenes semanales. Migración [`20261027000000_reporting_acompanamiento_familiar`](../../apps/api/prisma/migrations/20261027000000_reporting_acompanamiento_familiar/migration.sql), que agrega 2 tablas (`preferencia_familiar` y `resumen_familiar_enviado`), 2 vistas materializadas y 1 vista |
 
-**Total: 60 tablas (52 del SRS + 4 del Módulo 8 + 2 del Módulo 9 + 2 del Módulo 10), 6 vistas materializadas y 3 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
+**Total: 61 tablas (52 del SRS + 4 del Módulo 8 + 2 del Módulo 9 + 2 del Módulo 10 + 1 del Módulo 11), 6 vistas materializadas y 3 vistas de reportes.** La tabla `public._prisma_migrations` guarda el historial de migraciones: no se toca.
 
 ## Cómo verlas en pgAdmin
 
@@ -89,10 +89,10 @@ erDiagram
   insignia ||--o{ insignia_otorgada : "irrevocable"
   insignia ||--o{ avance_insignia : "3 de 5"
   recompensa ||--o{ canje_recompensa : "una vez por niño"
-  conversacion ||--o{ turno : "máximo 10 intercambios"
+  conversacion ||--o{ turno : "máximo 10 intercambios (20 turnos)"
 ```
 
-`maestria_habilidad`, `historial_maestria`, `recomendacion`, `asiento_puntos`, `insignia_otorgada`, `avance_insignia`, `racha`, `reto_diario`, `evento_aplicado` y `canje_recompensa` se relacionan con el estudiante por su id (otro schema), sin llave foránea.
+`maestria_habilidad`, `historial_maestria`, `recomendacion`, `asiento_puntos`, `insignia_otorgada`, `avance_insignia`, `racha`, `reto_diario`, `evento_aplicado`, `canje_recompensa`, `conversacion` y `activacion` se relacionan con el estudiante por su id (otro schema), sin llave foránea; `conversacion` también con su sesión de lectura (una por sesión).
 
 ## Reglas del negocio dentro de la base
 
@@ -107,7 +107,7 @@ El dominio valida cada regla primero. La base es una segunda barrera: impide dat
   - límites de imágenes y audio (RF-023);
   - puntos nunca negativos (RN-10) y cada asiento con un motivo conocido (`ck_asiento_motivo`, RF-056);
   - recompensas de tipo personaje o accesorio con costo positivo (RF-062);
-  - máximo 10 intercambios del asistente (RF-074);
+  - máximo 10 intercambios del asistente (RF-074), turnos con texto de 1 a 1000 caracteres y orden de 1 a 20 (`ck_turno_texto`, `ck_turno_orden`), y solo la familia o la docente activan el asistente (`ck_activacion_rol`);
   - un solo diagnóstico inicial por estudiante.
 - **Registros que solo se agregan:** `admin.auditoria` (RF-077), `gamificacion.asiento_puntos` (libro de puntos), `gamificacion.insignia_otorgada` (RN-13) y `gamificacion.canje_recompensa` (RF-062). Un *trigger* rechaza cualquier modificación o borrado.
 - **Idempotencia:** un mismo evento no puede sumar puntos dos veces (`UNIQUE (evento_origen, motivo)`), y Gamificación aplica cada ítem, lectura, subida de nivel o mundo una sola vez (`evento_aplicado`, llave `(tipo, origen_id)`).
@@ -218,6 +218,11 @@ Se actualizan con `SELECT reporting.refrescar_vistas();` (las 6 vistas materiali
 | Resumen semanal de la familia (RF-070) | Domingos desde las 18:00 de Lima, una vez por familia y semana | Cada hijo activo: su semana, su avance y un consejo por habilidad a reforzar. El correo lo envía IAM (la dirección no sale de IAM). Si falla, se libera el registro y se reintenta en 5 minutos |
 | "Baja con un clic" (RF-070) | Enlace firmado en el correo + cabeceras `List-Unsubscribe` (RFC 8058) | El enlace lleva la cuenta y una firma HMAC-SHA256 con una clave derivada del secreto de la API, solo para esta preferencia. Abrirlo da de baja al instante (la página hace un POST) y permite deshacerlo; el botón "Cancelar suscripción" del programa de correo hace el mismo POST. También se cambia desde el panel |
 | Pruebas del envío del domingo | `POST /api/v1/dev/reportes/ejecutar` con un momento dado | Solo desarrollo y CI (como la bandeja de correos): responde 404 en producción o con un SMTP real |
+| Asistente activado (RF-072) | `asistente.activacion`, una fila por estudiante (sin fila: desactivado) | Lo activa la familia que creó el perfil (su consentimiento, ADR-008) o la docente para su aula (consentimiento institucional, RF-015); gana el último cambio y queda quién (`cambiado_por`, `rol`) y cuándo. La familia que acompaña por invitación no lo cambia (decide su docente) |
+| Conversación (RF-074) | Una por sesión de lectura (`UNIQUE (sesion_lectura_id)`) con `intercambios` ≤ 10 | Cada intercambio guarda 2 turnos (orden 1 a 20). Si llegan dos mensajes a la vez, el `UPDATE` condicional (`intercambios = previos`) deja pasar uno y el otro reintenta con la conversación al día: nunca pasa de 10. El undécimo recibe un cierre amable que no se guarda |
+| Lo que se guarda del niño (RN-16, ADR-008) | Su mensaje sin datos personales ni groserías (`filtrado = true` si se le quitó algo) | Correos, enlaces, números de 6 o más dígitos, el nombre tras "me llamo" o "mi mamá se llama", direcciones y colegio se reemplazan por `[correo]`, `[nombre]`… antes de guardar o usar el mensaje. Se borra a los 30 días (`expira_en`): un trabajo cada 6 horas elimina las conversaciones vencidas con sus turnos |
+| La clave de la pregunta (RF-073) | Nunca llega al motor del asistente | Lectura entrega por el shared-kernel (`PREGUNTA_EN_CURSO`) la pregunta en pantalla y, aparte, sus claves solo para el filtro de salida: una respuesta que revela la clave, señala una opción, pide datos personales o tiene groserías se reemplaza por una guía segura (`filtrado = true` en el turno del asistente) |
+| Borrador de retroalimentación (RF-075) | No se guarda | Se calcula al pedirlo con la respuesta abierta que entrega Lectura (`RESPUESTAS_ABIERTAS`, RN-17) y sale con `Cache-Control: no-store`; solo queda lo que la docente guarde en su valoración |
 
 ## Respaldo
 

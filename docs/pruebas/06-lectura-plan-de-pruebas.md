@@ -504,7 +504,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ordenMostrado } from '../../../../src/modules/lectura/domain/services/correccion';
 import { EVENTOS_INTEGRACION, NoEncontradoError } from '../../../../src/modules/shared-kernel/public-api';
-import { crearEntornoLectura, EntornoLectura, lecturaDeEjemplo } from '../dobles';
+import { crearEntornoLectura, EntornoLectura, lecturaDeEjemplo, ORACIONES } from '../dobles';
 
 /** Nivel 1 — Casos de uso de Lectura con dobles (RF-038 a RF-051, RN-17, RN-19). */
 const NINO = 'nino-9';
@@ -752,6 +752,59 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
       expect(await e.historial.historialDe('otro-nino', 20)).toEqual([]);
     });
   });
+
+  describe('Módulo 11: lo que Lectura entrega al asistente (RF-073, RF-075)', () => {
+    it('la pregunta en pantalla con el texto ya leído; la clave va aparte, solo para el filtro', async () => {
+      const s = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
+      expect(await e.asistencia.preguntaDe(NINO, s.id)).toMatchObject({ fase: 'PREDICCION', titulo: 'Killa y la llama', rangoEdad: 'R2', textoVisible: [], pregunta: null, claves: [] });
+
+      await e.sesiones.predecir(NINO, s.id, { texto: 'La llama se enfermará' });
+      await responder(s.id, 'it-antes', { indice: 0 });
+      await responder(s.id, 'it-sel', { indice: 0 }); // error: usa la P1
+      const p = (await e.asistencia.preguntaDe(NINO, s.id))!;
+      expect(p).toMatchObject({ sesionId: s.id, lecturaId: LECTURA, fase: 'LECTURA' });
+      expect(p.textoVisible).toEqual(['Killa vivía en Puno.', 'Cada mañana cuidaba a su llama Pancho.', 'Un día Pancho no quiso comer.']);
+      expect(p.pregunta).toEqual({ itemId: 'it-sel', enunciado: 'Pregunta it-sel', habilidad: 'INF', modalidad: 'SELECCION', esCerrada: true, multiple: false, duranteLaLectura: true, pistasRestantes: 2 });
+      expect(p.claves).toEqual(['Le dolía algo', 'Explicación de it-sel: vuelve al texto.']);
+      // El contexto que verá el motor no trae la clave ni las opciones.
+      expect(JSON.stringify({ ...p, claves: undefined })).not.toMatch(/Le dolía algo|indicesCorrectos|Explicación/);
+
+      await responder(s.id, 'it-sel', { indice: 1 });
+      expect((await e.asistencia.preguntaDe(NINO, s.id))!.claves).toEqual(['Un día Pancho no quiso comer.', 'Killa vio que tenía una espina en la pata.', 'Explicación de it-evid: vuelve al texto.']);
+      await responder(s.id, 'it-evid', { oraciones: ['o4'] });
+      const ord = (await e.asistencia.preguntaDe(NINO, s.id))!;
+      expect(ord).toMatchObject({ fase: 'DESPUES', pregunta: { modalidad: 'ORDENAMIENTO', duranteLaLectura: false } });
+      expect(ord.textoVisible).toHaveLength(6);
+      expect(ord.claves).toEqual(expect.arrayContaining(['No quiso comer', 'Vio la espina', 'Le quitó la espina']));
+    });
+
+    it('la sesión de otro niño o que no existe no da nada', async () => {
+      const s = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
+      expect(await e.asistencia.preguntaDe('otro-nino', s.id)).toBeNull();
+      expect(await e.asistencia.preguntaDe(NINO, 'no-existe')).toBeNull();
+    });
+
+    it('RN-17: la docente recibe la respuesta abierta de su aula con el texto; las cerradas y las ajenas no', async () => {
+      e.escuela.aulas.set('aula-1', { docenteId: DOCENTE, nombre: '4.° A', estudiantes: [NINO] });
+      await leerTodo();
+      const [abierta] = await e.revision.respuestas(DOCENTE, 'aula-1');
+      expect(await e.asistencia.respuestaParaDocente(DOCENTE, abierta!.respuestaId)).toEqual({
+        respuestaId: abierta!.respuestaId,
+        estudianteId: NINO,
+        rangoEdad: 'R2',
+        enunciado: 'Pregunta it-esc',
+        habilidad: 'ARG',
+        minPalabras: 3,
+        respuesta: 'Porque tenía una espina en la pata',
+        texto: ORACIONES.map((o) => o.texto),
+      });
+      expect(await e.asistencia.respuestaParaDocente('otra-docente', abierta!.respuestaId)).toBeNull();
+      expect(await e.asistencia.respuestaParaDocente(DOCENTE, 'no-existe')).toBeNull();
+      const [sesion] = await e.repo.ultimasDe(NINO, 1);
+      const cerrada = sesion!.respuestas.find((r) => r.itemId === 'it-sel')!;
+      expect(await e.asistencia.respuestaParaDocente(DOCENTE, cerrada.id)).toBeNull();
+    });
+  });
 });
 ```
 
@@ -766,6 +819,7 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
  */
 import type { RangoEdad } from '../../../src/modules/shared-kernel/public-api';
 import type { ContenidoLecturas, EscuelaLectura, IdentidadEstudiantes, SesionRepository } from '../../../src/modules/lectura/application/ports/lectura.ports';
+import { AsistenciaLecturaUseCase } from '../../../src/modules/lectura/application/use-cases/asistencia.use-case';
 import { HistorialUseCase } from '../../../src/modules/lectura/application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../../../src/modules/lectura/application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../../../src/modules/lectura/application/use-cases/sesiones.use-case';
@@ -973,6 +1027,7 @@ export function crearEntornoLectura() {
     sesiones: new SesionesUseCase(repo, contenido, identidad, escuela, bus, generarId, reloj.ahora),
     revision: new RevisionUseCase(repo, contenido, identidad, escuela, bus, reloj.ahora),
     historial: new HistorialUseCase(repo, contenido),
+    asistencia: new AsistenciaLecturaUseCase(repo, contenido, escuela),
   };
 }
 

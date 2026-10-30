@@ -6,6 +6,7 @@
  */
 import type { RangoEdad } from '../../../src/modules/shared-kernel/public-api';
 import type { ContenidoLecturas, EscuelaLectura, IdentidadEstudiantes, SesionRepository } from '../../../src/modules/lectura/application/ports/lectura.ports';
+import { AsistenciaLecturaUseCase } from '../../../src/modules/lectura/application/use-cases/asistencia.use-case';
 import { HistorialUseCase } from '../../../src/modules/lectura/application/use-cases/historial.use-case';
 import { RevisionUseCase } from '../../../src/modules/lectura/application/use-cases/revision.use-case';
 import { SesionesUseCase } from '../../../src/modules/lectura/application/use-cases/sesiones.use-case';
@@ -213,6 +214,7 @@ export function crearEntornoLectura() {
     sesiones: new SesionesUseCase(repo, contenido, identidad, escuela, bus, generarId, reloj.ahora),
     revision: new RevisionUseCase(repo, contenido, identidad, escuela, bus, reloj.ahora),
     historial: new HistorialUseCase(repo, contenido),
+    asistencia: new AsistenciaLecturaUseCase(repo, contenido, escuela),
   };
 }
 
