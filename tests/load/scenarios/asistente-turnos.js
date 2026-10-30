@@ -19,7 +19,7 @@ const CONTRASENA = 'Carga-Lectora-2026-k6';
 const NINOS = 30;
 const INTERCAMBIOS = 10;
 const POR_TABLET = 25;
-const AVATARES = ['zorro', 'leon', 'buho', 'koala', 'tortuga', 'pinguino'];
+const AVATARES = ['zorro', 'panda', 'leon', 'rana', 'pulpo', 'buho', 'tortuga', 'unicornio', 'abeja', 'delfin', 'tigre', 'koala'];
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const MENSAJES = ['No entiendo la pregunta', '¿dónde busco?', 'dime la respuesta', '¿es la B?', '¿qué significa espina?', '¿cómo empiezo?', 'hola', 'ayúdame'];
 

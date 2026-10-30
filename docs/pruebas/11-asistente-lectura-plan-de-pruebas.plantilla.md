@@ -21,7 +21,7 @@
 - **Corrida de confirmación:** computadora y tablet pasaron 110/110 (+ 2 omitidas). La sesión se cerró antes de llegar al celular.
 - **Celular:** la primera vez falló entero porque PostgreSQL no estaba encendido; un cierre brusco de la computadora había dejado un archivo de bloqueo viejo. Tras reiniciar la base, pasó 54/54 (+ 2 omitidas).
 
-**Defectos encontrados por las pruebas y corregidos:** 14 · **Brechas con el SRS cerradas:** 11 · **Decisiones documentadas donde el SRS no decía cómo:** 10 (ver §1.3).
+**Defectos encontrados por las pruebas y corregidos:** 15 · **Brechas con el SRS cerradas:** 11 · **Decisiones documentadas donde el SRS no decía cómo:** 10 (ver §1.3).
 
 ---
 
@@ -94,6 +94,7 @@ Otros módulos (solo por su public-api o el shared-kernel):
 | D-12 | Con cada mensaje, la página entera saltaba hasta el chat | Revisión visual | El chat se desplaza por dentro y la pregunta queda en su lugar |
 | D-13 | El comentario de la docente era de una línea y cortaba el borrador («¿Qué otra razón pod…») | Revisión visual y 3 · diseño en celular | El área crece con el texto: se lee completo en cualquier pantalla |
 | D-14 | En el avance de un niño acompañado por invitación, la nota «Lo activa su docente desde su aula» repetía el texto «Desde su aula» del Módulo 10 y lo volvía ambiguo | 3 · E2E completa (4 fallos del Módulo 10) | «Lo activa su docente para su aula»: el Módulo 10 queda igual |
+| D-15 | El escenario k6 nuevo usaba un avatar que no existe («pinguino»): en CI 5 de los 30 niños no se matricularon y el escenario se detuvo antes de enviar mensajes | CI · escenarios de carga | Los mismos 12 avatares válidos que usan los demás escenarios; el sondeo local repite exactamente su preparación |
 
 **Brechas con el SRS cerradas (todas con pruebas):**
 
