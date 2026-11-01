@@ -41,4 +41,8 @@ export class ServicioIdentidadIam implements ServicioIdentidad {
   async vincularFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void> {
     await this.iam.vincularFamiliar(params);
   }
+
+  cuentaActiva(cuentaId: string): Promise<boolean> {
+    return this.iam.cuentaActiva(cuentaId);
+  }
 }

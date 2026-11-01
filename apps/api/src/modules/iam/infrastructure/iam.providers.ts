@@ -14,6 +14,7 @@ import { CASOS_USO_IAM, CasosUsoIam } from '../application/casos-uso-iam';
 import { IamFacade } from '../application/iam.facade';
 import { EmisorSesiones } from '../application/services/emisor-sesiones';
 import { ActualizarPerfilUseCase } from '../application/use-cases/actualizar-perfil.use-case';
+import { AdministrarDocentesUseCase } from '../application/use-cases/administrar-docentes.use-case';
 import { AutenticarAdultoUseCase } from '../application/use-cases/autenticar-adulto.use-case';
 import { AutenticarEstudianteUseCase } from '../application/use-cases/autenticar-estudiante.use-case';
 import { CerrarSesionUseCase } from '../application/use-cases/cerrar-sesion.use-case';
@@ -143,7 +144,10 @@ export function crearCasosUsoIam(
     vincularFamiliar,
     contextoIngreso: new ContextoIngresoUseCase(perfiles, vinculos, dispositivos, contextoAula, tokens, ahora),
     autenticarEstudiante,
-    facade: new IamFacade(cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, vincularFamiliar, vinculos, ahora, correo),
+    facade: new IamFacade(
+      cuentas, perfiles, registrarConsentimiento, crearPerfil, restablecerPin, vincularFamiliar, vinculos, ahora, correo,
+      new AdministrarDocentesUseCase(cuentas, verificaciones, hash, tokens, sesiones, correo, bus, config.urlWeb, generarId, ahora),
+    ),
     bandejaDesarrollo,
   };
 }

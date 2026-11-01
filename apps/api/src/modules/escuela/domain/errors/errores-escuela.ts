@@ -68,3 +68,29 @@ export class FamiliaCompletaError extends ErrorDeNegocio {
     super(`${alias} ya tiene ${maximo} familiares vinculados`, 'CONFLICTO');
   }
 }
+
+/** RF-076: una institución suspendida ya no se elige para aulas nuevas. */
+export class InstitucionSuspendidaError extends ErrorDeNegocio {
+  constructor(nombre: string) {
+    super(`La institución «${nombre}» está suspendida en LectoAventura. Comunícate con la administración.`, 'CONFLICTO');
+  }
+}
+
+/** RF-076: el aula de un docente suspendido queda en solo lectura (los niños siguen leyendo). */
+export class AulaSoloLecturaError extends ErrorDeNegocio {
+  constructor() {
+    super('Esta aula está en solo lectura por ahora: no se pueden hacer cambios. Comunícate con el colegio.', 'CONFLICTO');
+  }
+}
+
+export class InstitucionInvalidaError extends ErrorDeNegocio {
+  constructor(mensaje: string) {
+    super(mensaje, 'VALIDACION');
+  }
+}
+
+export class InstitucionRepetidaError extends ErrorDeNegocio {
+  constructor(campo: 'nombre' | 'código modular') {
+    super(`Ya hay una institución registrada con ese ${campo}`, 'CONFLICTO');
+  }
+}

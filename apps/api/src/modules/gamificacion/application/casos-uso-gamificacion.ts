@@ -1,3 +1,4 @@
+import { GamificacionFacade } from './gamificacion.facade';
 import { LogrosUseCase } from './use-cases/logros.use-case';
 import { PasaporteUseCase } from './use-cases/pasaporte.use-case';
 
@@ -5,6 +6,8 @@ import { PasaporteUseCase } from './use-cases/pasaporte.use-case';
 export interface CasosUsoGamificacion {
   logros: LogrosUseCase;
   pasaporte: PasaporteUseCase;
+  /** RF-078 (Módulo 12). */
+  facade: GamificacionFacade;
 }
 
 export const CASOS_USO_GAMIFICACION = Symbol('CASOS_USO_GAMIFICACION');

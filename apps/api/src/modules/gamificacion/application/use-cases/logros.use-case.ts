@@ -17,7 +17,7 @@ import { habilidadDelReto, LecturaSugerida, RetoDiario } from '../../domain/enti
 import { idDeterminista } from '../../domain/services/id-origen';
 import { ParametrosGamificacion } from '../../domain/services/parametros';
 import { puntosDeItem } from '../../domain/services/politica-puntos';
-import { alcanzaNivel } from '../../domain/services/reglas-insignia';
+import { alcanzaNivel, aplicarUmbrales } from '../../domain/services/reglas-insignia';
 import { ClaveEvento, GamificacionRepository, IdentidadEstudiantes } from '../ports/gamificacion.ports';
 
 /**
@@ -120,7 +120,9 @@ export class LogrosUseCase {
     ahora: Date,
     operar: (cuenta: CuentaGamificacion, p: ParametrosGamificacion) => void,
   ): Promise<void> {
-    const [p, catalogo] = await Promise.all([this.repo.parametros(), this.repo.insignias()]);
+    const [p, base] = await Promise.all([this.repo.parametros(), this.repo.insignias()]);
+    // RF-078: los umbrales de la versión vigente (un cambio aplica solo a lo que ocurre después).
+    const catalogo = aplicarUmbrales(base, p.insignias);
     const cuenta = await this.repo.aplicar(estudianteId, clave, fechaLocalLima(ahora), (estado) => {
       const c = new CuentaGamificacion(estado, catalogo, p, ahora);
       operar(c, p);

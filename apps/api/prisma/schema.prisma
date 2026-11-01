@@ -1007,6 +1007,9 @@ model Auditoria {
 
   @@index([ocurridoEn])
   @@index([actorId, ocurridoEn])
+  /// Módulo 12: filtros de la consulta de auditoría por acción y por recurso.
+  @@index([accion, ocurridoEn])
+  @@index([recursoTipo, recursoId])
   @@map("auditoria")
   @@schema("admin")
 }

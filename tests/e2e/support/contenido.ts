@@ -15,10 +15,10 @@ export interface CuentaBackoffice {
 }
 
 /**
- * Cuenta de editor o revisor con MFA activo. Las crea el administrador (RF-076, Módulo 12); mientras
- * tanto la prueba la siembra en la base, en el dominio de pruebas que la limpieza final borra.
+ * Cuenta del backoffice (editor, revisor o administración) con MFA activo. La prueba la siembra en la
+ * base, en el dominio de pruebas que la limpieza final borra.
  */
-export async function cuentaBackoffice(rol: 'EDITOR' | 'REVISOR'): Promise<CuentaBackoffice> {
+export async function cuentaBackoffice(rol: 'EDITOR' | 'REVISOR' | 'ADMIN_PLATAFORMA'): Promise<CuentaBackoffice> {
   try {
     process.loadEnvFile(resolve(__dirname, '../../../apps/api/.env'));
   } catch {
@@ -30,7 +30,7 @@ export async function cuentaBackoffice(rol: 'EDITOR' | 'REVISOR'): Promise<Cuent
     const secreto = authenticator.generateSecret();
     const cuenta = await prisma.cuenta.create({
       data: {
-        nombre: rol === 'EDITOR' ? 'Elena Editora' : 'Raúl Revisor',
+        nombre: { EDITOR: 'Elena Editora', REVISOR: 'Raúl Revisor', ADMIN_PLATAFORMA: 'Ana Administradora' }[rol],
         email,
         rol,
         estado: 'ACTIVA',

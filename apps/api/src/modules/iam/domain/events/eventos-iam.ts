@@ -18,6 +18,10 @@ export const EVENTOS_IAM = {
   DISPOSITIVO_VINCULADO: 'iam.DispositivoVinculado',
   /** ADR-005: se presentó un refresh token ya rotado (posible robo); la sesión se revoca. */
   REUTILIZACION_REFRESH: 'iam.ReutilizacionRefreshDetectada',
+  /** RF-076: la administración dio de alta, suspendió o reactivó una cuenta docente. */
+  DOCENTE_DADO_DE_ALTA: 'iam.DocenteDadoDeAlta',
+  CUENTA_SUSPENDIDA: 'iam.CuentaSuspendida',
+  CUENTA_REACTIVADA: 'iam.CuentaReactivada',
 } as const;
 
 /** Datos comunes para auditoría: quién hizo la acción (cuenta adulta o sistema). */

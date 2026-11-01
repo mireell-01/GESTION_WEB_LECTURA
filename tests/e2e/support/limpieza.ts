@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import { PrismaClient } from '@prisma/client';
 
+import { PREFIJO_INSTITUCION_E2E } from './administracion';
 import { borrarCatalogoE2E } from './escuela';
 import { DOMINIO_E2E } from './iam';
 
@@ -60,6 +61,9 @@ export default async function limpieza(): Promise<void> {
     await prisma.resumenSemanalEnviado.deleteMany({ where: { docenteId: { in: idsCuentas } } });
     await prisma.resumenFamiliarEnviado.deleteMany({ where: { cuentaId: { in: idsCuentas } } });
     await prisma.preferenciaFamiliar.deleteMany({ where: { cuentaId: { in: idsCuentas } } });
+    // Administración (Módulo 12): instituciones de prueba y versiones de parámetros que publicaron sus cuentas.
+    await prisma.institucion.deleteMany({ where: { nombre: { startsWith: PREFIJO_INSTITUCION_E2E } } });
+    await prisma.parametroGamificacion.deleteMany({ where: { creadoPor: { in: idsCuentas } } });
     await prisma.cuenta.deleteMany({ where: { id: { in: idsCuentas } } });
     await borrarCatalogoE2E(prisma);
   } finally {

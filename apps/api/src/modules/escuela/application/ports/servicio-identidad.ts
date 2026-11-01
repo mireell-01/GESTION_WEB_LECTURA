@@ -37,4 +37,6 @@ export interface ServicioIdentidad {
   /** RF-019: lanza el error de negocio si el familiar no puede vincularse (sin guardar nada). */
   validarVinculoFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void>;
   vincularFamiliar(params: { perfilId: string; cuentaFamiliarId: string }): Promise<void>;
+  /** RF-076: false si la cuenta (p. ej. la docente del aula) está suspendida o no existe. */
+  cuentaActiva(cuentaId: string): Promise<boolean>;
 }

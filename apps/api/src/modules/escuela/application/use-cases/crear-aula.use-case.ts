@@ -5,6 +5,7 @@ import { CodigoAula } from '../../domain/value-objects/codigo-aula';
 import { Aleatorio, AulaVista, GeneradorId, Reloj, vistaAula } from '../dto/escuela.dto';
 import { AulaRepository } from '../ports/aula.repository';
 import { ServicioIdentidad } from '../ports/servicio-identidad';
+import { InstitucionesUseCase } from './instituciones.use-case';
 
 export interface CrearAulaInput {
   docenteId: string;
@@ -19,6 +20,7 @@ export interface CrearAulaInput {
 /**
  * Use Case: CrearAula (RF-014). Genera un código de aula único y registra el consentimiento
  * institucional bajo el que se crearán los perfiles de sus estudiantes (RF-015, RN-01).
+ * RF-076: si nombra una institución registrada, el aula queda vinculada a ella; una suspendida no se elige.
  */
 export class CrearAulaUseCase {
   constructor(
@@ -28,6 +30,7 @@ export class CrearAulaUseCase {
     private readonly aleatorio: Aleatorio,
     private readonly generarId: GeneradorId,
     private readonly ahora: Reloj,
+    private readonly instituciones: InstitucionesUseCase | null = null,
   ) {}
 
   async ejecutar(entrada: CrearAulaInput): Promise<AulaVista> {
@@ -47,7 +50,9 @@ export class CrearAulaUseCase {
       codigo,
       ahora,
     });
+    const institucion = (await this.instituciones?.paraAulaNueva(entrada.institucion)) ?? null;
     await this.aulas.guardar(aula);
+    if (institucion) await this.instituciones?.vincularAula(aula.id, institucion.id);
     await this.identidad.registrarConsentimientoInstitucional({
       docenteId: entrada.docenteId,
       aulaId: aula.id,

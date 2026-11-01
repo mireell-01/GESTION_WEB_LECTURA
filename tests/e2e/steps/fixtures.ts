@@ -1,5 +1,7 @@
 import { createBdd, test as base } from 'playwright-bdd';
 
+import { deshacerParametrosPublicados } from '../support/administracion';
+import type { CuentaBackoffice } from '../support/contenido';
 import type { AulaPreparada } from '../support/escuela';
 import { ipSimulada } from '../support/iam';
 
@@ -26,6 +28,12 @@ export interface Mundo {
   panelMs?: number;
   /** Acompañamiento familiar (Módulo 10): la familia del escenario y los ids de sus hijos por alias. */
   familia?: { email: string; contrasena: string; headers: Record<string, string>; hijos: Record<string, string> };
+  /** Administración (Módulo 12): su cuenta, la tablet del aula, la institución, el docente dado de alta y la versión de parámetros previa. */
+  admin?: CuentaBackoffice;
+  tablet?: string;
+  institucion?: string;
+  alta?: { nombre: string; email: string };
+  parametrosDesde?: number;
 }
 
 /**
@@ -37,7 +45,10 @@ export interface Mundo {
  */
 export const test = base.extend<{ mundo: Mundo }>({
   mundo: async ({}, use) => {
-    await use({});
+    const mundo: Mundo = {};
+    await use(mundo);
+    // RF-078: si el escenario publicó parámetros, los siguientes juegan con los de siempre.
+    if (mundo.parametrosDesde !== undefined) await deshacerParametrosPublicados(mundo.parametrosDesde);
   },
   extraHTTPHeaders: async ({}, use) => {
     await use({ 'X-Forwarded-For': ipSimulada() });

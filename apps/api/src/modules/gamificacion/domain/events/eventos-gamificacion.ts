@@ -7,4 +7,6 @@ export const EVENTOS_GAMIFICACION = {
   INSIGNIA_OTORGADA: 'gamificacion.InsigniaOtorgada',
   RETO_COMPLETADO: 'gamificacion.RetoDelDiaCompletado',
   RECOMPENSA_CANJEADA: 'gamificacion.RecompensaCanjeada',
+  /** RF-078: la administración publicó una versión nueva de los parámetros (se audita). */
+  PARAMETROS_PUBLICADOS: 'gamificacion.ParametrosPublicados',
 } as const;

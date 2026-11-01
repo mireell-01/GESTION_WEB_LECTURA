@@ -2,7 +2,9 @@ import { AulaProps } from '../domain/entities/aula';
 import { MisionDelDocenteVista } from './dto/escuela.dto';
 import { AulaRepository } from './ports/aula.repository';
 import { MatriculaRepository } from './ports/matricula.repository';
+import { AulasDeDocente, ResumenAulasRepository } from './ports/resumen-aulas';
 import { MisionesDelDocenteUseCase } from './use-cases/consultar-asignaciones.use-case';
+import { InstitucionesUseCase, InstitucionVista } from './use-cases/instituciones.use-case';
 
 export interface AulaResumen {
   id: string;
@@ -20,6 +22,8 @@ export class EscuelaFacade {
     private readonly aulas: AulaRepository,
     private readonly matriculas: MatriculaRepository,
     private readonly misiones: MisionesDelDocenteUseCase,
+    private readonly institucionesUseCase: InstitucionesUseCase | null = null,
+    private readonly resumenAulas: ResumenAulasRepository | null = null,
   ) {}
 
   async aulasDeDocente(docenteId: string): Promise<AulaResumen[]> {
@@ -64,5 +68,28 @@ export class EscuelaFacade {
       docenteId: p.docenteId,
       estado: p.estado,
     };
+  }
+
+  // RF-076 (Módulo 12): la administración gestiona las instituciones y ve las aulas de cada docente.
+  listarInstituciones(): Promise<InstitucionVista[]> {
+    return this.gestionInstituciones().listar();
+  }
+
+  crearInstitucion(entrada: { nombre: string; codigoModular?: string | null; region?: string | null; adminId: string }): Promise<InstitucionVista> {
+    return this.gestionInstituciones().crear(entrada);
+  }
+
+  cambiarEstadoInstitucion(id: string, estado: InstitucionVista['estado'], adminId: string): Promise<InstitucionVista> {
+    return this.gestionInstituciones().cambiarEstado(id, estado, adminId);
+  }
+
+  async aulasDeDocentes(docenteIds: string[]): Promise<Map<string, AulasDeDocente>> {
+    if (!this.resumenAulas) throw new Error('El resumen de aulas no está configurado');
+    return this.resumenAulas.porDocentes(docenteIds);
+  }
+
+  private gestionInstituciones(): InstitucionesUseCase {
+    if (!this.institucionesUseCase) throw new Error('La gestión de instituciones no está configurada');
+    return this.institucionesUseCase;
   }
 }

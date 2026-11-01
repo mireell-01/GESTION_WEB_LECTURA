@@ -18,6 +18,8 @@ export interface ParametrosGamificacion {
   /** RF-057: umbral del nivel n = base × n × (n + 1) / 2. */
   nivelLector: { base: number };
   respuestasAbiertas: { palabrasMinimasR2: number; palabrasMinimasR3: number };
+  /** RF-078: umbral de cada insignia que se gana contando (código → lecturas, evidencias o días); sin él, el del catálogo. */
+  insignias: Record<string, number>;
 }
 
 export const PARAMETROS_POR_DEFECTO: ParametrosGamificacion = {
@@ -33,7 +35,11 @@ export const PARAMETROS_POR_DEFECTO: ParametrosGamificacion = {
   antiFarming: { porcentajeRepeticion: 25, topeDiario: 300 },
   nivelLector: { base: 100 },
   respuestasAbiertas: { palabrasMinimasR2: 5, palabrasMinimasR3: 10 },
+  insignias: {},
 };
+
+/** Código de una insignia del catálogo ("DETECTIVE_EVIDENCIAS"). */
+const CODIGO_INSIGNIA = /^[A-Z][A-Z0-9_]{2,39}$/;
 
 const UMBRAL = /^\s*(\d+)\s*\*\s*n\s*\*\s*\(\s*n\s*\+\s*1\s*\)\s*\/\s*2\s*$/;
 
@@ -75,5 +81,8 @@ export function leerParametros(version: number, json: unknown): ParametrosGamifi
       palabrasMinimasR2: entero(abiertas['palabrasMinimasR2'], d.respuestasAbiertas.palabrasMinimasR2),
       palabrasMinimasR3: entero(abiertas['palabrasMinimasR3'], d.respuestasAbiertas.palabrasMinimasR3),
     },
+    insignias: Object.fromEntries(
+      Object.entries(objeto(raiz['insignias'])).filter(([codigo, umbral]) => CODIGO_INSIGNIA.test(codigo) && Number.isInteger(umbral) && (umbral as number) > 0),
+    ) as Record<string, number>,
   };
 }

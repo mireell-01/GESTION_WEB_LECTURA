@@ -5,6 +5,7 @@ import { CorreoService } from './ports/correo.service';
 import { CuentaRepository } from './ports/cuenta.repository';
 import { PerfilEstudianteRepository } from './ports/perfil-estudiante.repository';
 import { VinculoRepository } from './ports/vinculo.repository';
+import { AdministrarDocentesUseCase, DocenteAdministrado } from './use-cases/administrar-docentes.use-case';
 import { CrearPerfilEstudianteUseCase } from './use-cases/crear-perfil-estudiante.use-case';
 import { ListarPerfilesUseCase } from './use-cases/listar-perfiles.use-case';
 import { RegistrarConsentimientoUseCase } from './use-cases/registrar-consentimiento.use-case';
@@ -46,6 +47,7 @@ export class IamFacade {
     private readonly vinculos: VinculoRepository,
     private readonly ahora: Reloj,
     private readonly correo: CorreoService | null = null,
+    private readonly administrarDocentes: AdministrarDocentesUseCase | null = null,
   ) {}
 
   /** RF-015 / RN-01: el docente declara el consentimiento institucional de su aula. */
@@ -157,19 +159,41 @@ export class IamFacade {
   }
 
   async resumenCuentas(ids: string[]): Promise<ResumenCuenta[]> {
-    const resultado: ResumenCuenta[] = [];
-    for (const id of new Set(ids)) {
-      const cuenta = await this.cuentas.buscarPorId(id);
-      if (cuenta) {
-        resultado.push({
-          id: cuenta.id,
-          nombre: cuenta.nombre,
-          email: cuenta.email.value,
-          rol: cuenta.rol.value,
-          estado: cuenta.estado.value,
-        });
-      }
-    }
-    return resultado;
+    // A la vez, no una tras otra: la auditoría (RF-077) muestra hasta 50 actores distintos por página.
+    const cuentas = await Promise.all([...new Set(ids)].map((id) => this.cuentas.buscarPorId(id)));
+    return cuentas.flatMap((cuenta) =>
+      cuenta ? [{ id: cuenta.id, nombre: cuenta.nombre, email: cuenta.email.value, rol: cuenta.rol.value, estado: cuenta.estado.value }] : [],
+    );
+  }
+
+  /** RF-076: el aula de un docente suspendido queda en solo lectura (nadie la cambia por él). */
+  async cuentaActiva(cuentaId: string): Promise<boolean> {
+    return (await this.cuentas.buscarPorId(cuentaId))?.estaActiva() ?? false;
+  }
+
+  // RF-076 (Módulo 12): la administración de la plataforma gestiona las cuentas docentes.
+  listarDocentes(filtro: { texto?: string; estado?: DocenteAdministrado['estado'] } = {}): Promise<DocenteAdministrado[]> {
+    return this.gestionDocentes().listar(filtro);
+  }
+
+  docenteAdministrado(id: string): Promise<DocenteAdministrado> {
+    return this.gestionDocentes().docente(id);
+  }
+
+  darDeAltaDocente(entrada: { nombre: string; email: string; adminId: string }): Promise<DocenteAdministrado> {
+    return this.gestionDocentes().darDeAlta(entrada);
+  }
+
+  suspenderDocente(id: string, adminId: string): Promise<DocenteAdministrado> {
+    return this.gestionDocentes().suspender(id, adminId);
+  }
+
+  reactivarDocente(id: string, adminId: string): Promise<DocenteAdministrado> {
+    return this.gestionDocentes().reactivar(id, adminId);
+  }
+
+  private gestionDocentes(): AdministrarDocentesUseCase {
+    if (!this.administrarDocentes) throw new Error('La gestión de docentes no está configurada');
+    return this.administrarDocentes;
   }
 }

@@ -18,6 +18,13 @@ function FormularioAula({ onCancelar }: { onCancelar: () => void }) {
   const [declara, setDeclara] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  // RF-076: las instituciones registradas y activas se sugieren (las suspendidas no se eligen).
+  const [instituciones, setInstituciones] = useState<{ id: string; nombre: string }[]>([]);
+  useEffect(() => {
+    api<{ id: string; nombre: string }[]>('/instituciones')
+      .then(setInstituciones)
+      .catch(() => setInstituciones([]));
+  }, []);
   const cambiar = (campo: keyof typeof datos) => (e: { target: { value: string } }) => setDatos({ ...datos, [campo]: e.target.value });
 
   const enviar = async (e: FormEvent) => {
@@ -60,7 +67,12 @@ function FormularioAula({ onCancelar }: { onCancelar: () => void }) {
           onChange={cambiar('anioLectivo')}
           opciones={[anio - 1, anio, anio + 1].map((a) => ({ valor: String(a), texto: String(a) }))}
         />
-        <Campo etiqueta="Institución educativa" value={datos.institucion} maxLength={120} required onChange={cambiar('institucion')} />
+        <Campo etiqueta="Institución educativa" list="instituciones-registradas" autoComplete="off" value={datos.institucion} maxLength={120} required onChange={cambiar('institucion')} />
+        <datalist id="instituciones-registradas">
+          {instituciones.map((i) => (
+            <option key={i.id} value={i.nombre} />
+          ))}
+        </datalist>
       </div>
       <Campo
         etiqueta="Autoridad que firmó el consentimiento"

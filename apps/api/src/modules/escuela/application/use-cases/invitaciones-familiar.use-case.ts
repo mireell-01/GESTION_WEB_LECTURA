@@ -2,6 +2,7 @@ import { BusEventos, crearEvento, ErrorDeNegocio, NoEncontradoError } from '../.
 import { InvitacionFamiliar, MAX_INVITACIONES_PENDIENTES } from '../../domain/entities/invitacion-familiar';
 import {
   AulaArchivadaError,
+  AulaSoloLecturaError,
   DemasiadasInvitacionesError,
   FamiliaCompletaError,
   InvitacionInvalidaError,
@@ -110,6 +111,8 @@ export class CanjearInvitacionFamiliarUseCase {
     const aula = await this.aulas.buscarPorId(invitacion.aulaId);
     const matricula = await this.matriculas.buscar(invitacion.aulaId, invitacion.estudianteId);
     if (!aula || !aula.estaActiva || !matricula?.activa) throw new InvitacionInvalidaError();
+    // RF-076: el aula de un docente suspendido queda en solo lectura.
+    if (!(await this.identidad.cuentaActiva(aula.docenteId))) throw new AulaSoloLecturaError();
 
     const vinculo = { perfilId: invitacion.estudianteId, cuentaFamiliarId: entrada.cuentaFamiliarId };
     await this.identidad.validarVinculoFamiliar(vinculo);

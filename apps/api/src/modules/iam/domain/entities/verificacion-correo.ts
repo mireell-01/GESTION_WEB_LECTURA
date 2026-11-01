@@ -4,6 +4,8 @@ import { CodigoUnUso } from '../value-objects/codigo-un-uso';
 export const VIGENCIA_VERIFICACION_H = 24;
 /** Vigencia del enlace de recuperación de contraseña (RF-004): 30 minutos. */
 export const VIGENCIA_RECUPERACION_MIN = 30;
+/** RF-076: el docente dado de alta por la administración tiene 72 horas para crear su contraseña. */
+export const VIGENCIA_ALTA_H = 72;
 
 export type TipoVerificacion = 'CORREO' | 'RECUPERACION_CONTRASENA';
 
@@ -60,6 +62,21 @@ export class VerificacionCorreo {
       cuentaId: params.cuentaId,
       tipo: 'RECUPERACION_CONTRASENA',
       codigo: CodigoUnUso.crear(params.codigo, expiraEn),
+      creadoEn: params.ahora,
+      reemplazadoEn: null,
+    });
+  }
+
+  /**
+   * RF-076: enlace para que un docente dado de alta por la administración cree su contraseña. Es del
+   * mismo tipo que la recuperación (lo canjea la misma página) pero dura 72 horas.
+   */
+  static paraAltaPorAdministracion(params: { id: string; cuentaId: string; codigo: string; ahora: Date }): VerificacionCorreo {
+    return new VerificacionCorreo({
+      id: params.id,
+      cuentaId: params.cuentaId,
+      tipo: 'RECUPERACION_CONTRASENA',
+      codigo: CodigoUnUso.crear(params.codigo, new Date(params.ahora.getTime() + VIGENCIA_ALTA_H * 3_600_000)),
       creadoEn: params.ahora,
       reemplazadoEn: null,
     });
