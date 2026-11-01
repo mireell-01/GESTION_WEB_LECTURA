@@ -1511,6 +1511,46 @@ test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
     }
   });
 
+  test('la administración de la plataforma se adapta (RF-076 a RF-078): en laptops, filtros y formularios en una fila', async ({ page }, info) => {
+    test.setTimeout(150_000);
+    await ingresarBackoffice(page, await cuentaBackoffice('ADMIN_PLATAFORMA'));
+    const pantallas = [
+      { ruta: '/backoffice/docentes', lista: () => page.getByRole('list', { name: 'Cuentas docentes' }) },
+      { ruta: '/backoffice/instituciones', lista: () => page.getByRole('heading', { name: 'Registrar una institución' }) },
+      { ruta: '/backoffice/auditoria', lista: () => page.getByRole('table') },
+      { ruta: '/backoffice/gamificacion', lista: () => page.getByRole('group', { name: 'Puntos' }) },
+    ];
+    for (const p of pantallas) {
+      await page.goto(p.ruta);
+      await expect(p.lista()).toBeVisible();
+      await revisarPantalla(page);
+    }
+    if (info.project.name !== 'escritorio') return;
+    const filas = async (selectores: Locator[]) => new Set(await Promise.all(selectores.map(async (l) => Math.round((await l.boundingBox())!.y)))).size;
+    for (const [ancho, alto] of [[1280, 720], [1366, 768], [1536, 864], [1920, 1080], [1365, 600]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto('/backoffice/auditoria');
+      await expect(page.getByRole('table')).toBeVisible();
+      await revisarPantalla(page);
+      expect(await filas(['Desde', 'Hasta', 'Acción', 'Sobre'].map((n) => page.getByLabel(n, { exact: true }))), `filtros de auditoría en ${ancho}×${alto}`).toBe(1);
+
+      await page.goto('/backoffice/docentes');
+      await expect(page.getByRole('list', { name: 'Cuentas docentes' })).toBeVisible();
+      await revisarPantalla(page);
+      expect(await filas([page.getByLabel('Nombre y apellido'), page.getByLabel('Correo', { exact: true })]), `alta en una fila en ${ancho}×${alto}`).toBe(1);
+      // Los campos llenan la fila: sin una columna vacía a la derecha.
+      const formulario = (await page.getByRole('button', { name: 'Dar de alta' }).locator('xpath=ancestor::form').boundingBox())!;
+      const correo = (await page.getByLabel('Correo', { exact: true }).boundingBox())!;
+      expect(formulario.x + formulario.width - (correo.x + correo.width), `sin espacio vacío en ${ancho}×${alto}`).toBeLessThanOrEqual(2);
+
+      await page.goto('/backoffice/gamificacion');
+      const puntos = page.getByRole('group', { name: 'Puntos' });
+      await expect(puntos).toBeVisible();
+      await revisarPantalla(page);
+      expect(await filas(await puntos.getByRole('spinbutton').all()), `puntos en una fila en ${ancho}×${alto}`).toBe(1);
+    }
+  });
+
   test('el área del estudiante se adapta a laptops de distintos tamaños: centrada, sin desbordes y con la barra completa', async ({ page, request }, info) => {
     test.skip(info.project.name !== 'escritorio', 'Tamaños de laptop: solo en el proyecto de computadora');
     test.setTimeout(150_000);

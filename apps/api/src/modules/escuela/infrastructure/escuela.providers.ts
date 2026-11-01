@@ -30,13 +30,16 @@ import {
   CanjearInvitacionFamiliarUseCase,
   GenerarInvitacionFamiliarUseCase,
 } from '../application/use-cases/invitaciones-familiar.use-case';
+import { InstitucionesUseCase } from '../application/use-cases/instituciones.use-case';
 import { MatricularEstudiantesUseCase } from '../application/use-cases/matricular-estudiantes.use-case';
 import { ServicioIdentidadIam } from './identidad/servicio-identidad-iam';
 import { PdfLibTarjetas } from './pdf/pdf-lib-tarjetas';
 import { PrismaAsignacionRepository } from './persistence/prisma-asignacion-repository';
 import { PrismaAulaRepository } from './persistence/prisma-aula-repository';
+import { PrismaInstitucionRepository } from './persistence/prisma-institucion-repository';
 import { PrismaInvitacionRepository } from './persistence/prisma-invitacion-repository';
 import { PrismaMatriculaRepository } from './persistence/prisma-matricula-repository';
+import { PrismaResumenAulas } from './persistence/prisma-resumen-aulas';
 
 /** Composition root de Escuela. */
 export function crearCasosUsoEscuela(
@@ -56,9 +59,10 @@ export function crearCasosUsoEscuela(
   const invitaciones = new PrismaInvitacionRepository(prisma);
   const identidad = new ServicioIdentidadIam(iam);
   const misionesDelDocente = new MisionesDelDocenteUseCase(aulas, matriculas, asignaciones, ahora);
+  const instituciones = new InstitucionesUseCase(new PrismaInstitucionRepository(prisma), bus, generarId, ahora);
 
   return {
-    crearAula: new CrearAulaUseCase(aulas, identidad, bus, aleatorio, generarId, ahora),
+    crearAula: new CrearAulaUseCase(aulas, identidad, bus, aleatorio, generarId, ahora, instituciones),
     listarAulas: new ListarAulasUseCase(aulas, matriculas),
     detalleAula: new DetalleAulaUseCase(aulas, matriculas, identidad),
     matricular: new MatricularEstudiantesUseCase(aulas, matriculas, identidad, bus, aleatorio, generarId, ahora),
@@ -74,10 +78,11 @@ export function crearCasosUsoEscuela(
       aulas, matriculas, invitaciones, identidad, bus, huella, aleatorio, generarId, ahora,
     ),
     canjearInvitacion: new CanjearInvitacionFamiliarUseCase(aulas, matriculas, invitaciones, identidad, bus, huella, ahora),
+    instituciones,
     aulas,
     matriculas,
     asignaciones,
-    facade: new EscuelaFacade(aulas, matriculas, misionesDelDocente),
+    facade: new EscuelaFacade(aulas, matriculas, misionesDelDocente, instituciones, new PrismaResumenAulas(prisma)),
   };
 }
 

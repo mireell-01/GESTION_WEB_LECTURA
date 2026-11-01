@@ -9,6 +9,7 @@ import {
 } from './use-cases/consultar-asignaciones.use-case';
 import { ListarAulasUseCase, DetalleAulaUseCase } from './use-cases/consultar-aulas.use-case';
 import { CrearAulaUseCase } from './use-cases/crear-aula.use-case';
+import { InstitucionesUseCase } from './use-cases/instituciones.use-case';
 import { GenerarTarjetasUseCase } from './use-cases/generar-tarjetas.use-case';
 import { ArchivarAulaUseCase, RetirarEstudianteUseCase } from './use-cases/gestionar-aula.use-case';
 import { CerrarAsignacionUseCase, CrearAsignacionUseCase } from './use-cases/gestionar-asignaciones.use-case';
@@ -34,6 +35,8 @@ export interface CasosUsoEscuela {
   misionesDelDocente: MisionesDelDocenteUseCase;
   generarInvitacion: GenerarInvitacionFamiliarUseCase;
   canjearInvitacion: CanjearInvitacionFamiliarUseCase;
+  /** RF-076 (Módulo 12). */
+  instituciones: InstitucionesUseCase;
   aulas: AulaRepository;
   matriculas: MatriculaRepository;
   asignaciones: AsignacionRepository;

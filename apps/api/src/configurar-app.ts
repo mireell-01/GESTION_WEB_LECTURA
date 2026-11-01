@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import type { Express } from 'express';
 
-import { FiltroErrores, idPeticion } from './modules/shared-kernel/public-api';
+import { contextoSolicitud, FiltroErrores, idPeticion } from './modules/shared-kernel/public-api';
 
 /** Versión mayor del API en la ruta (SRS §7, "Versionado"). */
 export const PREFIJO_API = 'api/v1';
@@ -15,6 +15,8 @@ export function configurarApp(app: INestApplication): INestApplication {
   // solo se confía en proxies conocidos para que el límite de tasa por IP (RNF-019) no se pueda burlar.
   (app.getHttpAdapter().getInstance() as Express).set('trust proxy', process.env['TRUST_PROXY'] ?? 'loopback');
   app.use(idPeticion);
+  // RF-077: la IP de cada solicitud acompaña a sus acciones hasta la auditoría.
+  app.use(contextoSolicitud);
   app.setGlobalPrefix(PREFIJO_API);
   app.enableCors({
     origin: process.env['WEB_ORIGIN'] ?? 'http://localhost:3002',

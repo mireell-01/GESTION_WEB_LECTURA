@@ -111,3 +111,15 @@ export class EscuelaController {
     return this.escuela.archivarAula.ejecutar({ docenteId: u.sub, aulaId });
   }
 }
+
+/** RF-014, RF-076: las instituciones activas, para sugerirlas al crear un aula (las suspendidas no se eligen). */
+@Controller('instituciones')
+@Roles('DOCENTE')
+export class InstitucionesDocenteController {
+  constructor(@Inject(CASOS_USO_ESCUELA) private readonly escuela: CasosUsoEscuela) {}
+
+  @Get()
+  activas() {
+    return this.escuela.instituciones.activas();
+  }
+}

@@ -9,4 +9,8 @@ export const EVENTOS_ESCUELA = {
   ASIGNACION_CERRADA: 'escuela.AsignacionCerrada',
   INVITACION_FAMILIAR_GENERADA: 'escuela.InvitacionFamiliarGenerada',
   FAMILIAR_VINCULADO: 'escuela.FamiliarVinculado',
+  /** RF-076: la administración registró, suspendió o reactivó una institución. */
+  INSTITUCION_CREADA: 'escuela.InstitucionCreada',
+  INSTITUCION_SUSPENDIDA: 'escuela.InstitucionSuspendida',
+  INSTITUCION_REACTIVADA: 'escuela.InstitucionReactivada',
 } as const;

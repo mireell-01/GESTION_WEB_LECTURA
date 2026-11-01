@@ -11,7 +11,7 @@ import { EVENTOS_GAMIFICACION } from '../../domain/events/eventos-gamificacion';
 import { monedasDisponibles, validarCanje } from '../../domain/services/monedas';
 import { avanceNivel } from '../../domain/services/nivel-lector';
 import { comodinDeEstaSemana, rachaVigente } from '../../domain/services/racha';
-import { metaDe } from '../../domain/services/reglas-insignia';
+import { aplicarUmbrales, metaDe } from '../../domain/services/reglas-insignia';
 import { CanjeVista, PasaporteVista, RetoVista, vistaReto } from '../dto/gamificacion.dto';
 import { GamificacionRepository, IdentidadEstudiantes } from '../ports/gamificacion.ports';
 import { LogrosUseCase } from './logros.use-case';
@@ -41,7 +41,7 @@ export class PasaporteUseCase {
     const perfil = await this.identidad.perfil(estudianteId);
     if (!perfil) throw new NoEncontradoError('Estudiante');
     const hoy = fechaLocalLima(this.ahora());
-    const [p, catalogo, cuenta, recompensas, lecturas, mundos] = await Promise.all([
+    const [p, base, cuenta, recompensas, lecturas, mundos] = await Promise.all([
       this.repo.parametros(),
       this.repo.insignias(),
       this.repo.resumen(estudianteId, hoy),
@@ -49,6 +49,7 @@ export class PasaporteUseCase {
       this.realizadas.realizadasDe(estudianteId),
       this.mundos.completadosDe(estudianteId),
     ]);
+    const catalogo = aplicarUmbrales(base, p.insignias);
     const recientes = lecturas.slice(0, LECTURAS_RECIENTES);
     const titulos = new Map((await this.fichas.fichas(recientes.map((l) => l.lecturaId))).map((f) => [f.id, f.titulo]));
     const racha = rachaVigente(cuenta.racha, hoy);

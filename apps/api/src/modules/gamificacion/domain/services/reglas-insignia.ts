@@ -56,6 +56,25 @@ export function metaDe(regla: ReglaInsignia): number | null {
   return null;
 }
 
+/** Las insignias que se ganan contando: su umbral (lecturas, evidencias o días) se puede ajustar (RF-078). */
+export function tieneUmbral(regla: ReglaInsignia): boolean {
+  return metaDe(regla) !== null;
+}
+
+/**
+ * RF-078: el catálogo con los umbrales de la versión vigente de los parámetros. Una insignia sin umbral
+ * configurado conserva el del catálogo; las de nivel y de mundo no tienen umbral.
+ */
+export function aplicarUmbrales(catalogo: InsigniaCatalogo[], umbrales: Record<string, number>): InsigniaCatalogo[] {
+  return catalogo.map((i) => {
+    const umbral = umbrales[i.codigo];
+    if (!umbral) return i;
+    if (i.regla.tipo === 'LECTURAS' || i.regla.tipo === 'EVIDENCIAS') return { ...i, regla: { ...i.regla, meta: umbral } };
+    if (i.regla.tipo === 'RACHA') return { ...i, regla: { ...i.regla, dias: umbral } };
+    return i;
+  });
+}
+
 /** El nivel declarado llega al que pide la regla (AD ⊃ A ⊃ B ⊃ C). */
 export function alcanzaNivel(actual: NivelCNEB, requerido: NivelCNEB): boolean {
   return NIVELES.indexOf(actual) >= NIVELES.indexOf(requerido);

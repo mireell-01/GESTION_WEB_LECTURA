@@ -23,6 +23,22 @@ export default function BackofficeHomePage() {
             </Link>
           </div>
         ) : null}
+        {usuario?.rol === 'ADMIN_PLATAFORMA' ? (
+          <div className="fila">
+            <Link href="/backoffice/docentes" className={clasesBoton('primario')}>
+              Docentes
+            </Link>
+            <Link href="/backoffice/instituciones" className={clasesBoton('secundario')}>
+              Instituciones
+            </Link>
+            <Link href="/backoffice/auditoria" className={clasesBoton('secundario')}>
+              Auditoría
+            </Link>
+            <Link href="/backoffice/gamificacion" className={clasesBoton('secundario')}>
+              Gamificación
+            </Link>
+          </div>
+        ) : null}
       </Tarjeta>
     </RequiereRol>
   );

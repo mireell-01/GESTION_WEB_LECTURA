@@ -1,8 +1,10 @@
-// Invita una cuenta del backoffice (EDITOR o REVISOR) SOLO en desarrollo, mientras no exista la
-// gestión de usuarios del administrador (RF-076, Módulo 12).
+// Invita una cuenta del backoffice (EDITOR, REVISOR o ADMIN_PLATAFORMA) SOLO en desarrollo. Los docentes
+// los da de alta la administración desde su panel (RF-076, Módulo 12); este comando sirve para crear la
+// primera cuenta de administración y las del equipo de contenido.
 //
 // Uso (con la API en marcha):
 //   npm run cuenta:backoffice --workspace @lectoaventura/api -- --email ana@ejemplo.pe --nombre "Ana Ríos" --rol EDITOR
+//   (o --rol REVISOR, o --rol ADMIN_PLATAFORMA)
 //
 // La cuenta nace activa con una contraseña aleatoria que nadie conoce y se envía el correo de
 // "recuperar contraseña" (RF-004): la persona elige su contraseña desde ese enlace y, al entrar,
@@ -40,7 +42,7 @@ const base = new URL(process.env.DATABASE_URL ?? 'postgresql://x');
 if (!['localhost', '127.0.0.1', '::1'].includes(base.hostname)) salir('Solo funciona con una base de datos local.');
 if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) salir('Indica --email con un correo válido.');
 if (nombre.length < 3) salir('Indica --nombre con el nombre y apellido.');
-if (!['EDITOR', 'REVISOR'].includes(rol)) salir('Indica --rol EDITOR o --rol REVISOR.');
+if (!['EDITOR', 'REVISOR', 'ADMIN_PLATAFORMA'].includes(rol)) salir('Indica --rol EDITOR, --rol REVISOR o --rol ADMIN_PLATAFORMA.');
 
 const prisma = new PrismaClient();
 try {

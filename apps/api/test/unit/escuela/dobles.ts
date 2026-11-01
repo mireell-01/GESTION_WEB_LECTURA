@@ -12,6 +12,7 @@ import type { TarjetaAcceso } from '../../../src/modules/escuela/application/dto
 import type { AsignacionRepository } from '../../../src/modules/escuela/application/ports/asignacion.repository';
 import type { AulaRepository } from '../../../src/modules/escuela/application/ports/aula.repository';
 import type { GeneradorTarjetasPdf } from '../../../src/modules/escuela/application/ports/generador-tarjetas';
+import type { InstitucionRepository } from '../../../src/modules/escuela/application/ports/institucion.repository';
 import type { InvitacionRepository } from '../../../src/modules/escuela/application/ports/invitacion.repository';
 import type { MatriculaRepository } from '../../../src/modules/escuela/application/ports/matricula.repository';
 import type { EstudianteIdentidad, ServicioIdentidad } from '../../../src/modules/escuela/application/ports/servicio-identidad';
@@ -19,6 +20,7 @@ import { Asignacion } from '../../../src/modules/escuela/domain/entities/asignac
 import { Aula } from '../../../src/modules/escuela/domain/entities/aula';
 import { InvitacionFamiliar, InvitacionFamiliarProps } from '../../../src/modules/escuela/domain/entities/invitacion-familiar';
 import { Matricula } from '../../../src/modules/escuela/domain/entities/matricula';
+import { EstadoInstitucion, Institucion, normalizarNombreInstitucion } from '../../../src/modules/escuela/domain/services/institucion';
 import { CodigoAula } from '../../../src/modules/escuela/domain/value-objects/codigo-aula';
 import { BusEspia, Reloj } from '../iam/dobles';
 
@@ -120,6 +122,11 @@ export class IdentidadFalsa implements ServicioIdentidad {
     if (this.errorAlVincular) throw this.errorAlVincular;
     this.vinculos.push(p);
   }
+  /** RF-076: cuentas suspendidas por la administración. */
+  readonly suspendidas = new Set<string>();
+  async cuentaActiva(cuentaId: string) {
+    return !this.suspendidas.has(cuentaId);
+  }
 }
 
 export class CatalogoFalso implements CatalogoAsignable {
@@ -186,4 +193,41 @@ export async function estudianteEn(e: EntornoEscuela, aula: Aula, alias = 'Mateo
   const perfil = await e.identidad.crearPerfilEnAula({ alias, avatar, pin: '4826', anioNacimiento: 2017 });
   await e.matriculas.guardar(Matricula.crear({ id: e.generarId(), aulaId: aula.id, estudianteId: perfil.id, ahora: e.reloj.ahora() }));
   return perfil.id;
+}
+
+/**
+ * RF-076 (Módulo 12): instituciones en memoria. El vínculo aula → institución vive aparte (en la base es
+ * una columna del aula que el agregado Aula no conoce).
+ */
+export class InstitucionesEnMemoria implements InstitucionRepository {
+  readonly filas = new Map<string, Institucion>();
+  readonly vinculos = new Map<string, string>();
+  constructor(
+    private readonly aulas: AulasEnMemoria,
+    private readonly matriculas: MatriculasEnMemoria,
+  ) {}
+  async listar() {
+    return [...this.filas.values()]
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+      .map((i) => {
+        const aulas = [...this.aulas.filas.values()].filter((a) => a.estaActiva && this.vinculos.get(a.id) === i.id);
+        const estudiantes = this.matriculas.filas.filter((m) => m.activa && aulas.some((a) => a.id === m.aulaId)).map((m) => m.estudianteId);
+        return { ...i, aulas: aulas.length, docentes: new Set(aulas.map((a) => a.docenteId)).size, estudiantes: new Set(estudiantes).size };
+      });
+  }
+  async todas() { return [...this.filas.values()]; }
+  async buscarPorId(id: string) { return this.filas.get(id) ?? null; }
+  async crear(i: Institucion) { this.filas.set(i.id, { ...i }); }
+  async cambiarEstado(id: string, estado: EstadoInstitucion) { (this.filas.get(id) as Institucion).estado = estado; }
+  async vincularAulasPorNombre(institucionId: string, nombreNormalizado: string) {
+    let n = 0;
+    for (const a of this.aulas.filas.values()) {
+      if (!this.vinculos.has(a.id) && normalizarNombreInstitucion(a.propsSnapshot.institucion) === nombreNormalizado) {
+        this.vinculos.set(a.id, institucionId);
+        n++;
+      }
+    }
+    return n;
+  }
+  async vincularAula(aulaId: string, institucionId: string) { this.vinculos.set(aulaId, institucionId); }
 }

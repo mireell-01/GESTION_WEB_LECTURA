@@ -1,7 +1,7 @@
 import { Controller, Get, Inject, Param, Query, Res, StreamableFile } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
+import { Auditar, Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
 import { CASOS_USO_REPORTING, CasosUsoReporting } from '../../application/casos-uso-reporting';
 
 /**
@@ -21,12 +21,14 @@ export class SeguimientoDocenteController {
 
   /** RF-064: el detalle de un estudiante con sus últimas 20 sesiones. */
   @Get(':id/estudiantes/:estudianteId/detalle')
+  @Auditar({ accion: 'DETALLE_ESTUDIANTE_CONSULTADO', recurso: 'perfil_estudiante', parametro: 'estudianteId' })
   detalle(@UsuarioActual() u: UsuarioAutenticado, @Param('id') aulaId: string, @Param('estudianteId') estudianteId: string) {
     return this.reporting.detalle.detalle(u.sub, aulaId, estudianteId);
   }
 
   /** RF-067: el reporte de aula en PDF o CSV. No se guarda en el servidor ni en cachés. */
   @Get(':id/reporte')
+  @Auditar({ accion: 'REPORTE_AULA_DESCARGADO', recurso: 'aula', parametro: 'id' })
   async reporte(
     @UsuarioActual() u: UsuarioAutenticado,
     @Param('id') aulaId: string,

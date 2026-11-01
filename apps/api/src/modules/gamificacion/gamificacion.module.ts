@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { IamModule } from '../iam/public-api';
+import { GamificacionFacade } from './application/gamificacion.facade';
 import { gamificacionProviders } from './infrastructure/gamificacion.providers';
 import { PasaporteController } from './interface/http/pasaporte.controller';
 
@@ -12,5 +13,6 @@ import { PasaporteController } from './interface/http/pasaporte.controller';
   imports: [IamModule],
   controllers: [PasaporteController],
   providers: [...gamificacionProviders],
+  exports: [GamificacionFacade],
 })
 export class GamificacionModule {}
