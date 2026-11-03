@@ -35,6 +35,15 @@ Característica: Lectura interactiva con actividades antes, durante y después
     Entonces la evidencia se considera incorrecta
     Y recibe la pista P1 resaltando el párrafo donde buscar
 
+  # Como un libro ilustrado: cada párrafo con su escena animada; al pasar a la siguiente actividad, la
+  # pantalla vuelve al título y el niño baja leyendo desde ahí.
+  @RF-038 @RF-039
+  Escenario: El estudiante lee como en un libro ilustrado y vuelve al inicio al pasar de actividad
+    Dado un estudiante en una lectura del mundo "Detective"
+    Entonces cada párrafo que lee viene con su ilustración
+    Cuando baja hasta la pregunta y responde correctamente
+    Entonces la pantalla vuelve al título de la lectura
+
   @RF-038 @RF-047
   Escenario: El estudiante contrasta su predicción con el final y reflexiona
     Dado un estudiante que predijo "Creo que la llama se enfermará" y terminó las actividades de su lectura

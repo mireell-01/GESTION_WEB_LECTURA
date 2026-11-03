@@ -68,6 +68,8 @@ export interface ContenidoLectura {
   rangoEdad: RangoEdad;
   nivelDificultad: number;
   imagen: { url: string; textoAlternativo: string } | null;
+  /** Las ilustraciones de la lectura (la primera es la portada); acompañan a sus párrafos. */
+  imagenes: { url: string; textoAlternativo: string }[];
   oraciones: OracionLectura[];
   actividades: ActividadLectura[];
   nodos: NodoLectura[];

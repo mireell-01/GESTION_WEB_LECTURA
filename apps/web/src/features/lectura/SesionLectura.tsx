@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
@@ -13,6 +13,7 @@ import { api, mensajeDeError } from '@/shared/api/client';
 import { PreguntaLectura } from './PreguntaLectura';
 import { RespuestaEscrita } from './RespuestaEscrita';
 import { LectorEnVozAlta, TextoLectura } from './TextoLectura';
+import { IlustracionParrafo, repartoDe } from './IlustracionLectura';
 import { EntradaRespuesta, ResultadoRespuesta, Sesion } from './tipos';
 
 type Aviso = { tipo: 'exito' | 'info' | 'error'; texto: string } | null;
@@ -36,7 +37,9 @@ function nuevaClave(): string {
 export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: string; asignacionId?: string | null }) {
   const [sesion, setSesion] = useState<Sesion | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<Aviso>(null);
+  const [aviso, ponerAviso] = useState<(NonNullable<Aviso> & { vez: number }) | null>(null);
+  // Cada aviso nuevo vuelve a animar a la mascota, aunque repita el texto («Casi…» dos veces seguidas).
+  const setAviso = (a: Aviso) => ponerAviso((antes) => (a ? { ...a, vez: (antes?.vez ?? 0) + 1 } : null));
   const [explicacion, setExplicacion] = useState<{ texto: string; siguiente: Sesion } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [evidencia, setEvidencia] = useState<string[]>([]);
@@ -55,6 +58,18 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
 
   const itemId = sesion?.pregunta?.itemId ?? null;
   useEffect(() => setEvidencia([]), [itemId]);
+
+  // Al pasar a la siguiente pregunta, a la historia o al cierre, la pantalla vuelve arriba (al título).
+  const paso = sesion ? `${sesion.fase}|${itemId ?? ''}|${sesion.historia?.nodo.id ?? ''}|${explicacion ? 'explicacion' : ''}` : '';
+  const pasoAnterior = useRef<string | null>(null);
+  useEffect(() => {
+    if (!paso) return;
+    if (pasoAnterior.current !== null && pasoAnterior.current !== paso) {
+      const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: suave ? 'smooth' : 'auto' });
+    }
+    pasoAnterior.current = paso;
+  }, [paso]);
 
   const accion = async (fn: () => Promise<void>) => {
     setEnviando(true);
@@ -136,11 +151,29 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
         {fase !== 'PREDICCION' && fase !== 'FINALIZADA' ? <BarraProgreso valor={(sesion.progreso.hechas / Math.max(1, sesion.progreso.total)) * 100} etiqueta="Avance de la lectura" /> : null}
       </header>
 
-      {aviso ? <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta> : null}
+      {aviso ? (
+        // La mascota celebra cuando acierta y lo anima cuando le falta poco.
+        <div key={aviso.vez} className={`aviso-lectura aviso-lectura--${aviso.tipo}`}>
+          {aviso.tipo !== 'error' ? <Mascota tamano={60} className={aviso.tipo === 'exito' ? 'mascota-festeja' : 'mascota-anima'} /> : null}
+          {aviso.tipo === 'exito' ? (
+            <span className="aviso-lectura__chispas" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <span key={i} style={{ '--i': i } as React.CSSProperties} />
+              ))}
+            </span>
+          ) : null}
+          <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta>
+        </div>
+      ) : null}
 
       {fase === 'PREDICCION' ? (
         <section className="portada-lectura" aria-labelledby="prediccion-titulo">
-          {sesion.lectura.imagen ? <ArchivoProtegido url={sesion.lectura.imagen.url} tipo="IMAGEN" alt={sesion.lectura.imagen.textoAlternativo} className="portada-lectura__imagen" /> : <Mascota tamano={110} flota />}
+          {/* "Mira el título y la imagen": sin la imagen del editor, una escena con los personajes del título. */}
+          {sesion.lectura.imagen ? (
+            <ArchivoProtegido url={sesion.lectura.imagen.url} tipo="IMAGEN" alt={sesion.lectura.imagen.textoAlternativo} className="portada-lectura__imagen" />
+          ) : (
+            <IlustracionParrafo imagen={null} texto={sesion.lectura.titulo} reparto={sesion.lectura.titulo} />
+          )}
           <div className="pila-sm">
             <p className="pregunta-lectura__momento">Antes de leer</p>
             <h2 id="prediccion-titulo">{sesion.prediccion.enunciado}</h2>
@@ -182,6 +215,8 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
               {sesion.lectura.leerEnVozAlta ? <LectorEnVozAlta key={visibles.length} textos={visibles} alLeer={setOracionLeida} /> : null}
               <TextoLectura
                 parrafos={texto.parrafos}
+                titulo={sesion.lectura.titulo}
+                imagenes={sesion.lectura.imagenes ?? []}
                 resaltarParrafo={explicacion ? null : (pistaConParrafo?.parrafo ?? null)}
                 oracionLeida={oracionLeida}
                 anclajeId={pregunta?.anclajeOracionId ?? null}
@@ -204,7 +239,14 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
                   <p className="historia__eleccion">Elegiste: {r.eleccion}</p>
                 </div>
               ))}
-              <p className="historia__nodo">{historia.nodo.contenido}</p>
+              <div className="texto-lectura__bloque">
+                <IlustracionParrafo
+                  imagen={null}
+                  texto={historia.nodo.contenido}
+                  reparto={repartoDe(sesion.lectura.titulo, texto.parrafos[0]?.oraciones.map((o) => o.texto).join(' '))}
+                />
+                <p className="historia__nodo">{historia.nodo.contenido}</p>
+              </div>
               {fase === 'HISTORIA' ? (
                 <ul className="reto__opciones">
                   {historia.nodo.opciones.map((o, i) => (

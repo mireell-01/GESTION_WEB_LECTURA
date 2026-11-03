@@ -13,6 +13,7 @@ function aContenidoLectura(v: VersionParaLeer): ContenidoLectura {
     rangoEdad: v.rangoEdad as RangoEdad,
     nivelDificultad: v.nivelDificultad,
     imagen: v.imagen,
+    imagenes: v.imagenes,
     oraciones: v.oraciones,
     actividades: v.actividades.map((a) => ({
       id: a.id,

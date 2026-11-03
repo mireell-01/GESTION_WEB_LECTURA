@@ -4388,3 +4388,262 @@ p {
 .auditoria-tabla__id {
   font-size: var(--la-texto-sm);
 }
+
+/* ── Lectura ilustrada: cada párrafo con su escena animada, como un libro ilustrado ─────────────── */
+
+/* El texto y la historia miden su propio ancho: la ilustración va al lado del párrafo cuando cabe. */
+.texto-lectura,
+.historia {
+  container: texto-lectura / inline-size;
+}
+
+.texto-lectura {
+  gap: 18px;
+}
+
+.texto-lectura__bloque {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+}
+
+@container texto-lectura (min-width: 500px) {
+  .texto-lectura__bloque {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 16px;
+  }
+
+  /* Un párrafo con la ilustración a la izquierda y el siguiente a la derecha, como en un libro. */
+  .texto-lectura__bloque--alterno {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .texto-lectura__bloque--alterno > .ilustracion-lectura {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.ilustracion-lectura {
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 18px;
+  background: var(--la-color-fondo-alterno);
+  box-shadow: 0 4px 0 var(--la-color-primario-borde);
+}
+
+/* Portada: sin la imagen del editor, la escena del título, del mismo tamaño que tendría la imagen. */
+.portada-lectura > .ilustracion-lectura {
+  width: 100%;
+  max-width: 420px;
+}
+
+.ilustracion-lectura > .escena,
+.ilustracion-lectura__imagen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* La mascota acompaña cada aviso: celebra cuando acierta y anima cuando le falta poco. */
+.aviso-lectura {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aviso-lectura > .la-mascota {
+  flex-shrink: 0;
+}
+
+.aviso-lectura > .la-alerta {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-lectura__chispas {
+  position: absolute;
+  top: 50%;
+  left: 30px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.aviso-lectura__chispas > span {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--la-color-secundario);
+  opacity: 0;
+}
+
+.aviso-lectura__chispas > span:nth-child(even) {
+  background: var(--la-color-rosa);
+}
+
+/* Las animaciones, solo para quien no pidió menos movimiento: si no, todo queda quieto. */
+@media (prefers-reduced-motion: no-preference) {
+  .texto-lectura__bloque {
+    animation: bloque-aparece 0.6s ease-out both;
+  }
+
+  .ilustracion-lectura {
+    animation: ilustracion-entra 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+
+  /* Solo las piezas que se mueven giran sobre su propio centro (las demás conservan su posición). */
+  .escena :where([class*='escena__']) {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .escena__nube { animation: escena-nube 9s ease-in-out infinite alternate; }
+  .escena__nube--lenta { animation-duration: 13s; }
+  .escena__sol { animation: escena-sol 3s ease-in-out infinite alternate; }
+  .escena__sol--sale { animation: escena-sale 2.4s ease-out both, escena-sol 3s 2.4s ease-in-out infinite alternate; }
+  .escena__rayos { animation: escena-gira 24s linear infinite; }
+  .escena__olas { animation: escena-olas 4s linear infinite; }
+  .escena__pez { animation: escena-pez 4.4s ease-in-out infinite; }
+  .escena__llama { animation: escena-salta 1.6s ease-in-out infinite alternate; }
+  .escena__llama-cabeza { transform-origin: 50% 100%; animation: escena-cabeza 2.4s ease-in-out infinite alternate; }
+  .escena__aves { animation: escena-vuelo 6s ease-in-out infinite alternate; }
+  .escena__ala { animation: escena-aleteo 0.45s ease-in-out infinite alternate; }
+  .escena__estrellas circle { animation: escena-brillo 1.6s ease-in-out infinite alternate; }
+  .escena__lluvia line { animation: escena-lluvia 1.1s linear infinite; }
+  .escena__arbol { transform-origin: 50% 100%; animation: escena-mece 3s ease-in-out infinite alternate; }
+  .escena__flores { transform-origin: 50% 100%; animation: escena-flores 2.6s ease-in-out infinite alternate; }
+  .escena__mariposa { animation: escena-mariposa 9s ease-in-out infinite; }
+  .escena__ala-mariposa { animation: escena-ala-mariposa 0.25s ease-in-out infinite alternate; }
+  .escena__ala-mariposa:first-child { transform-origin: 100% 50%; }
+  .escena__ala-mariposa:nth-child(2) { transform-origin: 0 50%; }
+  .escena__arcoiris path { animation: escena-arcoiris 1.6s ease-out both; }
+  .escena__animal { animation: escena-salta 1.4s ease-in-out infinite alternate; }
+  .escena__animal--rana { animation: escena-brinco 2.2s ease-in-out infinite; }
+  .escena__cola { animation: escena-cola 0.5s ease-in-out infinite alternate; }
+
+  .mascota-festeja { animation: mascota-festeja 0.9s ease-out both; }
+  .mascota-anima { animation: mascota-anima 0.4s ease-in-out 3 alternate; }
+  .aviso-lectura__chispas > span { animation: chispa 0.9s ease-out both; }
+}
+
+@keyframes bloque-aparece {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@keyframes ilustracion-entra {
+  from { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes escena-nube {
+  to { transform: translateX(18px); }
+}
+
+@keyframes escena-sol {
+  to { transform: scale(1.07); }
+}
+
+@keyframes escena-sale {
+  from { transform: translateY(34px); }
+}
+
+@keyframes escena-gira {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes escena-olas {
+  to { transform: translateX(-40px); }
+}
+
+@keyframes escena-pez {
+  0%, 100% { transform: translate(0, 0); }
+  40% { transform: translate(-10px, 2px); }
+  52% { transform: translate(-15px, -16px) rotate(-25deg); }
+  64% { transform: translate(-20px, 0) rotate(15deg); }
+  72% { transform: translate(-20px, 2px); }
+}
+
+@keyframes escena-salta {
+  to { transform: translateY(-3px); }
+}
+
+@keyframes escena-cabeza {
+  from { transform: rotate(-6deg); }
+  to { transform: rotate(6deg); }
+}
+
+@keyframes escena-vuelo {
+  from { transform: translate(-10px, 0); }
+  to { transform: translate(16px, -8px); }
+}
+
+@keyframes escena-aleteo {
+  to { transform: scaleY(0.4); }
+}
+
+@keyframes escena-brillo {
+  to { opacity: 0.3; }
+}
+
+@keyframes escena-lluvia {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(80px); }
+}
+
+@keyframes escena-mece {
+  from { transform: rotate(-2deg); }
+  to { transform: rotate(2deg); }
+}
+
+@keyframes escena-flores {
+  to { transform: scaleY(1.05); }
+}
+
+@keyframes escena-mariposa {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-30px, -14px); }
+  50% { transform: translate(-60px, 6px); }
+  75% { transform: translate(-24px, 12px); }
+}
+
+@keyframes escena-ala-mariposa {
+  to { transform: scaleX(0.3); }
+}
+
+@keyframes escena-arcoiris {
+  from { stroke-dashoffset: 1; }
+}
+
+@keyframes escena-cola {
+  from { transform: rotate(-12deg); }
+  to { transform: rotate(12deg); }
+}
+
+@keyframes escena-brinco {
+  0%, 60%, 100% { transform: translateY(0); }
+  75% { transform: translateY(-12px); }
+}
+
+@keyframes mascota-festeja {
+  0% { transform: translateY(0) scale(0.6); }
+  40% { transform: translateY(-14px) rotate(-10deg) scale(1.1); }
+  70% { transform: translateY(0) rotate(8deg); }
+  100% { transform: none; }
+}
+
+@keyframes mascota-anima {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(8deg); }
+}
+
+@keyframes chispa {
+  from { opacity: 1; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(0.4); }
+  to { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(-46px) scale(1); }
+}
