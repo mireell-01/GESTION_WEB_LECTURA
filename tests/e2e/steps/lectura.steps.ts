@@ -179,3 +179,22 @@ Entonces('la respuesta queda valorada con el nivel {int}', async ({ page }, nive
   await expect(revision.getByRole('listitem', { name: 'Respuesta de Mateo' })).toContainText(`Nivel ${nivel}:`);
   await salirDelPanel(page);
 });
+
+// ── La lectura como un libro ilustrado (RF-038, RF-039) ─────────────────────
+
+Entonces('cada párrafo que lee viene con su ilustración', async ({ page }) => {
+  const texto = page.getByRole('article', { name: 'El texto' });
+  await expect(texto.locator('.texto-lectura__parrafo')).toHaveCount(2);
+  await expect(texto.locator('.ilustracion-lectura [data-escena]')).toHaveCount(2);
+});
+
+Cuando('baja hasta la pregunta y responde correctamente', async ({ page }) => {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.getByRole('button', { name: 'Opción B: Le dolía algo' }).click();
+  await expect(page.getByText('¡Muy bien! Sigue así.')).toBeVisible();
+});
+
+Entonces('la pantalla vuelve al título de la lectura', async ({ page, mundo }) => {
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.getByRole('heading', { level: 1, name: mundo.killa!.titulo })).toBeInViewport();
+});

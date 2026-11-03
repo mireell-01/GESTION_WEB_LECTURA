@@ -145,7 +145,8 @@ describe('La lectura de Mateo de punta a punta', () => {
     const v = (await t.http().post(`${API}/sesiones-lectura`).set(bearer(ninos.mateo.token)).send({ lecturaId: killa.lecturaId }).expect(201)).body;
     sesion = v.id;
     expect(v).toMatchObject({ fase: 'PREDICCION', estado: 'INICIADA', pregunta: null, texto: { parrafos: [], completo: false }, prediccion: { enunciado: '¿Qué crees que le pasará a la llama?', respuesta: null } });
-    expect(v.lectura).toMatchObject({ titulo: 'Killa y la llama', rangoEdad: 'R2', leerEnVozAlta: false });
+    // Sin imágenes del editor, la web pinta una escena por párrafo.
+    expect(v.lectura).toMatchObject({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: null, imagenes: [], leerEnVozAlta: false });
     expect(await outbox('lectura.SesionLecturaIniciada')).toBe(1);
     await responder({ itemId: uuidV7(), indice: 0 }).expect(409);
   });

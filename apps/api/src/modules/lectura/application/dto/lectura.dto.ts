@@ -33,7 +33,14 @@ export interface SesionVista {
   lecturaId: string;
   estado: string;
   fase: Fase | 'FINALIZADA' | 'ABANDONADA';
-  lectura: { titulo: string; rangoEdad: string; imagen: { url: string; textoAlternativo: string } | null; leerEnVozAlta: boolean };
+  lectura: {
+    titulo: string;
+    rangoEdad: string;
+    imagen: { url: string; textoAlternativo: string } | null;
+    /** Las ilustraciones de la lectura: la del párrafo n es la n-ésima (si la hay). */
+    imagenes: { url: string; textoAlternativo: string }[];
+    leerEnVozAlta: boolean;
+  };
   prediccion: { enunciado: string; opciones: string[]; respuesta: string | null };
   /** Solo lo que ya puede leer (RF-038, RF-039). */
   texto: { parrafos: { numero: number; oraciones: { id: string; texto: string }[] }[]; completo: boolean };
@@ -141,7 +148,7 @@ export function vistaSesion(s: SesionLectura, g: Guion): SesionVista {
     lecturaId: s.lecturaId,
     estado: s.estado,
     fase,
-    lectura: { titulo: c.titulo, rangoEdad: c.rangoEdad, imagen: c.imagen, leerEnVozAlta: c.rangoEdad === 'R1' },
+    lectura: { titulo: c.titulo, rangoEdad: c.rangoEdad, imagen: c.imagen, imagenes: c.imagenes, leerEnVozAlta: c.rangoEdad === 'R1' },
     prediccion: { enunciado: g.prediccion.enunciado, opciones: g.prediccion.opciones, respuesta: s.prediccion },
     texto: { parrafos: parrafos(visibles), completo: visibles.length === c.oraciones.length },
     progreso: { hechas: g.pasos.filter((p) => estaResuelta(s.respuestaDe(p.item.id), p.item)).length, total: g.pasos.length },

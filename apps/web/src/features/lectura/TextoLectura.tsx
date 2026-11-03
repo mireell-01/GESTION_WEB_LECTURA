@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Boton, Icono } from '@lectoaventura/ui';
 
 import { IconoLectura } from './iconos';
+import { IlustracionParrafo, repartoDe } from './IlustracionLectura';
 import { Parrafo } from './tipos';
 import { leerEnVozAlta, puedeLeerEnVozAlta, VELOCIDADES } from './voz';
 
@@ -65,8 +66,10 @@ export function LectorEnVozAlta({ textos, alLeer }: { textos: { id: string; text
 }
 
 /**
- * El texto que el niño ya puede leer (RF-038, RF-039). La oración que suena se resalta (RF-050), el
- * párrafo de la pista también (RN-06) y, en "Encuentra la evidencia", cada oración se puede tocar (RF-043).
+ * El texto que el niño ya puede leer (RF-038, RF-039), como un libro ilustrado: cada párrafo con su
+ * ilustración (la imagen del editor o una escena animada) y los párrafos nuevos aparecen con una
+ * animación suave. La oración que suena se resalta (RF-050), el párrafo de la pista también (RN-06)
+ * y, en "Encuentra la evidencia", cada oración se puede tocar (RF-043).
  */
 export function TextoLectura({
   parrafos,
@@ -74,43 +77,52 @@ export function TextoLectura({
   oracionLeida,
   anclajeId,
   evidencia,
+  titulo = '',
+  imagenes = [],
 }: {
   parrafos: Parrafo[];
   resaltarParrafo: number | null;
   oracionLeida: string | null;
   anclajeId: string | null;
   evidencia: { seleccionadas: string[]; alternar: (id: string) => void; deshabilitada: boolean } | null;
+  titulo?: string;
+  imagenes?: { url: string; textoAlternativo: string }[];
 }) {
+  const textoDe = (p: Parrafo) => p.oraciones.map((o) => o.texto).join(' ');
+  const reparto = repartoDe(titulo, parrafos[0] ? textoDe(parrafos[0]) : '');
   return (
     <div className="texto-lectura">
-      {parrafos.map((p) => (
-        <p key={p.numero} className={resaltarParrafo === p.numero ? 'texto-lectura__parrafo texto-lectura__parrafo--pista' : 'texto-lectura__parrafo'}>
-          {p.oraciones.map((o) => {
-            const clases = ['lectura-oracion', oracionLeida === o.id ? 'lectura-oracion--leyendo' : '', anclajeId === o.id ? 'lectura-oracion--anclaje' : ''].filter(Boolean).join(' ');
-            if (!evidencia) {
+      {parrafos.map((p, i) => (
+        <div key={p.numero} className={i % 2 ? 'texto-lectura__bloque texto-lectura__bloque--alterno' : 'texto-lectura__bloque'}>
+          <IlustracionParrafo imagen={imagenes[p.numero - 1] ?? null} texto={textoDe(p)} reparto={reparto} numero={p.numero} />
+          <p className={resaltarParrafo === p.numero ? 'texto-lectura__parrafo texto-lectura__parrafo--pista' : 'texto-lectura__parrafo'}>
+            {p.oraciones.map((o) => {
+              const clases = ['lectura-oracion', oracionLeida === o.id ? 'lectura-oracion--leyendo' : '', anclajeId === o.id ? 'lectura-oracion--anclaje' : ''].filter(Boolean).join(' ');
+              if (!evidencia) {
+                return (
+                  <span key={o.id} className={clases} data-oracion={o.id}>
+                    {o.texto}{' '}
+                  </span>
+                );
+              }
+              const elegida = evidencia.seleccionadas.includes(o.id);
               return (
-                <span key={o.id} className={clases} data-oracion={o.id}>
-                  {o.texto}{' '}
-                </span>
+                <button
+                  key={o.id}
+                  type="button"
+                  className={`${clases} lectura-oracion--elegible${elegida ? ' lectura-oracion--elegida' : ''}`}
+                  aria-pressed={elegida}
+                  disabled={evidencia.deshabilitada}
+                  onClick={() => evidencia.alternar(o.id)}
+                  data-oracion={o.id}
+                >
+                  {elegida ? <Icono nombre="estrella" tamano={18} /> : null}
+                  {o.texto}
+                </button>
               );
-            }
-            const elegida = evidencia.seleccionadas.includes(o.id);
-            return (
-              <button
-                key={o.id}
-                type="button"
-                className={`${clases} lectura-oracion--elegible${elegida ? ' lectura-oracion--elegida' : ''}`}
-                aria-pressed={elegida}
-                disabled={evidencia.deshabilitada}
-                onClick={() => evidencia.alternar(o.id)}
-                data-oracion={o.id}
-              >
-                {elegida ? <Icono nombre="estrella" tamano={18} /> : null}
-                {o.texto}
-              </button>
-            );
-          })}
-        </p>
+            })}
+          </p>
+        </div>
       ))}
     </div>
   );

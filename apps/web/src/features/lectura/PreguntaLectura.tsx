@@ -55,9 +55,10 @@ export function PreguntaLectura({
   const [marcadas, setMarcadas] = useState<number[]>([]);
   const titulo = useRef<HTMLHeadingElement>(null);
 
-  // Cada pregunta nueva recibe el foco, para quien navega con teclado o lector de pantalla.
+  // Cada pregunta nueva recibe el foco, para quien navega con teclado o lector de pantalla (sin mover la
+  // pantalla: la lectura vuelve arriba, al título, y desde ahí el niño baja leyendo hasta la pregunta).
   useEffect(() => {
-    titulo.current?.focus();
+    titulo.current?.focus({ preventScroll: true });
   }, [pregunta.itemId]);
 
   const cerrada = pregunta.modalidad === 'SELECCION' || pregunta.modalidad === 'ORDENAMIENTO' || pregunta.modalidad === 'EVIDENCIA';

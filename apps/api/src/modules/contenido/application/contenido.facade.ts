@@ -14,6 +14,8 @@ export interface VersionParaLeer {
   rangoEdad: string;
   nivelDificultad: number;
   imagen: { url: string; textoAlternativo: string } | null;
+  /** Todas las imágenes de la lectura, en el orden en que se subieron: ilustran sus párrafos. */
+  imagenes: { url: string; textoAlternativo: string }[];
   oraciones: { id: string; orden: number; parrafo: number; texto: string }[];
   actividades: {
     id: string;
@@ -59,14 +61,15 @@ export class ContenidoFacade {
     const version = await this.repo.buscarVersion(versionId);
     const p = version?.propsSnapshot;
     if (!p || !p.publicadaEn || (p.estado !== 'PUBLICADO' && p.estado !== 'ARCHIVADO')) return null;
-    const imagen = p.recursos.find((r) => r.tipo === 'IMAGEN');
+    const imagenes = p.recursos.filter((r) => r.tipo === 'IMAGEN').map((r) => ({ url: URL_RECURSO_BIBLIOTECA(r.id), textoAlternativo: r.textoAlternativo ?? '' }));
     return {
       lecturaId: p.lecturaId,
       versionId: p.id,
       titulo: p.metadatos.titulo,
       rangoEdad: p.metadatos.rangoEdad,
       nivelDificultad: p.metadatos.nivelDificultad,
-      imagen: imagen ? { url: URL_RECURSO_BIBLIOTECA(imagen.id), textoAlternativo: imagen.textoAlternativo ?? '' } : null,
+      imagen: imagenes[0] ?? null,
+      imagenes,
       oraciones: p.oraciones.map((o) => ({ ...o })),
       actividades: p.actividades.map((a) => ({
         id: a.id,

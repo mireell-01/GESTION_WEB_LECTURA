@@ -55,13 +55,20 @@ test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
     // RF-039: el texto llega hasta la oración de anclaje y la pregunta no deja avanzar.
     await expect(texto(page)).toContainText('Un día Pancho no quiso comer.');
     await expect(texto(page)).not.toContainText('espina');
+    // Como un libro ilustrado: cada párrafo con su escena (en Puno, junto al lago, con la llama del título).
+    await expect(texto(page).locator('.ilustracion-lectura')).toHaveCount(2);
+    await expect(texto(page).locator('[data-escena]').first()).toHaveAttribute('data-escena', 'agua');
+    await expect(texto(page).locator('[data-escena]').first()).toHaveAttribute('data-animales', /llama/);
     await pregunta(page, ENUNCIADOS.seleccion);
     // RF-045: si falla, la pista P1 (sin la respuesta); luego acierta.
     await page.getByRole('button', { name: 'Opción A: Estaba feliz' }).click();
     await expect(page.getByRole('list', { name: 'Tus pistas' })).toContainText('Pista 1: Vuelve a la oración que acabas de leer.');
     await expect(page.getByText('Mira por qué')).toHaveCount(0);
+    // Al pasar a la siguiente pregunta, la pantalla vuelve arriba (al título), aunque haya bajado.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.getByRole('button', { name: 'Opción B: Le dolía algo' }).click();
     await expect(page.getByText('¡Muy bien! Sigue así.')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 
     // RF-043: toca en el texto las oraciones que lo demuestran.
     await pregunta(page, ENUNCIADOS.evidencia);
@@ -79,6 +86,7 @@ test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
     await page.getByRole('button', { name: 'Ir al río' }).click();
     await expect(page.getByText('Elegiste: Ir al río')).toBeVisible();
     await expect(page.getByText(DESENLACE_RIO)).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Tu camino en la historia' }).locator('[data-escena]')).toHaveAttribute('data-escena', 'agua');
 
     // RF-042: ordena con los botones (la alternativa accesible al arrastre).
     await pregunta(page, ENUNCIADOS.ordenar);

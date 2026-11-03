@@ -40,7 +40,14 @@ export interface Sesion {
   lecturaId: string;
   estado: string;
   fase: Fase;
-  lectura: { titulo: string; rangoEdad: string; imagen: { url: string; textoAlternativo: string } | null; leerEnVozAlta: boolean };
+  lectura: {
+    titulo: string;
+    rangoEdad: string;
+    imagen: { url: string; textoAlternativo: string } | null;
+    /** Las ilustraciones de la lectura: la del párrafo n es la n-ésima (si la hay). */
+    imagenes?: { url: string; textoAlternativo: string }[];
+    leerEnVozAlta: boolean;
+  };
   prediccion: { enunciado: string; opciones: string[]; respuesta: string | null };
   texto: { parrafos: Parrafo[]; completo: boolean };
   progreso: { hechas: number; total: number };

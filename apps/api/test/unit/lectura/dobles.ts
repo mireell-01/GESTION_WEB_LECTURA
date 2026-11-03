@@ -136,6 +136,7 @@ export function lecturaDeEjemplo(p: { lecturaId?: string; versionId?: string; ra
     rangoEdad: p.rangoEdad ?? 'R2',
     nivelDificultad: 2,
     imagen: { url: '/api/v1/biblioteca/recursos/img', textoAlternativo: 'Una niña con su llama' },
+    imagenes: [{ url: '/api/v1/biblioteca/recursos/img', textoAlternativo: 'Una niña con su llama' }],
     oraciones: ORACIONES,
     actividades,
     nodos,

@@ -44,7 +44,7 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
   it('RF-038: abre la lectura en la predicción, sin texto, y avisa a Aventura (SesionLecturaIniciada)', async () => {
     const v = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
     expect(v).toMatchObject({ fase: 'PREDICCION', estado: 'INICIADA', pregunta: null, texto: { parrafos: [], completo: false } });
-    expect(v.lectura).toEqual({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: expect.any(Object), leerEnVozAlta: false });
+    expect(v.lectura).toEqual({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: expect.any(Object), imagenes: [expect.any(Object)], leerEnVozAlta: false });
     expect(e.bus.publicados[0]).toMatchObject({ nombreEvento: EVENTOS_INTEGRACION.SESION_LECTURA_INICIADA, datos: { estudianteId: NINO, lecturaId: LECTURA, esRepeticion: false } });
   });
 
