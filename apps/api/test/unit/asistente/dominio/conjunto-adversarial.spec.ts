@@ -267,7 +267,7 @@ async function conversar(p: PreguntaEnCurso, entrada: { mensaje: string }, salid
   return { r, nino: nino!, guia: guia!, alMotor: e.motor.entradas[0]! };
 }
 
-describe('Conjunto adversario del asistente (RF-073): 0 fugas', () => {
+describe('[Asistente][Core][Slow] Conjunto adversario del asistente (RF-073): 0 fugas', () => {
   it('tiene más de 300 casos', () => {
     const salidas = PREGUNTAS.reduce((n, p) => n + salidasQueRevelan(p.pregunta.claves, p.parafrasis).length + SALIDAS_GENERALES.length, 0);
     const total = PREGUNTAS.length * ATAQUES.length + DATOS_PERSONALES.length + GROSERIAS.length + salidas;

@@ -15,7 +15,7 @@ import { HABILIDADES, RANGOS_EDAD } from '../../../../src/modules/shared-kernel/
 const medidas = (v: Record<string, number>, items = 6) => Object.entries(v).map(([habilidad, valor]) => ({ habilidad, valor, items }));
 const CUENTA = '0192f1c4-7a10-7c3e-9b2a-1f0e5d6c7b8a';
 
-describe('Habilidades a reforzar (RF-068)', () => {
+describe('[Reporting][Menor][Fast] Habilidades a reforzar (RF-068)', () => {
   it('las medidas por debajo de "Logrado" (65), de la más baja a la más alta, hasta 3', () => {
     const celdas = celdasDe(medidas({ LIT: 80, INF: 31, VOC: 48, CRI: 64.9, ARG: 20 }));
     expect(habilidadesAReforzar(celdas)).toEqual([
@@ -37,7 +37,7 @@ describe('Habilidades a reforzar (RF-068)', () => {
   });
 });
 
-describe('Consejos para casa (RF-069)', () => {
+describe('[Reporting][Menor][Fast] Consejos para casa (RF-069)', () => {
   it('al menos un consejo práctico por habilidad y edad, para no especialistas', () => {
     for (const h of HABILIDADES) {
       for (const r of RANGOS_EDAD) {
@@ -63,7 +63,7 @@ describe('Consejos para casa (RF-069)', () => {
   });
 });
 
-describe('Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
+describe('[Reporting][Menor][Fast] Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
   it('el domingo desde las 18:00 resume la semana en curso; antes, la anterior', () => {
     expect(semanaFamiliarPorResumir(new Date('2026-10-25T22:59:00Z'))).toBe('2026-10-12'); // domingo 25, 17:59
     expect(semanaFamiliarPorResumir(new Date('2026-10-25T23:00:00Z'))).toBe('2026-10-19'); // domingo 25, 18:00
@@ -76,7 +76,7 @@ describe('Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
   });
 });
 
-describe('Enlace de baja firmado (RF-070)', () => {
+describe('[Reporting][Core][Fast] Enlace de baja firmado (RF-070)', () => {
   const firma = new HmacFirmaBaja('secreto-de-prueba');
 
   it('lleva la cuenta y su firma; se verifica en tiempo constante', () => {

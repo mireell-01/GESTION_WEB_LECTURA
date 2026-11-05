@@ -23,7 +23,7 @@ function peticion(regla: ReglaLimiteTasa | undefined, req: { ip?: string; body?:
 const LOGIN: ReglaLimiteTasa = { nombre: 'ingreso-adulto', maximoPorMinuto: 10, por: 'ip' };
 const TABLET: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-tablet', maximoPorMinuto: 30, por: { campoCuerpo: 'tokenDispositivo' } };
 
-describe('LimiteTasaGuard (RNF-019)', () => {
+describe('[IAM][Core][Fast] LimiteTasaGuard (RNF-019)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-15T15:00:00Z'));

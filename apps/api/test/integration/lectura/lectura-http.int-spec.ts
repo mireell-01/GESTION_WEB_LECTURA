@@ -120,7 +120,7 @@ const outbox = (tipo: string) => t.prisma.outboxEvento.count({ where: { tipo } }
 const responder = (cuerpo: Record<string, unknown>) =>
   t.http().post(`${API}/sesiones-lectura/${sesion}/respuestas`).set(bearer(ninos.mateo.token)).send({ idempotencyKey: uuidV7(), ...cuerpo });
 
-describe('Preparación', () => {
+describe('[Lectura][Core][Slow] Preparación', () => {
   it('editora y revisora publican; una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -140,7 +140,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('La lectura de Mateo de punta a punta', () => {
+describe('[Lectura][Core][Slow] La lectura de Mateo de punta a punta', () => {
   it('RF-038: empieza en la predicción, sin texto ni preguntas; antes de predecir no se responde', async () => {
     const v = (await t.http().post(`${API}/sesiones-lectura`).set(bearer(ninos.mateo.token)).send({ lecturaId: killa.lecturaId }).expect(201)).body;
     sesion = v.id;
@@ -241,7 +241,7 @@ describe('La lectura de Mateo de punta a punta', () => {
   });
 });
 
-describe('Reanudar, acceso y lectura en voz alta', () => {
+describe('[Lectura][Core][Slow] Reanudar, acceso y lectura en voz alta', () => {
   it('RF-046, RF-027: al volver sigue la misma sesión con su versión, aunque se publique otra', async () => {
     const leer = () => t.http().post(`${API}/sesiones-lectura`).set(bearer(ninos.lia.token)).send({ lecturaId: toby.lecturaId }).expect(201);
     const v = (await leer()).body;
@@ -279,7 +279,7 @@ describe('Reanudar, acceso y lectura en voz alta', () => {
   });
 });
 
-describe('RF-051: revisión docente con rúbrica (RN-17)', () => {
+describe('[Lectura][Core][Slow] RF-051: revisión docente con rúbrica (RN-17)', () => {
   it('la docente ve la respuesta abierta de Mateo con su defensa y la valora una vez', async () => {
     const pendientes = (await t.http().get(`${API}/aulas/${aulaId}/respuestas-abiertas`).set(bearer(tokenDocente)).expect(200)).body;
     expect(pendientes).toHaveLength(1);

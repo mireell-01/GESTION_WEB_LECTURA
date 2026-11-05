@@ -192,7 +192,7 @@ import { generarBanco } from '../dobles';
 const AHORA = new Date('2026-10-21T15:00:00Z');
 const despues = (min: number) => new Date(AHORA.getTime() + min * 60_000);
 
-describe('Plan y cálculo del nivel', () => {
+describe('[Diagnostico][Core][Fast] Plan y cálculo del nivel', () => {
   it('RF-034: 15 ítems (R1: 10); RF-037: la reevaluación alterna a la forma equivalente', () => {
     expect(ITEMS_POR_RANGO).toEqual({ R1: 10, R2: 15, R3: 15 });
     expect(formaDe('INICIAL', 1)).toBe('A');
@@ -232,7 +232,7 @@ describe('Plan y cálculo del nivel', () => {
   });
 });
 
-describe('Diagnóstico', () => {
+describe('[Diagnostico][Core][Fast] Diagnóstico', () => {
   const banco = generarBanco('R2', 'A');
   const nuevo = () => Diagnostico.crearInicial({ id: 'd1', estudianteId: 'nino', rangoEdad: 'R2' });
   const responderTodo = (d: Diagnostico, acierta: (i: number) => boolean = () => true) => {
@@ -329,7 +329,7 @@ import { crearEntornoDiagnostico, EntornoDiagnostico, generarBanco } from '../do
 const NINO = 'nino-9';
 const DOCENTE = 'docente';
 
-describe('Diagnóstico: reto del estudiante y reevaluación del docente', () => {
+describe('[Diagnostico][Core][Fast] Diagnóstico: reto del estudiante y reevaluación del docente', () => {
   let e: EntornoDiagnostico;
 
   beforeEach(() => {
@@ -696,7 +696,7 @@ let aulaId: string;
 const ninos = {} as Record<'mateo' | 'lia', { id: string; token: string }>;
 let retoMateo: string;
 
-describe('Preparación', () => {
+describe('[Diagnostico][Core][Slow] Preparación', () => {
   it('una docente con un aula, Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     tokenDocente = await docente();
     aulaId = (await t.http().post(`${API}/aulas`).set(bearer(tokenDocente)).send({
@@ -714,7 +714,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Reto inicial (RF-034, RF-036, RN-05)', () => {
+describe('[Diagnostico][Core][Slow] Reto inicial (RF-034, RF-036, RN-05)', () => {
   it('RN-05: sin el reto inicial, el mapa no se habilita', async () => {
     const mapa = (await t.http().get(`${API}/aventura/mapa`).set(bearer(ninos.mateo.token)).expect(200)).body;
     expect(mapa.diagnosticoPendiente).toBe(true);
@@ -768,7 +768,7 @@ describe('Reto inicial (RF-034, RF-036, RN-05)', () => {
   });
 });
 
-describe('Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
+describe('[Diagnostico][Core][Slow] Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
   it('Mateo acierta en LIT y VOC: nivel por habilidad y empieza en el Detective con el Explorador completado (UAT-01)', async () => {
     await t.http().post(`${API}/diagnosticos/${retoMateo}/finalizar`).set(bearer(ninos.mateo.token)).expect(409); // aún faltan
     await responderTodo(ninos.mateo.token, retoMateo, ['LIT', 'VOC']);
@@ -803,7 +803,7 @@ describe('Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
   });
 });
 
-describe('Reevaluación periódica del docente (RF-037)', () => {
+describe('[Diagnostico][Core][Slow] Reevaluación periódica del docente (RF-037)', () => {
   it('la docente la asigna a su aula; otra docente no puede', async () => {
     const otra = await docente();
     await t.http().post(`${API}/aulas/${aulaId}/reevaluaciones`).set(bearer(otra)).send({}).expect(404);
@@ -891,7 +891,7 @@ const test = base.extend({
  * el niño hace su reto inicial en la web real, lo pausa y lo retoma, y queda ubicado en su mundo; la
  * docente le asigna un reto de repaso y compara el avance por habilidad.
  */
-test.describe('Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => {
+test.describe('[Diagnostico][Core][Slow] Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {

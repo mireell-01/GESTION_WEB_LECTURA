@@ -198,7 +198,7 @@ import { MUNDOS } from '../dobles';
 const AHORA = new Date('2026-10-17T15:00:00Z');
 const estados = (p: ProgresoAventura) => p.mundos.map((m) => m.estado);
 
-describe('Política de progresión', () => {
+describe('[Aventura][Menor][Fast] Política de progresión', () => {
   it('RF-033: con LIT y VOC ≥ 65 empieza en el mundo 2; si no, en el 1 (nunca más allá del 2)', () => {
     expect(mundoInicial({ LIT: 70, VOC: 68, INF: 10 })).toBe(2); // escenario UAT-01 del SRS
     expect(mundoInicial({ LIT: 65, VOC: 65 })).toBe(2); // el umbral es inclusivo
@@ -232,7 +232,7 @@ describe('Política de progresión', () => {
   });
 });
 
-describe('ProgresoAventura', () => {
+describe('[Aventura][Menor][Fast] ProgresoAventura', () => {
   it('RF-033: en el mundo 1, el resto bloqueado y sin celebración para el mundo inicial', () => {
     const p = ProgresoAventura.posicionar('nino', MUNDOS, 1, AHORA);
     expect(estados(p)).toEqual(['DISPONIBLE', 'BLOQUEADO', 'BLOQUEADO', 'BLOQUEADO', 'BLOQUEADO']);
@@ -284,7 +284,7 @@ describe('ProgresoAventura', () => {
   });
 });
 
-describe('Misión', () => {
+describe('[Aventura][Menor][Fast] Misión', () => {
   const lecturas = (n: number) => Array.from({ length: n }, () => uuidV7());
   const crear = (datos: Partial<{ titulo: string; descripcion: string; lecturaIds: string[] }> = {}, orden = 1) =>
     Mision.crear({
@@ -351,7 +351,7 @@ import { crearEntornoAventura, EntornoAventura } from '../dobles';
 const NINO = 'nino-9-anios';
 const EDITORA = 'editora';
 
-describe('Aventura: mapa, misiones, progreso y backoffice', () => {
+describe('[Aventura][Menor][Fast] Aventura: mapa, misiones, progreso y backoffice', () => {
   let e: EntornoAventura;
 
   beforeEach(() => {
@@ -931,7 +931,7 @@ let mundos: { id: string; numero: number }[];
 const lecturasR2: string[] = [];
 const misionesR2: string[] = [];
 
-describe('Preparación: lecturas publicadas y un aula con dos niños', () => {
+describe('[Aventura][Menor][Slow] Preparación: lecturas publicadas y un aula con dos niños', () => {
   it('editora, revisor, docente y niños de 9 y 11 años con sesión en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisor = await backoffice('REVISOR');
@@ -953,7 +953,7 @@ describe('Preparación: lecturas publicadas y un aula con dos niños', () => {
   });
 });
 
-describe('Backoffice de misiones (RF-032)', () => {
+describe('[Aventura][Menor][Slow] Backoffice de misiones (RF-032)', () => {
   it('solo editores (y revisores para consultar) con MFA; el esqueleto de ejemplo ya no existe', async () => {
     await t.http().get(`${API}/backoffice/mundos`).set(bearer(tokenDocente)).expect(403);
     await t.http().get(`${API}/backoffice/mundos`).set(bearer(ninos.mateo.token)).expect(403);
@@ -1008,7 +1008,7 @@ describe('Backoffice de misiones (RF-032)', () => {
   });
 });
 
-describe('Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
+describe('[Aventura][Menor][Slow] Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
   it('sin el Módulo 5, Mateo (9 años) empieza en el Explorador; los demás mundos están bloqueados', async () => {
     const mapa = (await t.http().get(`${API}/aventura/mapa`).set(bearer(ninos.mateo.token)).expect(200)).body;
     expect(mapa).toMatchObject({ diagnosticoPendiente: false, mundoActual: 1 });
@@ -1047,7 +1047,7 @@ describe('Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
   });
 });
 
-describe('Avance y desbloqueo por eventos (RF-031, RF-032, RN-09)', () => {
+describe('[Aventura][Menor][Slow] Avance y desbloqueo por eventos (RF-031, RF-032, RN-09)', () => {
   it('terminar lecturas completa misiones; con LIT y VOC ≥ 65 y 3 misiones se abre el Detective con celebración', async () => {
     const yo = ninos.mateo;
     maestrias.set(yo.id, { LIT: 70, VOC: 68, INF: 40 });
@@ -1146,7 +1146,7 @@ const test = base.extend({
  * arma misiones en la web real y el niño (9 años) las encuentra en su mapa; los mundos bloqueados no
  * se abren y un desbloqueo se celebra una sola vez.
  */
-test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
+test.describe('[Aventura][Menor][Slow] Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
   test.setTimeout(150_000);
 
   async function entrarComoNino(page: Page, aula: AulaPreparada, alias: string) {

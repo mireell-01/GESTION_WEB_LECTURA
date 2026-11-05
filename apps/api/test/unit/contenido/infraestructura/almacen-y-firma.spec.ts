@@ -8,7 +8,7 @@ import { AlmacenDiscoLocal } from '../../../../src/modules/contenido/infrastruct
 import { FirmadorSubidasHmac } from '../../../../src/modules/contenido/infrastructure/almacen/firmador-subidas-hmac';
 
 /** Nivel 1 — Adaptadores de Contenido: firma de subidas (URL prefirmada) y almacén local (RF-023). */
-describe('FirmadorSubidasHmac', () => {
+describe('[Contenido][Core][Fast] FirmadorSubidasHmac', () => {
   const firmador = new FirmadorSubidasHmac('secreto-de-pruebas-de-contenido-con-mas-de-32-caracteres');
   const ahora = new Date('2026-10-20T15:00:00Z');
   const vence = new Date(ahora.getTime() + 60_000);
@@ -34,7 +34,7 @@ describe('FirmadorSubidasHmac', () => {
   });
 });
 
-describe('AlmacenDiscoLocal', () => {
+describe('[Contenido][Menor][Fast] AlmacenDiscoLocal', () => {
   let carpeta: string;
   beforeAll(async () => {
     carpeta = await mkdtemp(join(tmpdir(), 'almacen-'));

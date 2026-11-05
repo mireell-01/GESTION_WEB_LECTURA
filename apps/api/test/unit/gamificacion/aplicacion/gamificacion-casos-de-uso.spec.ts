@@ -26,7 +26,7 @@ const item = (p: Partial<DatosItemRespondido> = {}): DatosItemRespondido => ({
   ...p,
 });
 
-describe('Gamificación: logros, pasaporte, reto del día y recompensas', () => {
+describe('[Gamificacion][Menor][Fast] Gamificación: logros, pasaporte, reto del día y recompensas', () => {
   let e: EntornoGamificacion;
 
   beforeEach(() => {

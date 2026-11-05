@@ -25,7 +25,7 @@ import { crearEntorno, cuentaActiva, Entorno, perfilEstudiante } from '../dobles
 
 const CONTRASENA = 'Lectura-Segura-2026';
 
-describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
+describe('[IAM][Core][Fast] AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
   let e: Entorno;
   let caso: AutenticarAdultoUseCase;
 
@@ -85,7 +85,7 @@ describe('AutenticarAdulto (RF-003, RF-009, RF-011)', () => {
   });
 });
 
-describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-04, CR-01)', () => {
+describe('[IAM][Core][Fast] AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-04, CR-01)', () => {
   let e: Entorno;
   let caso: AutenticarEstudianteUseCase;
   let contexto: ContextoIngresoUseCase;
@@ -206,7 +206,7 @@ describe('AutenticarEstudiante y contexto de ingreso (RF-007, RF-008, RN-03, RN-
   });
 });
 
-describe('Sesiones: renovar, validar y cerrar (RF-003, RF-010, ADR-005)', () => {
+describe('[IAM][Core][Fast] Sesiones: renovar, validar y cerrar (RF-003, RF-010, ADR-005)', () => {
   let e: Entorno;
   let renovar: RenovarSesionUseCase;
 
@@ -277,7 +277,7 @@ describe('Sesiones: renovar, validar y cerrar (RF-003, RF-010, ADR-005)', () => 
   });
 });
 
-describe('MFA en dos pasos (RF-011)', () => {
+describe('[IAM][Core][Fast] MFA en dos pasos (RF-011)', () => {
   it('iniciar genera secreto pendiente; confirmar con código válido eleva la sesión', async () => {
     const e = crearEntorno();
     const cuenta = await cuentaActiva(e, { rol: 'REVISOR' });

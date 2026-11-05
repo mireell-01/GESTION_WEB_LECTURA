@@ -13,7 +13,7 @@ import { crearEntorno, cuentaActiva, Entorno, perfilEstudiante } from '../dobles
  * Nivel 1 — Vínculos de familiares adicionales (RF-019, RN-17, SRS §7: 1 responsable + hasta 2
  * vinculados). IAM los crea cuando Escuela canjea la invitación de la docente.
  */
-describe('Vincular un familiar con un estudiante (RF-019)', () => {
+describe('[IAM][Core][Fast] Vincular un familiar con un estudiante (RF-019)', () => {
   let e: Entorno;
   let vincular: VincularFamiliarUseCase;
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe('Vincular un familiar con un estudiante (RF-019)', () => {
   });
 });
 
-describe('Tablet de casa con estudiantes vinculados (RF-007, RN-04, RF-019)', () => {
+describe('[IAM][Core][Fast] Tablet de casa con estudiantes vinculados (RF-007, RN-04, RF-019)', () => {
   it('la familia ve y hace entrar con su PIN al niño vinculado; otra familia no', async () => {
     const e = crearEntorno();
     const docente = await cuentaActiva(e, { rol: 'DOCENTE' });

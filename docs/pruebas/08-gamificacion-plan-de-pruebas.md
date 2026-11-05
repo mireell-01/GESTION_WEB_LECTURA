@@ -226,7 +226,7 @@ function cuenta(e: Partial<EstadoCuenta> = {}) {
 const reto = (p: Partial<{ fecha: string; habilidad: 'INF' | 'LIT' }> = {}) =>
   RetoDiario.proponer({ id: 'reto-1', estudianteId: 'nino', fecha: p.fecha ?? HOY, habilidad: p.habilidad ?? 'INF', lectura: null });
 
-describe('Parámetros versionados (RF-078)', () => {
+describe('[Gamificacion][Menor][Fast] Parámetros versionados (RF-078)', () => {
   it('la versión 1 sembrada por la migración da los valores del SRS', () => {
     const v1 = leerParametros(1, {
       puntos: { lecturaCompletada: 20, itemCorrecto: 10, correctoTrasPista: 6, subidaNivelCneb: 50, retoDelDia: 15, racha: { '3': 10, '7': 30, '30': 100 } },
@@ -245,7 +245,7 @@ describe('Parámetros versionados (RF-078)', () => {
   });
 });
 
-describe('Nivel lector (RF-057)', () => {
+describe('[Gamificacion][Menor][Fast] Nivel lector (RF-057)', () => {
   it('el nivel n pide 100 × n × (n + 1) / 2 puntos', () => {
     expect([1, 2, 3, 4].map((n) => umbralNivel(n))).toEqual([100, 300, 600, 1000]);
     expect([0, 99, 100, 299, 300, 599, 600, 1000, 1499, 1500].map((p) => nivelLector(p))).toEqual([0, 0, 1, 1, 2, 2, 3, 4, 4, 5]);
@@ -259,7 +259,7 @@ describe('Nivel lector (RF-057)', () => {
   });
 });
 
-describe('Política de puntos (RN-10, RN-11, RN-12, RN-19)', () => {
+describe('[Gamificacion][Menor][Fast] Política de puntos (RN-10, RN-11, RN-12, RN-19)', () => {
   it('acertar a la primera vale 10, tras una pista 6; equivocarse no da ni quita (RN-10)', () => {
     expect(puntosDeItem({ esCorrecta: true, pistasUsadas: 0, palabras: null }, P, 'R2')).toEqual({ motivo: 'ITEM_CORRECTO', puntos: 10 });
     expect(puntosDeItem({ esCorrecta: true, pistasUsadas: 1, palabras: null }, P, 'R2')).toEqual({ motivo: 'CORRECTO_TRAS_PISTA', puntos: 6 });
@@ -287,7 +287,7 @@ describe('Política de puntos (RN-10, RN-11, RN-12, RN-19)', () => {
   });
 });
 
-describe('Racha con comodín semanal (RF-061)', () => {
+describe('[Gamificacion][Menor][Fast] Racha con comodín semanal (RF-061)', () => {
   const r = (ultimaFecha: string, dias: number, comodinSemana: string | null = null) => ({ dias, mejor: dias, ultimaFecha, comodinSemana });
 
   it('empieza en 1, suma un día seguido e ignora un segundo logro el mismo día o uno atrasado', () => {
@@ -320,7 +320,7 @@ describe('Racha con comodín semanal (RF-061)', () => {
   });
 });
 
-describe('Reglas de insignias (RF-058)', () => {
+describe('[Gamificacion][Menor][Fast] Reglas de insignias (RF-058)', () => {
   it('lee las reglas del catálogo y descarta las mal formadas', () => {
     expect(leerRegla({ tipo: 'EVIDENCIAS', meta: 5 })).toEqual({ tipo: 'EVIDENCIAS', meta: 5 });
     expect(leerRegla({ tipo: 'NIVEL_HABILIDAD', habilidad: 'INF', nivel: 'AD' })).toEqual({ tipo: 'NIVEL_HABILIDAD', habilidad: 'INF', nivel: 'AD' });
@@ -338,7 +338,7 @@ describe('Reglas de insignias (RF-058)', () => {
   });
 });
 
-describe('Identificador determinista y monedas (RF-062)', () => {
+describe('[Gamificacion][Menor][Fast] Identificador determinista y monedas (RF-062)', () => {
   it('el mismo logro da siempre el mismo UUID v8; otro logro, otro', () => {
     const a = idDeterminista('racha', 'nino', HOY);
     expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
@@ -356,7 +356,7 @@ describe('Identificador determinista y monedas (RF-062)', () => {
   });
 });
 
-describe('Reto del día (RF-060, RN-18)', () => {
+describe('[Gamificacion][Menor][Fast] Reto del día (RF-060, RN-18)', () => {
   it('apunta a la habilidad más débil; empate por el orden del SRS; sin perfil, comprensión literal', () => {
     expect(habilidadDelReto({ LIT: 70, INF: 30, VOC: 60, CRI: 50, ARG: 40 })).toBe('INF');
     expect(habilidadDelReto({ LIT: 70, INF: 0, VOC: 60, CRI: 0, ARG: 0 })).toBe('INF');
@@ -373,7 +373,7 @@ describe('Reto del día (RF-060, RN-18)', () => {
   });
 });
 
-describe('Cuenta de gamificación (RF-056, RF-058, RN-12, RN-13)', () => {
+describe('[Gamificacion][Menor][Fast] Cuenta de gamificación (RF-056, RF-058, RN-12, RN-13)', () => {
   it('cada otorgamiento es un asiento con motivo; el tope diario corta el último y no deja asientos en 0', () => {
     const c = cuenta({ puntosTotales: 1000, puntosHoy: 295 });
     expect(c.otorgarPuntos('ITEM_CORRECTO', 10, 'r-1')).toBe(5);
@@ -477,7 +477,7 @@ const item = (p: Partial<DatosItemRespondido> = {}): DatosItemRespondido => ({
   ...p,
 });
 
-describe('Gamificación: logros, pasaporte, reto del día y recompensas', () => {
+describe('[Gamificacion][Menor][Fast] Gamificación: logros, pasaporte, reto del día y recompensas', () => {
   let e: EntornoGamificacion;
 
   beforeEach(() => {
@@ -1056,7 +1056,7 @@ const asientos = (estudianteId = mateo.id) => t.prisma.asientoPuntos.findMany({ 
 const insignia = (v: { insignias: { codigo: string }[] }, codigo: string) => v.insignias.find((i) => i.codigo === codigo);
 const total = async (estudianteId = mateo.id) => (await asientos(estudianteId)).reduce((s, a) => s + a.puntos, 0);
 
-describe('Preparación', () => {
+describe('[Gamificacion][Menor][Slow] Preparación', () => {
   it('lecturas publicadas y una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -1078,7 +1078,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
+describe('[Gamificacion][Menor][Slow] Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
   it('RF-059: sin logros, el pasaporte muestra el catálogo por ganar, nivel 0 y ninguna moneda', async () => {
     const v = (await pasaporte().expect(200)).body;
     expect(v).toMatchObject({
@@ -1112,7 +1112,7 @@ describe('Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
   });
 });
 
-describe('Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
+describe('[Gamificacion][Menor][Slow] Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
   let sesion: string;
 
   it('UAT-02, UAT-03: una lectura real deja un asiento por motivo y suma a la evidencia, la racha y el reto', async () => {
@@ -1178,7 +1178,7 @@ describe('Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
   });
 });
 
-describe('Insignias (RF-058, RN-13) y racha (RF-061)', () => {
+describe('[Gamificacion][Menor][Slow] Insignias (RF-058, RN-13) y racha (RF-061)', () => {
   it('UAT-03: la quinta evidencia correcta otorga "Detective de Evidencias", una sola vez', async () => {
     for (let i = 0; i < 5; i++) await bus.publicar([itemSintetico(mateo.id, { modalidad: 'EVIDENCIA' })]);
     const v = (await pasaporte().expect(200)).body;
@@ -1234,7 +1234,7 @@ describe('Insignias (RF-058, RN-13) y racha (RF-061)', () => {
   });
 });
 
-describe('Tope diario (RN-12)', () => {
+describe('[Gamificacion][Menor][Slow] Tope diario (RN-12)', () => {
   it('aunque lleguen 40 aciertos a la vez, Lía no pasa de 300 puntos en el día', async () => {
     await Promise.all(Array.from({ length: 40 }, () => bus.publicar([itemSintetico(lia.id)])));
     expect(await total(lia.id)).toBe(300);
@@ -1245,7 +1245,7 @@ describe('Tope diario (RN-12)', () => {
   });
 });
 
-describe('Recompensas (RF-062)', () => {
+describe('[Gamificacion][Menor][Slow] Recompensas (RF-062)', () => {
   const recompensa = async (codigo: string) => (await t.prisma.recompensa.findUniqueOrThrow({ where: { codigo } })).id;
   const canjear = (id: string, token = lia.token) => t.http().post(`${API}/yo/recompensas/${id}/canje`).set(bearer(token));
 
@@ -1276,7 +1276,7 @@ describe('Recompensas (RF-062)', () => {
   });
 });
 
-describe('Acceso (RNF-012)', () => {
+describe('[Gamificacion][Menor][Slow] Acceso (RNF-012)', () => {
   it('solo el estudiante ve su pasaporte, su reto y canjea', async () => {
     await t.http().get(`${API}/yo/pasaporte`).expect(401);
     await t.http().get(`${API}/yo/pasaporte`).set(bearer(tokenDocente)).expect(403);
@@ -1345,7 +1345,7 @@ const test = base.extend({
  * una lectura el niño ve lo que ganó y su Pasaporte del Lector lo refleja al instante; el inicio muestra
  * su marcador y el reto del día; en la tienda canjea con monedas sin perder puntos.
  */
-test.describe('Gamificación: pasaporte, reto del día y recompensas (RF-056 a RF-062)', () => {
+test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del día y recompensas (RF-056 a RF-062)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {

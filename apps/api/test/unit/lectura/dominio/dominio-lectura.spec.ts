@@ -43,7 +43,7 @@ function hasta(s: SesionLectura, g: Guion, itemId: string) {
   }
 }
 
-describe('Guion de la lectura (RF-038, RF-039)', () => {
+describe('[Lectura][Core][Fast] Guion de la lectura (RF-038, RF-039)', () => {
   const g = new Guion(lecturaDeEjemplo());
 
   it('la predicción va primero y sale del ítem PREDICCION; el resto sigue antes → durante (por anclaje) → después', () => {
@@ -72,7 +72,7 @@ describe('Guion de la lectura (RF-038, RF-039)', () => {
   });
 });
 
-describe('Corrección en el servidor (RF-040 a RF-043)', () => {
+describe('[Lectura][Core][Fast] Corrección en el servidor (RF-040 a RF-043)', () => {
   const g = new Guion(lecturaDeEjemplo());
   const ctx = { claveOrden: 'ses:it-ord', oracionesValidas: new Set(['o1', 'o2', 'o3', 'o4']) };
 
@@ -123,7 +123,7 @@ describe('Corrección en el servidor (RF-040 a RF-043)', () => {
   });
 });
 
-describe('Filtro de palabras (RF-041)', () => {
+describe('[Lectura][Core][Fast] Filtro de palabras (RF-041)', () => {
   it('cubre tildes, mayúsculas, letras repetidas, plurales y sustituciones', () => {
     expect(filtrarPalabras('¡Qué ESTÚPIDO!').texto).toBe('¡Qué ********!');
     expect(filtrarPalabras('idiotaaa').filtrado).toBe(true);
@@ -139,7 +139,7 @@ describe('Filtro de palabras (RF-041)', () => {
   });
 });
 
-describe('Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
+describe('[Lectura][Core][Fast] Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
   it('1 · 0,75 · 0,5 · 0,25 según las pistas; 0 con la explicación', () => {
     expect([0, 1, 2, 3].map((p) => puntajeItem(p, false))).toEqual([1, 0.75, 0.5, 0.25]);
     expect(puntajeItem(3, true)).toBe(0);
@@ -147,7 +147,7 @@ describe('Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
   });
 });
 
-describe('SesionLectura', () => {
+describe('[Lectura][Core][Fast] SesionLectura', () => {
   const g = new Guion(lecturaDeEjemplo());
 
   it('RF-038: sin predicción no hay texto ni preguntas; al predecir se abre la lectura (una sola vez)', () => {

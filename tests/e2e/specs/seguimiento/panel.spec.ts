@@ -21,7 +21,7 @@ const test = base.extend({
  * refuerzo grupal con un clic, abre el detalle de un estudiante con sus evidencias y pistas, y descarga
  * el reporte en CSV y PDF.
  */
-test.describe('Seguimiento docente (RF-063 a RF-067)', () => {
+test.describe('[Reporting][Menor][Slow] Seguimiento docente (RF-063 a RF-067)', () => {
   test.setTimeout(150_000);
 
   /** Mateo lee de verdad (se equivoca en la inferencia hasta la explicación); a los demás, lo que mediría Progreso. */

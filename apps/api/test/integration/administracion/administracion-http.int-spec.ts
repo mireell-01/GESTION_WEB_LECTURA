@@ -61,7 +61,7 @@ let tokenAna: string;
 let codigoFamilia: string;
 let institucionId: string;
 
-describe('Preparación', () => {
+describe('[Administracion][Core][Slow] Preparación', () => {
   it('una administradora; Rosa con su aula "4.° A" del "IE 1234"; un código para la familia de Mateo', async () => {
     admin = await administrador();
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
@@ -83,7 +83,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('RF-076: instituciones', () => {
+describe('[Administracion][Core][Slow] RF-076: instituciones', () => {
   const url = `${API}/admin/instituciones`;
   const nuevaAula = (institucion: string) =>
     t.http().post(`${API}/aulas`).set(bearer(rosa.token)).send({ nombre: '5.° B', grado: '5', anioLectivo: new Date().getFullYear(), institucion, autoridadConsentimiento: 'Dir. Ruiz', declaraConsentimiento: true });
@@ -120,7 +120,7 @@ describe('RF-076: instituciones', () => {
   });
 });
 
-describe('RF-076: cuentas docentes', () => {
+describe('[Administracion][Core][Slow] RF-076: cuentas docentes', () => {
   const url = `${API}/admin/docentes`;
 
   it('alta: el docente crea su contraseña con el enlace del correo y ya ingresa', async () => {
@@ -170,7 +170,7 @@ describe('RF-076: cuentas docentes', () => {
   });
 });
 
-describe('RF-077: auditoría', () => {
+describe('[Administracion][Core][Slow] RF-077: auditoría', () => {
   it('registra las acciones sensibles con actor, rol, recurso, fecha e IP', async () => {
     const [suspension] = await registros('CUENTA_SUSPENDIDA');
     expect(suspension).toMatchObject({ actorId: admin.id, actorRol: 'ADMIN_PLATAFORMA', recursoTipo: 'cuenta_adulta', recursoId: rosa.id, ip: IP });
@@ -242,7 +242,7 @@ describe('RF-077: auditoría', () => {
   });
 });
 
-describe('RF-078: parámetros de gamificación', () => {
+describe('[Administracion][Core][Slow] RF-078: parámetros de gamificación', () => {
   const url = `${API}/admin/parametros-gamificacion`;
 
   it('muestra la versión vigente con los umbrales de las insignias', async () => {

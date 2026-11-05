@@ -94,7 +94,7 @@ async function terminarKilla(token: string, id: string) {
   await t.http().post(`${API}/sesiones-lectura/${id}/finalizar`).set(bearer(token)).send({ reflexion: 'Era una espina' }).expect(200);
 }
 
-describe('Preparación', () => {
+describe('[Asistente][Core][Slow] Preparación', () => {
   it('Rosa tiene a Mateo y Ana en su aula; Carmen creó a Lucía y acompaña a Mateo por invitación; José es otra familia', async () => {
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
     rosa = await docente('Rosa Pérez');
@@ -119,7 +119,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('RF-072: activación por la familia o la docente (RN-17)', () => {
+describe('[Asistente][Core][Slow] RF-072: activación por la familia o la docente (RN-17)', () => {
   const deFamilia = (id: string) => `${API}/familia/estudiantes/${id}/asistente`;
 
   it('la familia que creó el perfil lo activa; queda registrado quién y cuándo', async () => {
@@ -166,7 +166,7 @@ describe('RF-072: activación por la familia o la docente (RN-17)', () => {
   });
 });
 
-describe('RF-072 a RF-074: el niño conversa durante su lectura', () => {
+describe('[Asistente][Core][Slow] RF-072 a RF-074: el niño conversa durante su lectura', () => {
   it('RNF-007: responde por un flujo de eventos en menos de 3 s, con una guía y sin la clave', async () => {
     sesionMateo = await hastaLaInferencia(tokenMateo);
     expect((await estado(sesionMateo, tokenMateo)).body).toEqual({ disponible: true, intercambios: 0, restantes: 10, turnos: [] });
@@ -242,7 +242,7 @@ describe('RF-072 a RF-074: el niño conversa durante su lectura', () => {
   });
 });
 
-describe('RF-075: borrador de retroalimentación para la docente', () => {
+describe('[Asistente][Core][Slow] RF-075: borrador de retroalimentación para la docente', () => {
   let respuestaAna: string;
 
   it('propone un comentario para la respuesta abierta de su estudiante; no guarda nada', async () => {
@@ -270,7 +270,7 @@ describe('RF-075: borrador de retroalimentación para la docente', () => {
   });
 });
 
-describe('Retención (SRS §7, ADR-008)', () => {
+describe('[Asistente][Core][Slow] Retención (SRS §7, ADR-008)', () => {
   it('a los 30 días se borran las conversaciones con sus turnos', async () => {
     expect(await t.prisma.conversacion.count()).toBe(2);
     expect(await casos.retencion.borrarVencidas(new Date(Date.now() + 29 * 86_400_000))).toBe(0);

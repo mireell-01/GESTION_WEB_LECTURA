@@ -17,7 +17,7 @@ const test = base.extend({
  * el niño predice, lee con preguntas en sus oraciones de anclaje, recibe pistas, busca evidencias,
  * elige su camino, ordena, escribe, defiende su respuesta y cierra; la docente valora con la rúbrica.
  */
-test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
+test.describe('[Lectura][Core][Slow] Lectura interactiva (RF-038 a RF-051)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {

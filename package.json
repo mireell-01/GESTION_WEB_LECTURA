@@ -22,6 +22,15 @@
                     "test:e2e":  "npm run test --workspace @lectoaventura/tests-e2e",
                     "test:uat":  "npm run test:uat --workspace @lectoaventura/tests-e2e",
                     "test:load":  "npm run test --workspace @lectoaventura/tests-load",
+                    "test:core":  "npm run test:core --workspace @lectoaventura/api",
+                    "test:core:fast":  "npm run test:core:fast --workspace @lectoaventura/api",
+                    "test:fast":  "npm run test:fast --workspace @lectoaventura/api",
+                    "test:slow":  "npm run test:slow --workspace @lectoaventura/api",
+                    "test:suite":  "npm run test:suite --workspace @lectoaventura/api --",
+                    "test:int:core":  "npm run test:int:core --workspace @lectoaventura/api",
+                    "test:e2e:core":  "npm run test:core --workspace @lectoaventura/tests-e2e",
+                    "test:e2e:resto":  "npm run test:resto --workspace @lectoaventura/tests-e2e",
+                    "test:web":  "npm run test --workspace @lectoaventura/web",
                     "typecheck":  "tsc --noEmit -p apps/api/tsconfig.json \u0026\u0026 tsc --noEmit -p apps/web/tsconfig.json"
                 },
     "devDependencies":  {

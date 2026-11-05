@@ -232,7 +232,7 @@ function hasta(s: SesionLectura, g: Guion, itemId: string) {
   }
 }
 
-describe('Guion de la lectura (RF-038, RF-039)', () => {
+describe('[Lectura][Core][Fast] Guion de la lectura (RF-038, RF-039)', () => {
   const g = new Guion(lecturaDeEjemplo());
 
   it('la predicción va primero y sale del ítem PREDICCION; el resto sigue antes → durante (por anclaje) → después', () => {
@@ -261,7 +261,7 @@ describe('Guion de la lectura (RF-038, RF-039)', () => {
   });
 });
 
-describe('Corrección en el servidor (RF-040 a RF-043)', () => {
+describe('[Lectura][Core][Fast] Corrección en el servidor (RF-040 a RF-043)', () => {
   const g = new Guion(lecturaDeEjemplo());
   const ctx = { claveOrden: 'ses:it-ord', oracionesValidas: new Set(['o1', 'o2', 'o3', 'o4']) };
 
@@ -312,7 +312,7 @@ describe('Corrección en el servidor (RF-040 a RF-043)', () => {
   });
 });
 
-describe('Filtro de palabras (RF-041)', () => {
+describe('[Lectura][Core][Fast] Filtro de palabras (RF-041)', () => {
   it('cubre tildes, mayúsculas, letras repetidas, plurales y sustituciones', () => {
     expect(filtrarPalabras('¡Qué ESTÚPIDO!').texto).toBe('¡Qué ********!');
     expect(filtrarPalabras('idiotaaa').filtrado).toBe(true);
@@ -328,7 +328,7 @@ describe('Filtro de palabras (RF-041)', () => {
   });
 });
 
-describe('Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
+describe('[Lectura][Core][Fast] Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
   it('1 · 0,75 · 0,5 · 0,25 según las pistas; 0 con la explicación', () => {
     expect([0, 1, 2, 3].map((p) => puntajeItem(p, false))).toEqual([1, 0.75, 0.5, 0.25]);
     expect(puntajeItem(3, true)).toBe(0);
@@ -336,7 +336,7 @@ describe('Puntaje del ítem (RN-07) y rúbrica (RF-051)', () => {
   });
 });
 
-describe('SesionLectura', () => {
+describe('[Lectura][Core][Fast] SesionLectura', () => {
   const g = new Guion(lecturaDeEjemplo());
 
   it('RF-038: sin predicción no hay texto ni preguntas; al predecir se abre la lectura (una sola vez)', () => {
@@ -511,7 +511,7 @@ const NINO = 'nino-9';
 const DOCENTE = 'docente';
 const LECTURA = 'lectura-killa';
 
-describe('Lectura interactiva: sesión del estudiante y revisión docente', () => {
+describe('[Lectura][Core][Fast] Lectura interactiva: sesión del estudiante y revisión docente', () => {
   let e: EntornoLectura;
 
   beforeEach(() => {
@@ -546,7 +546,7 @@ describe('Lectura interactiva: sesión del estudiante y revisión docente', () =
   it('RF-038: abre la lectura en la predicción, sin texto, y avisa a Aventura (SesionLecturaIniciada)', async () => {
     const v = await e.sesiones.iniciar(NINO, { lecturaId: LECTURA });
     expect(v).toMatchObject({ fase: 'PREDICCION', estado: 'INICIADA', pregunta: null, texto: { parrafos: [], completo: false } });
-    expect(v.lectura).toEqual({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: expect.any(Object), leerEnVozAlta: false });
+    expect(v.lectura).toEqual({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: expect.any(Object), imagenes: [expect.any(Object)], leerEnVozAlta: false });
     expect(e.bus.publicados[0]).toMatchObject({ nombreEvento: EVENTOS_INTEGRACION.SESION_LECTURA_INICIADA, datos: { estudianteId: NINO, lecturaId: LECTURA, esRepeticion: false } });
   });
 
@@ -949,6 +949,7 @@ export function lecturaDeEjemplo(p: { lecturaId?: string; versionId?: string; ra
     rangoEdad: p.rangoEdad ?? 'R2',
     nivelDificultad: 2,
     imagen: { url: '/api/v1/biblioteca/recursos/img', textoAlternativo: 'Una niña con su llama' },
+    imagenes: [{ url: '/api/v1/biblioteca/recursos/img', textoAlternativo: 'Una niña con su llama' }],
     oraciones: ORACIONES,
     actividades,
     nodos,
@@ -1182,7 +1183,7 @@ const outbox = (tipo: string) => t.prisma.outboxEvento.count({ where: { tipo } }
 const responder = (cuerpo: Record<string, unknown>) =>
   t.http().post(`${API}/sesiones-lectura/${sesion}/respuestas`).set(bearer(ninos.mateo.token)).send({ idempotencyKey: uuidV7(), ...cuerpo });
 
-describe('Preparación', () => {
+describe('[Lectura][Core][Slow] Preparación', () => {
   it('editora y revisora publican; una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -1202,12 +1203,13 @@ describe('Preparación', () => {
   });
 });
 
-describe('La lectura de Mateo de punta a punta', () => {
+describe('[Lectura][Core][Slow] La lectura de Mateo de punta a punta', () => {
   it('RF-038: empieza en la predicción, sin texto ni preguntas; antes de predecir no se responde', async () => {
     const v = (await t.http().post(`${API}/sesiones-lectura`).set(bearer(ninos.mateo.token)).send({ lecturaId: killa.lecturaId }).expect(201)).body;
     sesion = v.id;
     expect(v).toMatchObject({ fase: 'PREDICCION', estado: 'INICIADA', pregunta: null, texto: { parrafos: [], completo: false }, prediccion: { enunciado: '¿Qué crees que le pasará a la llama?', respuesta: null } });
-    expect(v.lectura).toMatchObject({ titulo: 'Killa y la llama', rangoEdad: 'R2', leerEnVozAlta: false });
+    // Sin imágenes del editor, la web pinta una escena por párrafo.
+    expect(v.lectura).toMatchObject({ titulo: 'Killa y la llama', rangoEdad: 'R2', imagen: null, imagenes: [], leerEnVozAlta: false });
     expect(await outbox('lectura.SesionLecturaIniciada')).toBe(1);
     await responder({ itemId: uuidV7(), indice: 0 }).expect(409);
   });
@@ -1302,7 +1304,7 @@ describe('La lectura de Mateo de punta a punta', () => {
   });
 });
 
-describe('Reanudar, acceso y lectura en voz alta', () => {
+describe('[Lectura][Core][Slow] Reanudar, acceso y lectura en voz alta', () => {
   it('RF-046, RF-027: al volver sigue la misma sesión con su versión, aunque se publique otra', async () => {
     const leer = () => t.http().post(`${API}/sesiones-lectura`).set(bearer(ninos.lia.token)).send({ lecturaId: toby.lecturaId }).expect(201);
     const v = (await leer()).body;
@@ -1340,7 +1342,7 @@ describe('Reanudar, acceso y lectura en voz alta', () => {
   });
 });
 
-describe('RF-051: revisión docente con rúbrica (RN-17)', () => {
+describe('[Lectura][Core][Slow] RF-051: revisión docente con rúbrica (RN-17)', () => {
   it('la docente ve la respuesta abierta de Mateo con su defensa y la valora una vez', async () => {
     const pendientes = (await t.http().get(`${API}/aulas/${aulaId}/respuestas-abiertas`).set(bearer(tokenDocente)).expect(200)).body;
     expect(pendientes).toHaveLength(1);
@@ -1434,7 +1436,7 @@ const test = base.extend({
  * el niño predice, lee con preguntas en sus oraciones de anclaje, recibe pistas, busca evidencias,
  * elige su camino, ordena, escribe, defiende su respuesta y cierra; la docente valora con la rúbrica.
  */
-test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
+test.describe('[Lectura][Core][Slow] Lectura interactiva (RF-038 a RF-051)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {
@@ -1472,13 +1474,20 @@ test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
     // RF-039: el texto llega hasta la oración de anclaje y la pregunta no deja avanzar.
     await expect(texto(page)).toContainText('Un día Pancho no quiso comer.');
     await expect(texto(page)).not.toContainText('espina');
+    // Como un libro ilustrado: cada párrafo con su escena (en Puno, junto al lago, con la llama del título).
+    await expect(texto(page).locator('.ilustracion-lectura')).toHaveCount(2);
+    await expect(texto(page).locator('[data-escena]').first()).toHaveAttribute('data-escena', 'agua');
+    await expect(texto(page).locator('[data-escena]').first()).toHaveAttribute('data-animales', /llama/);
     await pregunta(page, ENUNCIADOS.seleccion);
     // RF-045: si falla, la pista P1 (sin la respuesta); luego acierta.
     await page.getByRole('button', { name: 'Opción A: Estaba feliz' }).click();
     await expect(page.getByRole('list', { name: 'Tus pistas' })).toContainText('Pista 1: Vuelve a la oración que acabas de leer.');
     await expect(page.getByText('Mira por qué')).toHaveCount(0);
+    // Al pasar a la siguiente pregunta, la pantalla vuelve arriba (al título), aunque haya bajado.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.getByRole('button', { name: 'Opción B: Le dolía algo' }).click();
     await expect(page.getByText('¡Muy bien! Sigue así.')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 
     // RF-043: toca en el texto las oraciones que lo demuestran.
     await pregunta(page, ENUNCIADOS.evidencia);
@@ -1496,6 +1505,7 @@ test.describe('Lectura interactiva (RF-038 a RF-051)', () => {
     await page.getByRole('button', { name: 'Ir al río' }).click();
     await expect(page.getByText('Elegiste: Ir al río')).toBeVisible();
     await expect(page.getByText(DESENLACE_RIO)).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Tu camino en la historia' }).locator('[data-escena]')).toHaveAttribute('data-escena', 'agua');
 
     // RF-042: ordena con los botones (la alternativa accesible al arrastre).
     await pregunta(page, ENUNCIADOS.ordenar);
@@ -2150,6 +2160,15 @@ Característica: Lectura interactiva con actividades antes, durante y después
     Entonces la evidencia se considera incorrecta
     Y recibe la pista P1 resaltando el párrafo donde buscar
 
+  # Como un libro ilustrado: cada párrafo con su escena animada; al pasar a la siguiente actividad, la
+  # pantalla vuelve al título y el niño baja leyendo desde ahí.
+  @RF-038 @RF-039
+  Escenario: El estudiante lee como en un libro ilustrado y vuelve al inicio al pasar de actividad
+    Dado un estudiante en una lectura del mundo "Detective"
+    Entonces cada párrafo que lee viene con su ilustración
+    Cuando baja hasta la pregunta y responde correctamente
+    Entonces la pantalla vuelve al título de la lectura
+
   @RF-038 @RF-047
   Escenario: El estudiante contrasta su predicción con el final y reflexiona
     Dado un estudiante que predijo "Creo que la llama se enfermará" y terminó las actividades de su lectura
@@ -2347,6 +2366,25 @@ Entonces('la respuesta queda valorada con el nivel {int}', async ({ page }, nive
   await revision.getByRole('button', { name: 'Valoradas' }).click();
   await expect(revision.getByRole('listitem', { name: 'Respuesta de Mateo' })).toContainText(`Nivel ${nivel}:`);
   await salirDelPanel(page);
+});
+
+// ── La lectura como un libro ilustrado (RF-038, RF-039) ─────────────────────
+
+Entonces('cada párrafo que lee viene con su ilustración', async ({ page }) => {
+  const texto = page.getByRole('article', { name: 'El texto' });
+  await expect(texto.locator('.texto-lectura__parrafo')).toHaveCount(2);
+  await expect(texto.locator('.ilustracion-lectura [data-escena]')).toHaveCount(2);
+});
+
+Cuando('baja hasta la pregunta y responde correctamente', async ({ page }) => {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.getByRole('button', { name: 'Opción B: Le dolía algo' }).click();
+  await expect(page.getByText('¡Muy bien! Sigue así.')).toBeVisible();
+});
+
+Entonces('la pantalla vuelve al título de la lectura', async ({ page, mundo }) => {
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.getByRole('heading', { level: 1, name: mundo.killa!.titulo })).toBeInViewport();
 });
 ```
 

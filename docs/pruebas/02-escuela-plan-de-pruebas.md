@@ -196,7 +196,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn } from '../do
 const DOCENTE = 'doc-1';
 const FAMILIAR = 'fam-1';
 
-describe('Invitación familiar (RF-019)', () => {
+describe('[Escuela][Core][Fast] Invitación familiar (RF-019)', () => {
   let e: EntornoEscuela;
   let generar: GenerarInvitacionFamiliarUseCase;
   let canjear: CanjearInvitacionFamiliarUseCase;
@@ -363,7 +363,7 @@ import { FechaLima } from '../../../../src/modules/escuela/domain/value-objects/
 /** Nivel 1 — Dominio de Escuela (RF-014 a RF-020): reglas puras, sin base de datos. */
 const AHORA = new Date('2026-10-15T15:00:00Z'); // jueves, 10:00 en Lima
 
-describe('Aula (RF-014, RF-020)', () => {
+describe('[Escuela][Menor][Fast] Aula (RF-014, RF-020)', () => {
   const crear = (cambios: Partial<Parameters<typeof Aula.crear>[0]> = {}) =>
     Aula.crear({
       id: 'aula-1', docenteId: 'doc-1', nombre: ' 3.° B ', grado: '3', anioLectivo: 2026, institucion: 'IE 1234',
@@ -406,7 +406,7 @@ describe('Aula (RF-014, RF-020)', () => {
   });
 });
 
-describe('Matrícula y política de matrícula (RF-015, RF-016)', () => {
+describe('[Escuela][Core][Fast] Matrícula y política de matrícula (RF-015, RF-016)', () => {
   it('retirar conserva la fecha y es idempotente', () => {
     const m = Matricula.crear({ id: 'm-1', aulaId: 'a', estudianteId: 'e', ahora: AHORA });
     m.retirar(AHORA);
@@ -436,7 +436,7 @@ describe('Matrícula y política de matrícula (RF-015, RF-016)', () => {
   });
 });
 
-describe('FechaLima: días del calendario escolar en hora de Lima', () => {
+describe('[Escuela][Menor][Fast] FechaLima: días del calendario escolar en hora de Lima', () => {
   it('un día va de 00:00 a 23:59:59.999 en Lima (UTC−5)', () => {
     const dia = FechaLima.de('2026-10-20');
     expect(dia.inicio.toISOString()).toBe('2026-10-20T05:00:00.000Z');
@@ -460,7 +460,7 @@ describe('FechaLima: días del calendario escolar en hora de Lima', () => {
   });
 });
 
-describe('Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', () => {
+describe('[Escuela][Menor][Fast] Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', () => {
   const crear = (desde: string, hasta: string, estudianteIds: string[] = []) =>
     Asignacion.crear({
       id: 'asig-1', aulaId: 'aula-1', docenteId: 'doc-1', tipo: 'LECTURA', contenidoId: 'lectura-1',
@@ -520,7 +520,7 @@ describe('Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', 
   });
 });
 
-describe('Invitación familiar (RF-019): código de un solo uso por 7 días', () => {
+describe('[Escuela][Core][Fast] Invitación familiar (RF-019): código de un solo uso por 7 días', () => {
   it('el código tiene 8 caracteres sin ambiguos y se lee como ABCD-2345', () => {
     let i = 0;
     const codigo = CodigoInvitacion.generar((n) => i++ % n);
@@ -584,7 +584,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn } from '../do
 /** Nivel 1 — Asignaciones (RF-018): crear, listar, cerrar y verlas en la aventura del estudiante. */
 const DOCENTE = 'doc-1';
 
-describe('Asignaciones de la docente (RF-018)', () => {
+describe('[Escuela][Menor][Fast] Asignaciones de la docente (RF-018)', () => {
   let e: EntornoEscuela;
   let crear: CrearAsignacionUseCase;
   let listar: ListarAsignacionesUseCase;
@@ -811,7 +811,7 @@ let mateoId: string;
 let anaId: string;
 let catalogo: Awaited<ReturnType<typeof sembrarCatalogo>>;
 
-describe('Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
+describe('[Escuela][Core][Slow] Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
   it('la docente crea su aula con código único y el consentimiento institucional queda registrado', async () => {
     docente = await cuentaConSesion('docente.escuela@lectoaventura.test', 'DOCENTE');
     const r = await t.http().post(`${API}/aulas`).set(bearer(docente.token)).send({
@@ -875,7 +875,7 @@ describe('Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
   });
 });
 
-describe('Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
+describe('[Escuela][Core][Slow] Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
   it('el PDF trae un PIN nuevo por estudiante que sirve para entrar desde la tablet del aula', async () => {
     const r = await t.http()
       .post(`${API}/aulas/${aulaId}/tarjetas-acceso.pdf`)
@@ -917,7 +917,7 @@ describe('Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
   });
 });
 
-describe('Asignaciones (RF-018)', () => {
+describe('[Escuela][Core][Slow] Asignaciones (RF-018)', () => {
   let asignacionId: string;
 
   it('el catálogo muestra solo lo publicado: lecturas y misiones', async () => {
@@ -1001,7 +1001,7 @@ describe('Asignaciones (RF-018)', () => {
   });
 });
 
-describe('Invitación familiar (RF-019)', () => {
+describe('[Escuela][Core][Slow] Invitación familiar (RF-019)', () => {
   let familia: { id: string; token: string };
   let codigo: string;
 
@@ -1079,7 +1079,7 @@ describe('Invitación familiar (RF-019)', () => {
   });
 });
 
-describe('Retirar y archivar (RF-020)', () => {
+describe('[Escuela][Core][Slow] Retirar y archivar (RF-020)', () => {
   it('archivar: solo lectura, conserva perfiles, cierra asignaciones y anula invitaciones pendientes', async () => {
     const { codigo } = (await t.http().post(`${API}/estudiantes/${anaId}/invitaciones-familiar`).set(bearer(docente.token)).expect(201)).body;
     await t.http().post(`${API}/aulas/${aulaId}/asignaciones`).set(bearer(docente.token)).send({
@@ -1224,7 +1224,7 @@ const test = base.extend({
  * Nivel 3 — Modo escuela de punta a punta (RF-014 a RF-020) en escritorio, tablet y celular:
  * la docente usa la web real y los niños entran desde la tablet, como en el aula.
  */
-test.describe('Modo escuela (RF-014 a RF-020)', () => {
+test.describe('[Escuela][Core][Slow] Modo escuela (RF-014 a RF-020)', () => {
   test('la docente crea su aula, matricula, descarga las tarjetas y el niño entra con el PIN impreso', async ({ page, request }) => {
     const docente = await cuentaVerificada(request, { rol: 'DOCENTE', nombre: 'Rosa Docente', prefijo: 'docente' });
     await ingresarComoAdulto(page, docente.email, docente.contrasena);

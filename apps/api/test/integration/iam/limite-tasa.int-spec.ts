@@ -22,7 +22,7 @@ afterAll(async () => {
 const intento = (ip: string) =>
   t.http().post(`${API}/auth/login`).set('X-Forwarded-For', ip).send({ email: 'nadie@lectoaventura.test', contrasena: 'cualquier-cosa' });
 
-describe('Límite de tasa (RNF-019)', () => {
+describe('[IAM][Core][Slow] Límite de tasa (RNF-019)', () => {
   it('ingreso adulto: los 10 primeros intentos son 401 y el 11.º responde 429 con Retry-After', async () => {
     for (let i = 0; i < 10; i++) await intento('203.0.113.7').expect(401);
     const bloqueado = await intento('203.0.113.7').expect(429);

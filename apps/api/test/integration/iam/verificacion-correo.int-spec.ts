@@ -37,7 +37,7 @@ async function retrocederUltimoEnlace(app: AppDePrueba, email: string, seg = 120
   await app.prisma.verificacion.updateMany({ where: { cuentaId: cuenta.id }, data: { creadoEn: new Date(Date.now() - seg * 1000) } });
 }
 
-describe('Reenvío del enlace de verificación (RF-002)', () => {
+describe('[IAM][Core][Slow] Reenvío del enlace de verificación (RF-002)', () => {
   it('el ingreso de una cuenta sin verificar lo dice claramente (solo con la contraseña correcta)', async () => {
     await registrar(t, 'pendiente@lectoaventura.test');
     const r = await t.http().post(`${API}/auth/login`).send({ email: 'pendiente@lectoaventura.test', contrasena: CONTRASENA }).expect(403);
@@ -112,7 +112,7 @@ describe('Reenvío del enlace de verificación (RF-002)', () => {
   });
 });
 
-describe('Verificación después de reiniciar la API', () => {
+describe('[IAM][Core][Slow] Verificación después de reiniciar la API', () => {
   it('el enlace sigue funcionando y, si el correo se perdió, se puede pedir otro', async () => {
     await registrar(t, 'antes@lectoaventura.test');
     await registrar(t, 'perdido@lectoaventura.test');

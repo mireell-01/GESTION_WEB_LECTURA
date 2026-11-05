@@ -213,7 +213,7 @@ const ids = () => {
   return () => `n-${++n}`;
 };
 
-describe('Metadatos de la lectura (RF-021)', () => {
+describe('[Contenido][Menor][Fast] Metadatos de la lectura (RF-021)', () => {
   it('normaliza y acepta un borrador sin licencia ni habilidades', () => {
     const m = MetadatosLectura.de(metadatos({ titulo: '  El zorro  ', licencia: '  ', habilidadesObjetivo: [] }));
     expect(m.titulo).toBe('El zorro');
@@ -232,7 +232,7 @@ describe('Metadatos de la lectura (RF-021)', () => {
   });
 });
 
-describe('Segmentación en oraciones (RF-022)', () => {
+describe('[Contenido][Menor][Slow] Segmentación en oraciones (RF-022)', () => {
   it('corta tras . ! ? … sin cortar en abreviaturas, iniciales ni números', () => {
     expect(partirParrafo('El Sr. Pérez llegó. ¿Viste? ¡Sí! Midió 3.5 metros… Luego se fue.')).toEqual([
       'El Sr. Pérez llegó.', '¿Viste?', '¡Sí!', 'Midió 3.5 metros…', 'Luego se fue.',
@@ -279,7 +279,7 @@ describe('Segmentación en oraciones (RF-022)', () => {
   });
 });
 
-describe('Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
+describe('[Contenido][Core][Fast] Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
   const oraciones = segmentar(TEXTO, [], ids());
   const set = new Set(oraciones.map((o) => o.id));
   const completas = () => construirActividades(actividadesCompletas(oraciones.map((o) => o.id)), set, ids());
@@ -330,7 +330,7 @@ describe('Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
   });
 });
 
-describe('Historia ramificada (RF-029)', () => {
+describe('[Contenido][Menor][Fast] Historia ramificada (RF-029)', () => {
   const nodo = (clave: string, opciones: string[] = [], extra = {}) => ({
     clave, contenido: `Texto de ${clave}`, opciones: opciones.map((d) => ({ texto: `Ir a ${d}`, destino: d })), ...extra,
   });
@@ -358,7 +358,7 @@ describe('Historia ramificada (RF-029)', () => {
   });
 });
 
-describe('Recursos (RF-023)', () => {
+describe('[Contenido][Menor][Fast] Recursos (RF-023)', () => {
   const webp = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(20)]);
   const avif = Buffer.concat([Buffer.alloc(4), Buffer.from('ftypavif'), Buffer.alloc(20)]);
 
@@ -391,7 +391,7 @@ describe('Recursos (RF-023)', () => {
   });
 });
 
-describe('Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14, RN-15)', () => {
+describe('[Contenido][Core][Fast] Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14, RN-15)', () => {
   const borrador = (autorId = 'editora') =>
     VersionLectura.crearBorrador({ id: 'v1', lecturaId: 'l1', numero: 1, metadatos: meta(), texto: TEXTO, autorId, ahora: AHORA, generarId: ids() });
   const completa = () => {
@@ -494,7 +494,7 @@ describe('Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14,
   });
 });
 
-describe('Lectura: la versión publicada vigente (RF-027)', () => {
+describe('[Contenido][Core][Fast] Lectura: la versión publicada vigente (RF-027)', () => {
   it('publicar devuelve la versión anterior; archivar la saca de circulación', () => {
     const l = Lectura.crear({ id: 'l1', autorId: 'editora', ahora: AHORA });
     expect(l.publicar('v1')).toBeNull();
@@ -532,7 +532,7 @@ const EDITORA = 'editora';
 const REVISOR = 'revisor';
 const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(40)]);
 
-describe('Contenido: autoría, publicación, recursos y biblioteca', () => {
+describe('[Contenido][Core][Fast] Contenido: autoría, publicación, recursos y biblioteca', () => {
   let e: EntornoContenido;
   let autoria: AutoriaUseCase;
   let publicacion: PublicacionUseCase;
@@ -784,7 +784,7 @@ import { AlmacenDiscoLocal } from '../../../../src/modules/contenido/infrastruct
 import { FirmadorSubidasHmac } from '../../../../src/modules/contenido/infrastructure/almacen/firmador-subidas-hmac';
 
 /** Nivel 1 — Adaptadores de Contenido: firma de subidas (URL prefirmada) y almacén local (RF-023). */
-describe('FirmadorSubidasHmac', () => {
+describe('[Contenido][Core][Fast] FirmadorSubidasHmac', () => {
   const firmador = new FirmadorSubidasHmac('secreto-de-pruebas-de-contenido-con-mas-de-32-caracteres');
   const ahora = new Date('2026-10-20T15:00:00Z');
   const vence = new Date(ahora.getTime() + 60_000);
@@ -810,7 +810,7 @@ describe('FirmadorSubidasHmac', () => {
   });
 });
 
-describe('AlmacenDiscoLocal', () => {
+describe('[Contenido][Menor][Fast] AlmacenDiscoLocal', () => {
   let carpeta: string;
   beforeAll(async () => {
     carpeta = await mkdtemp(join(tmpdir(), 'almacen-'));
@@ -937,7 +937,7 @@ let revisor: Awaited<ReturnType<typeof backoffice>>;
 let lecturaId: string;
 let recursoId: string;
 
-describe('Backoffice protegido (RF-009, RF-011)', () => {
+describe('[Contenido][Core][Slow] Backoffice protegido (RF-009, RF-011)', () => {
   it('solo editores y revisores con MFA verificado; las familias no entran', async () => {
     const sinMfa = await backoffice('EDITOR', false);
     expect(sinMfa.requiereConfigurarMfa).toBe(true);
@@ -951,7 +951,7 @@ describe('Backoffice protegido (RF-009, RF-011)', () => {
   });
 });
 
-describe('Autoría y flujo de publicación (RF-021 a RF-027)', () => {
+describe('[Contenido][Core][Slow] Autoría y flujo de publicación (RF-021 a RF-027)', () => {
   it('la editora crea la lectura en borrador, segmentada en oraciones', async () => {
     editora = await backoffice('EDITOR');
     const r = await t.http().post(`${API}/backoffice/lecturas`).set(bearer(editora.token)).send({ metadatos: metadatos(), texto: TEXTO }).expect(201);
@@ -1038,7 +1038,7 @@ describe('Autoría y flujo de publicación (RF-021 a RF-027)', () => {
   });
 });
 
-describe('Biblioteca y asignaciones (RF-028, RF-018)', () => {
+describe('[Contenido][Core][Slow] Biblioteca y asignaciones (RF-028, RF-018)', () => {
   let docente: string;
   let ninoR2: string;
 
@@ -1167,7 +1167,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAE0lEQVR
  * celular: la editora escribe en la web real, el revisor la devuelve y la publica, y la lectura
  * llega a la biblioteca de docentes, familias y niños.
  */
-test.describe('Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
+test.describe('[Contenido][Core][Slow] Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
   test.setTimeout(150_000);
 
   async function abrirLectura(page: Page, titulo: string) {

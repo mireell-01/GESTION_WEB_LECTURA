@@ -73,7 +73,7 @@ let mateoId: string;
 let anaId: string;
 let catalogo: Awaited<ReturnType<typeof sembrarCatalogo>>;
 
-describe('Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
+describe('[Escuela][Core][Slow] Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
   it('la docente crea su aula con código único y el consentimiento institucional queda registrado', async () => {
     docente = await cuentaConSesion('docente.escuela@lectoaventura.test', 'DOCENTE');
     const r = await t.http().post(`${API}/aulas`).set(bearer(docente.token)).send({
@@ -137,7 +137,7 @@ describe('Aulas y matrículas (RF-014, RF-015, RF-016, RN-17)', () => {
   });
 });
 
-describe('Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
+describe('[Escuela][Core][Slow] Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
   it('el PDF trae un PIN nuevo por estudiante que sirve para entrar desde la tablet del aula', async () => {
     const r = await t.http()
       .post(`${API}/aulas/${aulaId}/tarjetas-acceso.pdf`)
@@ -179,7 +179,7 @@ describe('Tarjetas de acceso en PDF (RF-017, CR-01)', () => {
   });
 });
 
-describe('Asignaciones (RF-018)', () => {
+describe('[Escuela][Core][Slow] Asignaciones (RF-018)', () => {
   let asignacionId: string;
 
   it('el catálogo muestra solo lo publicado: lecturas y misiones', async () => {
@@ -263,7 +263,7 @@ describe('Asignaciones (RF-018)', () => {
   });
 });
 
-describe('Invitación familiar (RF-019)', () => {
+describe('[Escuela][Core][Slow] Invitación familiar (RF-019)', () => {
   let familia: { id: string; token: string };
   let codigo: string;
 
@@ -341,7 +341,7 @@ describe('Invitación familiar (RF-019)', () => {
   });
 });
 
-describe('Retirar y archivar (RF-020)', () => {
+describe('[Escuela][Core][Slow] Retirar y archivar (RF-020)', () => {
   it('archivar: solo lectura, conserva perfiles, cierra asignaciones y anula invitaciones pendientes', async () => {
     const { codigo } = (await t.http().post(`${API}/estudiantes/${anaId}/invitaciones-familiar`).set(bearer(docente.token)).expect(201)).body;
     await t.http().post(`${API}/aulas/${aulaId}/asignaciones`).set(bearer(docente.token)).send({

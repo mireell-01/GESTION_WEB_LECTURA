@@ -35,7 +35,7 @@ function codigoDelEnlace(enlace: string | undefined): string {
   return new URL(enlace as string).searchParams.get('codigo') as string;
 }
 
-describe('Registro y verificación de cuenta (RF-001, RF-002)', () => {
+describe('[IAM][Core][Fast] Registro y verificación de cuenta (RF-001, RF-002)', () => {
   let e: Entorno;
   let registrar: RegistrarCuentaUseCase;
   let verificar: VerificarCorreoUseCase;
@@ -98,7 +98,7 @@ describe('Registro y verificación de cuenta (RF-001, RF-002)', () => {
   });
 });
 
-describe('Reenvío del enlace de verificación (RF-002, RNF-019)', () => {
+describe('[IAM][Menor][Fast] Reenvío del enlace de verificación (RF-002, RNF-019)', () => {
   let e: Entorno;
   let registrar: RegistrarCuentaUseCase;
   let reenviar: ReenviarVerificacionUseCase;
@@ -174,7 +174,7 @@ describe('Reenvío del enlace de verificación (RF-002, RNF-019)', () => {
   });
 });
 
-describe('Recuperación de contraseña (RF-004)', () => {
+describe('[IAM][Core][Fast] Recuperación de contraseña (RF-004)', () => {
   it('responde igual exista o no la cuenta, pero solo envía correo si existe', async () => {
     const e = crearEntorno();
     await cuentaActiva(e, { email: 'ana@lectoaventura.test' });
@@ -210,7 +210,7 @@ describe('Recuperación de contraseña (RF-004)', () => {
   });
 });
 
-describe('Consentimiento y perfiles de estudiante (RF-005, RF-006, RF-071, RN-01)', () => {
+describe('[IAM][Core][Fast] Consentimiento y perfiles de estudiante (RF-005, RF-006, RF-071, RN-01)', () => {
   let e: Entorno;
   let crear: CrearPerfilEstudianteUseCase;
   let consentir: RegistrarConsentimientoUseCase;
@@ -279,7 +279,7 @@ describe('Consentimiento y perfiles de estudiante (RF-005, RF-006, RF-071, RN-01
   });
 });
 
-describe('Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071, RN-17)', () => {
+describe('[IAM][Core][Fast] Gestión del perfil por su responsable (RF-008, RF-012, RF-013, RF-071, RN-17)', () => {
   let e: Entorno;
 
   beforeEach(() => {

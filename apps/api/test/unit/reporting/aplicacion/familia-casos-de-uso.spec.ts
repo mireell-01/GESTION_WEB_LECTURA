@@ -16,7 +16,7 @@ const PEDRO = 'est-pedro';
 const BENJA = 'est-benja';
 const DOMINGO_1830 = new Date('2026-10-25T23:30:00Z'); // domingo 25, 18:30 en Lima
 
-describe('Acompañamiento familiar: panel por hijo, preferencias y resumen semanal', () => {
+describe('[Reporting][Core][Fast] Acompañamiento familiar: panel por hijo, preferencias y resumen semanal', () => {
   let e: EntornoFamilia;
 
   beforeEach(() => {

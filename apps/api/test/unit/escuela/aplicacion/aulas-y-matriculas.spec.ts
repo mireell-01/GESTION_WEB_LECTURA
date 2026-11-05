@@ -19,7 +19,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn } from '../do
 const DOCENTE = 'doc-1';
 const OTRA_DOCENTE = 'doc-2';
 
-describe('Crear y consultar aulas (RF-014, RN-17)', () => {
+describe('[Escuela][Core][Fast] Crear y consultar aulas (RF-014, RN-17)', () => {
   let e: EntornoEscuela;
   beforeEach(() => {
     e = crearEntornoEscuela();
@@ -75,7 +75,7 @@ describe('Crear y consultar aulas (RF-014, RN-17)', () => {
   });
 });
 
-describe('Matricular estudiantes (RF-015, RF-016)', () => {
+describe('[Escuela][Core][Fast] Matricular estudiantes (RF-015, RF-016)', () => {
   let e: EntornoEscuela;
   let matricular: MatricularEstudiantesUseCase;
   beforeEach(() => {
@@ -137,7 +137,7 @@ describe('Matricular estudiantes (RF-015, RF-016)', () => {
   });
 });
 
-describe('Tarjetas de acceso (RF-017, CR-01)', () => {
+describe('[Escuela][Core][Fast] Tarjetas de acceso (RF-017, CR-01)', () => {
   let e: EntornoEscuela;
   let tarjetas: GenerarTarjetasUseCase;
   beforeEach(() => {
@@ -175,7 +175,7 @@ describe('Tarjetas de acceso (RF-017, CR-01)', () => {
   });
 });
 
-describe('Retirar estudiantes y archivar el aula (RF-020)', () => {
+describe('[Escuela][Menor][Fast] Retirar estudiantes y archivar el aula (RF-020)', () => {
   let e: EntornoEscuela;
   beforeEach(() => {
     e = crearEntornoEscuela();

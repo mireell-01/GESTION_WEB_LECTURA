@@ -17,7 +17,7 @@ test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
  * Nivel 3 — Recorrido completo de IAM desde la interfaz, como lo haría una familia real:
  * RF-001 → RF-002 → RF-003 → RF-005 → RF-006 → RF-007 → RF-009.
  */
-test('una familia se registra, crea el perfil de su hijo y el niño entra con avatar y PIN', async ({ page, request }) => {
+test('[IAM][Core][Slow] una familia se registra, crea el perfil de su hijo y el niño entra con avatar y PIN', async ({ page, request }) => {
   const email = correoUnico('familia');
 
   // RF-001: registro desde la web.

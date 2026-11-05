@@ -13,7 +13,7 @@ import { Rol } from '../../../../src/modules/iam/domain/value-objects/rol';
 
 const HOY = new Date('2026-10-15T12:00:00Z');
 
-describe('Pin (SRS §6 VO Pin, R-10)', () => {
+describe('[IAM][Core][Fast] Pin (SRS §6 VO Pin, R-10)', () => {
   it('acepta 4 dígitos no triviales', () => {
     expect(Pin.de('2580').value).toBe('2580');
   });
@@ -32,7 +32,7 @@ describe('Pin (SRS §6 VO Pin, R-10)', () => {
   });
 });
 
-describe('AnioMesNacimiento (edad 5–13, RangoEdad R1/R2/R3)', () => {
+describe('[IAM][Core][Fast] AnioMesNacimiento (edad 5–13, RangoEdad R1/R2/R3)', () => {
   it.each([
     [2020, 10, 'R1'], // 6 años
     [2019, 1, 'R1'], // 7 años
@@ -58,7 +58,7 @@ describe('AnioMesNacimiento (edad 5–13, RangoEdad R1/R2/R3)', () => {
   });
 });
 
-describe('Email y Contrasena', () => {
+describe('[IAM][Core][Fast] Email y Contrasena', () => {
   it('normaliza el correo a minúsculas y sin espacios', () => {
     expect(Email.de('  Ana.Rios@Colegio.EDU.pe ').value).toBe('ana.rios@colegio.edu.pe');
   });
@@ -73,7 +73,7 @@ describe('Email y Contrasena', () => {
   });
 });
 
-describe('Rol', () => {
+describe('[IAM][Core][Fast] Rol', () => {
   it('solo EDITOR, REVISOR y ADMIN_PLATAFORMA exigen MFA (RF-011)', () => {
     expect(Rol.de('EDITOR').requiereMfaObligatorio()).toBe(true);
     expect(Rol.de('REVISOR').requiereMfaObligatorio()).toBe(true);
@@ -87,7 +87,7 @@ describe('Rol', () => {
   });
 });
 
-describe('CodigoUnUso (enlaces de RF-002 y RF-004)', () => {
+describe('[IAM][Core][Fast] CodigoUnUso (enlaces de RF-002 y RF-004)', () => {
   const expira = new Date('2026-10-15T12:30:00Z');
 
   it('se canjea una sola vez', () => {

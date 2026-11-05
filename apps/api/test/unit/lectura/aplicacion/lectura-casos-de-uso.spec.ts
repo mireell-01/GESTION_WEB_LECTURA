@@ -9,7 +9,7 @@ const NINO = 'nino-9';
 const DOCENTE = 'docente';
 const LECTURA = 'lectura-killa';
 
-describe('Lectura interactiva: sesión del estudiante y revisión docente', () => {
+describe('[Lectura][Core][Fast] Lectura interactiva: sesión del estudiante y revisión docente', () => {
   let e: EntornoLectura;
 
   beforeEach(() => {

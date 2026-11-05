@@ -16,7 +16,7 @@ const test = base.extend({
  * el niño hace su reto inicial en la web real, lo pausa y lo retoma, y queda ubicado en su mundo; la
  * docente le asigna un reto de repaso y compara el avance por habilidad.
  */
-test.describe('Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => {
+test.describe('[Diagnostico][Core][Slow] Diagnóstico: reto inicial y de repaso (RF-034 a RF-037)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {

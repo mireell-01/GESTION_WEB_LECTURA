@@ -22,7 +22,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn, Institucione
 const ADMIN = 'admin-1';
 const DOCENTE = 'doc-1';
 
-describe('Instituciones educativas (RF-076)', () => {
+describe('[Escuela][Menor][Fast] Instituciones educativas (RF-076)', () => {
   let e: EntornoEscuela;
   let repo: InstitucionesEnMemoria;
   let instituciones: InstitucionesUseCase;
@@ -105,7 +105,7 @@ describe('Instituciones educativas (RF-076)', () => {
   });
 });
 
-describe('Aulas de un docente suspendido: solo lectura (RF-076)', () => {
+describe('[Escuela][Core][Fast] Aulas de un docente suspendido: solo lectura (RF-076)', () => {
   it('el código para la familia ya no se puede canjear; nada se gasta ni se vincula', async () => {
     const e = crearEntornoEscuela();
     const generar = new GenerarInvitacionFamiliarUseCase(e.aulas, e.matriculas, e.invitaciones, e.identidad, e.bus, e.huella, e.aleatorio, e.generarId, e.reloj.ahora);

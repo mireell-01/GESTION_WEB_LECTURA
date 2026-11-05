@@ -21,7 +21,7 @@ const EDITORA = 'editora';
 const REVISOR = 'revisor';
 const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(40)]);
 
-describe('Contenido: autoría, publicación, recursos y biblioteca', () => {
+describe('[Contenido][Core][Fast] Contenido: autoría, publicación, recursos y biblioteca', () => {
   let e: EntornoContenido;
   let autoria: AutoriaUseCase;
   let publicacion: PublicacionUseCase;

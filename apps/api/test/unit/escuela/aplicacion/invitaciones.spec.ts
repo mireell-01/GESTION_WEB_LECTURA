@@ -19,7 +19,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn } from '../do
 const DOCENTE = 'doc-1';
 const FAMILIAR = 'fam-1';
 
-describe('Invitación familiar (RF-019)', () => {
+describe('[Escuela][Core][Fast] Invitación familiar (RF-019)', () => {
   let e: EntornoEscuela;
   let generar: GenerarInvitacionFamiliarUseCase;
   let canjear: CanjearInvitacionFamiliarUseCase;

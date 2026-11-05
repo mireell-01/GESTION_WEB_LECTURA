@@ -31,9 +31,22 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+  # Puerta rápida (suites priorizadas): corre a la par de lo estático, sin base de datos ni navegador.
+  # Si se rompe una regla crítica, avisa en cuanto termina y no se gastan los demás niveles.
+  puerta-core:
+    name: 'Puerta rápida: suite Core y Fast'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - run: npm run test:core:fast
+
   unitarias:
     name: 'Nivel 1: unitarias + cobertura'
-    needs: estatico
+    needs: [estatico, puerta-core]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +57,7 @@ jobs:
       # Falla si la cobertura baja de los umbrales de vitest.config.ts.
       - run: npm run test:unit
         env: { CI: 'true' }
+      - run: npm run test:web
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: cobertura-unitaria, path: apps/api/reports/unit }
@@ -98,8 +112,14 @@ jobs:
             sleep 20
             npm run build --workspace @lectoaventura/web
           }
-      - name: 'Nivel 3: sistema E2E (escritorio y tablet)'
-        run: npm run test:e2e
+      # Las mismas pruebas de siempre, primero las críticas: si una falla, no se espera a las demás.
+      # --grep-invert corre todo lo que no sea [Core], así que una prueba sin etiqueta tampoco queda afuera.
+      - name: 'Nivel 3: sistema E2E, primero lo crítico (Core)'
+        run: |
+          npm run test:e2e:core
+          mv tests/e2e/reportes/sistema tests/e2e/reportes/sistema-core
+      - name: 'Nivel 3: sistema E2E, el resto'
+        run: npm run test:e2e:resto
       - name: 'Nivel 4: aceptación (Gherkin)'
         run: npm run test:uat
       - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'

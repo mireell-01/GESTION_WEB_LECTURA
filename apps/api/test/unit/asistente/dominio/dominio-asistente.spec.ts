@@ -22,7 +22,7 @@ const contexto = (pregunta: Partial<NonNullable<ContextoMediacion['pregunta']>> 
   ...resto,
 });
 
-describe('Conversacion (RF-074)', () => {
+describe('[Asistente][Menor][Fast] Conversacion (RF-074)', () => {
   const nueva = () => Conversacion.iniciar({ id: 'c-1', estudianteId: 'nino', sesionLecturaId: 's-1', ahora: AHORA });
 
   it('empieza vacía, con 10 intercambios y se borra a los 30 días', () => {
@@ -60,7 +60,7 @@ describe('Conversacion (RF-074)', () => {
   });
 });
 
-describe('Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
+describe('[Asistente][Menor][Fast] Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
   it('normaliza y saca las palabras con contenido', () => {
     expect(normalizar('¡Le dolía ALGO!')).toBe('le dolia algo');
     expect(normalizar('Ñandú, ¿cómo estás?')).toBe('nandu como estas');
@@ -68,7 +68,7 @@ describe('Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
   });
 });
 
-describe('Moderación de entrada (RF-073, RN-16)', () => {
+describe('[Asistente][Core][Fast] Moderación de entrada (RF-073, RN-16)', () => {
   it.each([
     ['mi correo es ana.quispe@gmail.com', 'mi correo es [correo]'],
     ['mira www.ejemplo.com/ana', 'mira [enlace]'],
@@ -104,7 +104,7 @@ describe('Moderación de entrada (RF-073, RN-16)', () => {
   });
 });
 
-describe('Intención del niño', () => {
+describe('[Asistente][Menor][Fast] Intención del niño', () => {
   it.each<[string, Intencion]>([
     ['dime cuál es la respuesta', 'PIDE_RESPUESTA'],
     ['¿es la B?', 'PIDE_RESPUESTA'],
@@ -128,7 +128,7 @@ describe('Intención del niño', () => {
   });
 });
 
-describe('Mediación socrática sin conexión (RF-072)', () => {
+describe('[Asistente][Core][Fast] Mediación socrática sin conexión (RF-072)', () => {
   it('si pide la respuesta, guía con una estrategia y recuerda las pistas oficiales', () => {
     const t = mediar(contexto(), 'PIDE_RESPUESTA', null, 1);
     expect(t).toMatch(/^No te voy a decir la respuesta, ¡pero sé que puedes descubrirla! El texto no lo dice directamente/);
@@ -181,7 +181,7 @@ describe('Mediación socrática sin conexión (RF-072)', () => {
   });
 });
 
-describe('Filtro de salida (RF-073, RN-16)', () => {
+describe('[Asistente][Core][Fast] Filtro de salida (RF-073, RN-16)', () => {
   const claves = ['Le dolía algo', 'Pancho tenía una espina en la pata y por eso no quería comer.'];
 
   it.each([
@@ -224,7 +224,7 @@ describe('Filtro de salida (RF-073, RN-16)', () => {
   });
 });
 
-describe('Borrador de retroalimentación (RF-075)', () => {
+describe('[Asistente][Menor][Fast] Borrador de retroalimentación (RF-075)', () => {
   const base = { minPalabras: null, rangoEdad: 'R2' as const, habilidad: 'ARG' as const, texto: TEXTO_KILLA };
 
   it('mide la respuesta: palabras, razones y si usa el texto', () => {

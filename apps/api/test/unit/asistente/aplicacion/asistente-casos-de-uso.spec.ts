@@ -10,7 +10,7 @@ import { crearEntornoAsistente, EntornoAsistente, preguntaEnCurso, TEXTO_KILLA }
 const NINO = 'nino-1';
 const SESION = 'sesion-1';
 
-describe('Conversar durante la lectura (RF-072 a RF-074)', () => {
+describe('[Asistente][Core][Fast] Conversar durante la lectura (RF-072 a RF-074)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {
@@ -112,7 +112,7 @@ describe('Conversar durante la lectura (RF-072 a RF-074)', () => {
   });
 });
 
-describe('Activación por la familia o la docente (RF-072, RN-17)', () => {
+describe('[Asistente][Core][Fast] Activación por la familia o la docente (RF-072, RN-17)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {
@@ -168,7 +168,7 @@ describe('Activación por la familia o la docente (RF-072, RN-17)', () => {
   });
 });
 
-describe('Borrador de retroalimentación para la docente (RF-075, RN-17)', () => {
+describe('[Asistente][Core][Fast] Borrador de retroalimentación para la docente (RF-075, RN-17)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {

@@ -16,7 +16,7 @@ import {
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
 /** Nivel 3 — Tablet del aula sin código (RF-007, RN-04, CR-01) y cierre por inactividad (RF-010, R-02). */
-test.describe('IAM — tablet del aula e inactividad', () => {
+test.describe('[IAM][Core][Slow] IAM — tablet del aula e inactividad', () => {
   test('la docente activa la tablet y el niño entra con su avatar y el PIN de su tarjeta, sin escribir códigos', async ({ page, request }) => {
     const tarjeta = await aulaConEstudiante(request, { alias: 'Sofía', avatar: 'buho' });
 

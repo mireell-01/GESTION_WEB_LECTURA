@@ -146,7 +146,7 @@ const asientos = (estudianteId = mateo.id) => t.prisma.asientoPuntos.findMany({ 
 const insignia = (v: { insignias: { codigo: string }[] }, codigo: string) => v.insignias.find((i) => i.codigo === codigo);
 const total = async (estudianteId = mateo.id) => (await asientos(estudianteId)).reduce((s, a) => s + a.puntos, 0);
 
-describe('Preparación', () => {
+describe('[Gamificacion][Menor][Slow] Preparación', () => {
   it('lecturas publicadas y una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -168,7 +168,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
+describe('[Gamificacion][Menor][Slow] Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
   it('RF-059: sin logros, el pasaporte muestra el catálogo por ganar, nivel 0 y ninguna moneda', async () => {
     const v = (await pasaporte().expect(200)).body;
     expect(v).toMatchObject({
@@ -202,7 +202,7 @@ describe('Pasaporte del Lector y reto del día (RF-059, RF-060)', () => {
   });
 });
 
-describe('Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
+describe('[Gamificacion][Menor][Slow] Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
   let sesion: string;
 
   it('UAT-02, UAT-03: una lectura real deja un asiento por motivo y suma a la evidencia, la racha y el reto', async () => {
@@ -268,7 +268,7 @@ describe('Libro de puntos (RF-056, RN-10, RN-11, RN-19)', () => {
   });
 });
 
-describe('Insignias (RF-058, RN-13) y racha (RF-061)', () => {
+describe('[Gamificacion][Menor][Slow] Insignias (RF-058, RN-13) y racha (RF-061)', () => {
   it('UAT-03: la quinta evidencia correcta otorga "Detective de Evidencias", una sola vez', async () => {
     for (let i = 0; i < 5; i++) await bus.publicar([itemSintetico(mateo.id, { modalidad: 'EVIDENCIA' })]);
     const v = (await pasaporte().expect(200)).body;
@@ -324,7 +324,7 @@ describe('Insignias (RF-058, RN-13) y racha (RF-061)', () => {
   });
 });
 
-describe('Tope diario (RN-12)', () => {
+describe('[Gamificacion][Menor][Slow] Tope diario (RN-12)', () => {
   it('aunque lleguen 40 aciertos a la vez, Lía no pasa de 300 puntos en el día', async () => {
     await Promise.all(Array.from({ length: 40 }, () => bus.publicar([itemSintetico(lia.id)])));
     expect(await total(lia.id)).toBe(300);
@@ -335,7 +335,7 @@ describe('Tope diario (RN-12)', () => {
   });
 });
 
-describe('Recompensas (RF-062)', () => {
+describe('[Gamificacion][Menor][Slow] Recompensas (RF-062)', () => {
   const recompensa = async (codigo: string) => (await t.prisma.recompensa.findUniqueOrThrow({ where: { codigo } })).id;
   const canjear = (id: string, token = lia.token) => t.http().post(`${API}/yo/recompensas/${id}/canje`).set(bearer(token));
 
@@ -366,7 +366,7 @@ describe('Recompensas (RF-062)', () => {
   });
 });
 
-describe('Acceso (RNF-012)', () => {
+describe('[Gamificacion][Menor][Slow] Acceso (RNF-012)', () => {
   it('solo el estudiante ve su pasaporte, su reto y canjea', async () => {
     await t.http().get(`${API}/yo/pasaporte`).expect(401);
     await t.http().get(`${API}/yo/pasaporte`).set(bearer(tokenDocente)).expect(403);

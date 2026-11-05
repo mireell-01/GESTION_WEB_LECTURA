@@ -24,7 +24,7 @@ const ids = () => {
   return () => `n-${++n}`;
 };
 
-describe('Metadatos de la lectura (RF-021)', () => {
+describe('[Contenido][Menor][Fast] Metadatos de la lectura (RF-021)', () => {
   it('normaliza y acepta un borrador sin licencia ni habilidades', () => {
     const m = MetadatosLectura.de(metadatos({ titulo: '  El zorro  ', licencia: '  ', habilidadesObjetivo: [] }));
     expect(m.titulo).toBe('El zorro');
@@ -43,7 +43,7 @@ describe('Metadatos de la lectura (RF-021)', () => {
   });
 });
 
-describe('Segmentación en oraciones (RF-022)', () => {
+describe('[Contenido][Menor][Slow] Segmentación en oraciones (RF-022)', () => {
   it('corta tras . ! ? … sin cortar en abreviaturas, iniciales ni números', () => {
     expect(partirParrafo('El Sr. Pérez llegó. ¿Viste? ¡Sí! Midió 3.5 metros… Luego se fue.')).toEqual([
       'El Sr. Pérez llegó.', '¿Viste?', '¡Sí!', 'Midió 3.5 metros…', 'Luego se fue.',
@@ -90,7 +90,7 @@ describe('Segmentación en oraciones (RF-022)', () => {
   });
 });
 
-describe('Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
+describe('[Contenido][Core][Fast] Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
   const oraciones = segmentar(TEXTO, [], ids());
   const set = new Set(oraciones.map((o) => o.id));
   const completas = () => construirActividades(actividadesCompletas(oraciones.map((o) => o.id)), set, ids());
@@ -141,7 +141,7 @@ describe('Actividades, ítems y pistas (RF-024, RF-025, RN-06, RN-15)', () => {
   });
 });
 
-describe('Historia ramificada (RF-029)', () => {
+describe('[Contenido][Menor][Fast] Historia ramificada (RF-029)', () => {
   const nodo = (clave: string, opciones: string[] = [], extra = {}) => ({
     clave, contenido: `Texto de ${clave}`, opciones: opciones.map((d) => ({ texto: `Ir a ${d}`, destino: d })), ...extra,
   });
@@ -169,7 +169,7 @@ describe('Historia ramificada (RF-029)', () => {
   });
 });
 
-describe('Recursos (RF-023)', () => {
+describe('[Contenido][Menor][Fast] Recursos (RF-023)', () => {
   const webp = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 '), Buffer.alloc(20)]);
   const avif = Buffer.concat([Buffer.alloc(4), Buffer.from('ftypavif'), Buffer.alloc(20)]);
 
@@ -202,7 +202,7 @@ describe('Recursos (RF-023)', () => {
   });
 });
 
-describe('Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14, RN-15)', () => {
+describe('[Contenido][Core][Fast] Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14, RN-15)', () => {
   const borrador = (autorId = 'editora') =>
     VersionLectura.crearBorrador({ id: 'v1', lecturaId: 'l1', numero: 1, metadatos: meta(), texto: TEXTO, autorId, ahora: AHORA, generarId: ids() });
   const completa = () => {
@@ -305,7 +305,7 @@ describe('Versión de una lectura: flujo de publicación (RF-026, RF-027, RN-14,
   });
 });
 
-describe('Lectura: la versión publicada vigente (RF-027)', () => {
+describe('[Contenido][Core][Fast] Lectura: la versión publicada vigente (RF-027)', () => {
   it('publicar devuelve la versión anterior; archivar la saca de circulación', () => {
     const l = Lectura.crear({ id: 'l1', autorId: 'editora', ahora: AHORA });
     expect(l.publicar('v1')).toBeNull();

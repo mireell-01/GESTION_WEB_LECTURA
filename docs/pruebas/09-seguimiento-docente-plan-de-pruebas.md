@@ -204,7 +204,7 @@ const AHORA = new Date('2026-10-21T15:00:00Z'); // miércoles 21, 10:00 en Lima
 const medidas = (v: Record<string, number>, items = 6) => Object.entries(v).map(([habilidad, valor]) => ({ habilidad, valor, items }));
 const dias = (n: number) => new Date(AHORA.getTime() - n * 86_400_000);
 
-describe('Mapa de calor (RF-063, RN-08)', () => {
+describe('[Reporting][Core][Fast] Mapa de calor (RF-063, RN-08)', () => {
   it('5 celdas en el orden del SRS con su nivel CNEB declarado; sin medir, sin datos', () => {
     const c = celdasDe([...medidas({ INF: 20, LIT: 90, VOC: 64.996 }), { habilidad: 'CRI', valor: 70, items: 4 }]);
     expect(c.map((x) => `${x.habilidad}:${x.nivel}:${x.valor}`)).toEqual(['LIT:AD:90', 'INF:C:20', 'VOC:B:65', 'CRI:null:70', 'ARG:null:null']);
@@ -213,7 +213,7 @@ describe('Mapa de calor (RF-063, RN-08)', () => {
   });
 });
 
-describe('Estudiantes en riesgo (RF-065)', () => {
+describe('[Reporting][Core][Fast] Estudiantes en riesgo (RF-065)', () => {
   const celdas = celdasDe(medidas({ INF: 20, ARG: 30, LIT: 80 }));
 
   it('7 días sin actividad o 2 habilidades en inicio', () => {
@@ -230,7 +230,7 @@ describe('Estudiantes en riesgo (RF-065)', () => {
   });
 });
 
-describe('Refuerzo grupal (RF-066)', () => {
+describe('[Reporting][Menor][Fast] Refuerzo grupal (RF-066)', () => {
   it('habilidades en inicio para el 30 % del aula o más, de la más extendida a la menos', () => {
     const e = (id: string, v: Record<string, number>) => ({ id, celdas: celdasDe(medidas(v)) });
     const aula = [e('a', { INF: 20, CRI: 30 }), e('b', { INF: 25, CRI: 30 }), e('c', { INF: 35 }), e('d', { CRI: 10 }), e('e', { INF: 90, ARG: 20 }), e('f', {}), e('g', {}), e('h', {}), e('i', {}), e('j', {})];
@@ -243,7 +243,7 @@ describe('Refuerzo grupal (RF-066)', () => {
   });
 });
 
-describe('Resumen semanal (RF-065)', () => {
+describe('[Reporting][Menor][Fast] Resumen semanal (RF-065)', () => {
   it('cuánto leyó el aula en la semana; activos = con al menos una sesión', () => {
     const semanal = [
       { estudianteId: 'a', semana: '2026-10-19', lecturas: 2, minutos: 12.4, respuestas: 10 },
@@ -263,7 +263,7 @@ describe('Resumen semanal (RF-065)', () => {
   });
 });
 
-describe('Tasa de acierto sin pista (RF-064)', () => {
+describe('[Reporting][Menor][Fast] Tasa de acierto sin pista (RF-064)', () => {
   const r = (habilidad: string, esCorrecta: boolean | null, pistasUsadas = 0) => ({ habilidad, esCorrecta, pistasUsadas });
 
   it('sobre las cerradas respondidas; las abiertas no cuentan', () => {
@@ -274,7 +274,7 @@ describe('Tasa de acierto sin pista (RF-064)', () => {
   });
 });
 
-describe('Reporte CSV (RF-067)', () => {
+describe('[Reporting][Menor][Fast] Reporte CSV (RF-067)', () => {
   it('UTF-8 con BOM, una fila por estudiante y celdas seguras para la hoja de cálculo', () => {
     const csv = reporteCsv([
       { alias: 'Sofía', celdas: celdasDe(medidas({ LIT: 70, INF: 20 })), ultimaActividad: new Date('2026-10-20T20:00:00Z'), lecturasSemana: 2, motivosRiesgo: ['HABILIDADES_EN_INICIO'] },
@@ -336,7 +336,7 @@ const sesion = (id: string, respuestas: Partial<SesionDeHistorial['respuestas'][
   })),
 });
 
-describe('Seguimiento docente: panel, detalle, reporte y resumen semanal', () => {
+describe('[Reporting][Core][Fast] Seguimiento docente: panel, detalle, reporte y resumen semanal', () => {
   let e: EntornoReporting;
 
   beforeEach(() => {
@@ -743,7 +743,7 @@ let tokenMateo: string;
 const panel = (aulaId = aula.aulaId, token = rosa.token) => t.http().get(`${API}/aulas/${aulaId}/panel`).set(bearer(token));
 const estudiante = (v: { estudiantes: { alias: string }[] }, alias: string) => v.estudiantes.find((e) => e.alias === alias) as unknown as Record<string, unknown> & { celdas: { habilidad: string; nivel: string | null; valor: number | null }[]; riesgo: { motivos: string[]; diasSinActividad: number | null } };
 
-describe('Preparación', () => {
+describe('[Reporting][Core][Slow] Preparación', () => {
   it('una lectura publicada, la docente Rosa con 5 estudiantes de 9 años y otra docente con su aula', async () => {
     const editora = await backoffice('EDITOR');
     killa = await publicarKilla(editora, await backoffice('REVISOR'));
@@ -768,7 +768,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Panel del aula (RF-063, RF-065, RF-066)', () => {
+describe('[Reporting][Core][Slow] Panel del aula (RF-063, RF-065, RF-066)', () => {
   it('RF-063: mapa de calor estudiantes × habilidades con el nivel CNEB declarado (RN-08)', async () => {
     const v = (await panel().expect(200)).body;
     expect(v.aula).toMatchObject({ id: aula.aulaId, nombre: '4.° A', estado: 'ACTIVA' });
@@ -830,7 +830,7 @@ describe('Panel del aula (RF-063, RF-065, RF-066)', () => {
   });
 });
 
-describe('Detalle del estudiante (RF-064)', () => {
+describe('[Reporting][Core][Slow] Detalle del estudiante (RF-064)', () => {
   it('sus últimas sesiones con lo que respondió, las evidencias que eligió y las pistas que usó', async () => {
     const v = (await t.http().get(`${API}/aulas/${aula.aulaId}/estudiantes/${aula.ids['Mateo']}/detalle`).set(bearer(rosa.token)).expect(200)).body;
     expect(v.estudiante).toMatchObject({ id: aula.ids['Mateo'], alias: 'Mateo', avatar: 'zorro' });
@@ -856,7 +856,7 @@ describe('Detalle del estudiante (RF-064)', () => {
   });
 });
 
-describe('Reporte del aula (RF-067)', () => {
+describe('[Reporting][Core][Slow] Reporte del aula (RF-067)', () => {
   const reporte = (formato: string) => t.http().get(`${API}/aulas/${aula.aulaId}/reporte?formato=${formato}`).set(bearer(rosa.token)).buffer(true).parse((res, cb) => {
     const partes: Buffer[] = [];
     res.on('data', (c: Buffer) => partes.push(c));
@@ -889,7 +889,7 @@ describe('Reporte del aula (RF-067)', () => {
   });
 });
 
-describe('Resumen semanal (RF-065)', () => {
+describe('[Reporting][Core][Slow] Resumen semanal (RF-065)', () => {
   it('desde el lunes a las 07:00 de Lima se envía una vez a cada docente con sus aulas', async () => {
     const lunes = lunesDeLaSemana(fechaLocalLima(new Date()));
     // El miércoles de la próxima semana: toca resumir la semana en curso (la de las lecturas de Mateo).
@@ -918,7 +918,7 @@ describe('Resumen semanal (RF-065)', () => {
   });
 });
 
-describe('Riesgo por inactividad (RF-065)', () => {
+describe('[Reporting][Core][Slow] Riesgo por inactividad (RF-065)', () => {
   it('RF-065: con 9 días sin leer aparece en riesgo con sus días', async () => {
     await t.prisma.sesionLectura.updateMany({ where: { estudianteId: aula.ids['Mateo'] }, data: { iniciadaEn: haceDias(9), ultimaActividadEn: haceDias(9) } });
     await t.prisma.respuestaDiagnostico.updateMany({ where: { diagnostico: { estudianteId: aula.ids['Mateo'] } }, data: { respondidaEn: haceDias(12) } });
@@ -928,7 +928,7 @@ describe('Riesgo por inactividad (RF-065)', () => {
   });
 });
 
-describe('Acceso (RN-17, RNF-012)', () => {
+describe('[Reporting][Core][Slow] Acceso (RN-17, RNF-012)', () => {
   it('solo la docente del aula ve su panel', async () => {
     await panel(aula.aulaId, otra.token).expect(404);
     await panel('no-es-un-id').expect(404);
@@ -937,7 +937,7 @@ describe('Acceso (RN-17, RNF-012)', () => {
   });
 });
 
-describe('Rendimiento (RNF-003)', () => {
+describe('[Reporting][Core][Slow] Rendimiento (RNF-003)', () => {
   it('el panel de un aula de 40 estudiantes con datos responde en menos de 1,5 s', async () => {
     const grande = await crearAula(rosa.token, '4.° C', Array.from({ length: 40 }, (_, i) => `Niño ${i + 1}`));
     for (const [i, id] of Object.values(grande.ids).entries()) await maestria(id, { INF: i % 3 === 0 ? 20 : 75, CRI: i % 4 === 0 ? 30 : 60 });
@@ -1012,7 +1012,7 @@ const test = base.extend({
  * refuerzo grupal con un clic, abre el detalle de un estudiante con sus evidencias y pistas, y descarga
  * el reporte en CSV y PDF.
  */
-test.describe('Seguimiento docente (RF-063 a RF-067)', () => {
+test.describe('[Reporting][Menor][Slow] Seguimiento docente (RF-063 a RF-067)', () => {
   test.setTimeout(150_000);
 
   /** Mateo lee de verdad (se equivoca en la inferencia hasta la explicación); a los demás, lo que mediría Progreso. */
@@ -1238,7 +1238,7 @@ async function revisarPantalla(page: Page): Promise<void> {
   expect(resultado.pequenos, 'objetivos táctiles menores de 48 px').toEqual([]);
 }
 
-test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
+test.describe('[Diseno][Menor][Slow] Diseño responsivo (RNF-022, RNF-023)', () => {
   for (const ruta of ['/', '/ingresar', '/registro', '/recuperar', '/ingresar/estudiante']) {
     test(`${ruta} se adapta sin desbordes y con objetivos táctiles grandes`, async ({ page }) => {
       await page.goto(ruta);

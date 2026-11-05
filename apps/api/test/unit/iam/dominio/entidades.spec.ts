@@ -33,7 +33,7 @@ function perfil(alias = 'Lucía', avatar = 'zorro') {
   });
 }
 
-describe('PerfilEstudiante — datos mínimos (RN-02)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — datos mínimos (RN-02)', () => {
   it('normaliza espacios del alias', () => {
     expect(perfil('  Ana   Lucía ').alias).toBe('Ana Lucía');
   });
@@ -50,7 +50,7 @@ describe('PerfilEstudiante — datos mínimos (RN-02)', () => {
   });
 });
 
-describe('PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
   it(`se bloquea ${DURACION_BLOQUEO_MIN} min al ${MAX_INTENTOS_PIN}.º PIN incorrecto`, () => {
     const p = perfil();
     for (let i = 1; i < MAX_INTENTOS_PIN; i++) p.registrarIntentoFallido(T0);
@@ -93,7 +93,7 @@ describe('PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
   });
 });
 
-describe('PerfilEstudiante — eliminación (RF-013)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — eliminación (RF-013)', () => {
   it('anonimizar borra datos personales y desactiva', () => {
     const p = perfil();
     p.anonimizar(T0);
@@ -104,7 +104,7 @@ describe('PerfilEstudiante — eliminación (RF-013)', () => {
   });
 });
 
-describe('Sesion — inactividad (RF-010)', () => {
+describe('[IAM][Core][Fast] Sesion — inactividad (RF-010)', () => {
   const abrir = (rol: string) =>
     Sesion.abrir({ id: 's1', sujetoId: 'x', rol, mfa: false, hashRefreshToken: 'h', ahora: T0 });
 
@@ -150,7 +150,7 @@ describe('Sesion — inactividad (RF-010)', () => {
   });
 });
 
-describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)', () => {
+describe('[IAM][Core][Fast] Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)', () => {
   const nueva = (rol: Parameters<typeof Rol.de>[0] = 'EDITOR') =>
     Cuenta.registrar({
       id: 'c1',
@@ -193,7 +193,7 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
   });
 });
 
-describe('VerificacionCorreo (RF-002)', () => {
+describe('[IAM][Core][Fast] VerificacionCorreo (RF-002)', () => {
   const nuevo = () => VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella', ahora: T0 });
 
   it('pasa de vigente a vencido a las 24 h y recuerda cuándo se creó', () => {
@@ -226,7 +226,7 @@ describe('VerificacionCorreo (RF-002)', () => {
   });
 });
 
-describe('Consentimiento y DispositivoIngreso', () => {
+describe('[IAM][Core][Fast] Consentimiento y DispositivoIngreso', () => {
   it('el consentimiento institucional exige aula (RN-01)', () => {
     expect(() =>
       Consentimiento.otorgar({

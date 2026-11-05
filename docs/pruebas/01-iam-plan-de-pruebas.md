@@ -227,7 +227,7 @@ function perfil(alias = 'Lucía', avatar = 'zorro') {
   });
 }
 
-describe('PerfilEstudiante — datos mínimos (RN-02)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — datos mínimos (RN-02)', () => {
   it('normaliza espacios del alias', () => {
     expect(perfil('  Ana   Lucía ').alias).toBe('Ana Lucía');
   });
@@ -244,7 +244,7 @@ describe('PerfilEstudiante — datos mínimos (RN-02)', () => {
   });
 });
 
-describe('PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
   it(`se bloquea ${DURACION_BLOQUEO_MIN} min al ${MAX_INTENTOS_PIN}.º PIN incorrecto`, () => {
     const p = perfil();
     for (let i = 1; i < MAX_INTENTOS_PIN; i++) p.registrarIntentoFallido(T0);
@@ -287,7 +287,7 @@ describe('PerfilEstudiante — bloqueo por PIN (RF-008, RN-03)', () => {
   });
 });
 
-describe('PerfilEstudiante — eliminación (RF-013)', () => {
+describe('[IAM][Core][Fast] PerfilEstudiante — eliminación (RF-013)', () => {
   it('anonimizar borra datos personales y desactiva', () => {
     const p = perfil();
     p.anonimizar(T0);
@@ -298,7 +298,7 @@ describe('PerfilEstudiante — eliminación (RF-013)', () => {
   });
 });
 
-describe('Sesion — inactividad (RF-010)', () => {
+describe('[IAM][Core][Fast] Sesion — inactividad (RF-010)', () => {
   const abrir = (rol: string) =>
     Sesion.abrir({ id: 's1', sujetoId: 'x', rol, mfa: false, hashRefreshToken: 'h', ahora: T0 });
 
@@ -344,7 +344,7 @@ describe('Sesion — inactividad (RF-010)', () => {
   });
 });
 
-describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)', () => {
+describe('[IAM][Core][Fast] Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)', () => {
   const nueva = (rol: Parameters<typeof Rol.de>[0] = 'EDITOR') =>
     Cuenta.registrar({
       id: 'c1',
@@ -387,7 +387,7 @@ describe('Cuenta — ciclo de vida y MFA en dos pasos (RF-002, RF-011, RF-076)',
   });
 });
 
-describe('VerificacionCorreo (RF-002)', () => {
+describe('[IAM][Core][Fast] VerificacionCorreo (RF-002)', () => {
   const nuevo = () => VerificacionCorreo.paraVerificacionCorreo({ id: 'v1', cuentaId: 'c1', codigo: 'huella', ahora: T0 });
 
   it('pasa de vigente a vencido a las 24 h y recuerda cuándo se creó', () => {
@@ -420,7 +420,7 @@ describe('VerificacionCorreo (RF-002)', () => {
   });
 });
 
-describe('Consentimiento y DispositivoIngreso', () => {
+describe('[IAM][Core][Fast] Consentimiento y DispositivoIngreso', () => {
   it('el consentimiento institucional exige aula (RN-01)', () => {
     expect(() =>
       Consentimiento.otorgar({
@@ -478,7 +478,7 @@ function peticion(regla: ReglaLimiteTasa | undefined, req: { ip?: string; body?:
 const LOGIN: ReglaLimiteTasa = { nombre: 'ingreso-adulto', maximoPorMinuto: 10, por: 'ip' };
 const TABLET: ReglaLimiteTasa = { nombre: 'ingreso-estudiante-tablet', maximoPorMinuto: 30, por: { campoCuerpo: 'tokenDispositivo' } };
 
-describe('LimiteTasaGuard (RNF-019)', () => {
+describe('[IAM][Core][Fast] LimiteTasaGuard (RNF-019)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-15T15:00:00Z'));
@@ -693,7 +693,7 @@ afterAll(async () => {
   await t?.cerrar();
 });
 
-describe('Logs sin secretos (RNF-031)', () => {
+describe('[IAM][Core][Slow] Logs sin secretos (RNF-031)', () => {
   it('un recorrido completo de IAM no deja contraseñas, PIN, tokens ni códigos en los logs', async () => {
     const secretos: string[] = [CONTRASENA, PIN];
     const email = 'secretos@lectoaventura.test';
@@ -796,7 +796,7 @@ afterAll(async () => {
 const intento = (ip: string) =>
   t.http().post(`${API}/auth/login`).set('X-Forwarded-For', ip).send({ email: 'nadie@lectoaventura.test', contrasena: 'cualquier-cosa' });
 
-describe('Límite de tasa (RNF-019)', () => {
+describe('[IAM][Core][Slow] Límite de tasa (RNF-019)', () => {
   it('ingreso adulto: los 10 primeros intentos son 401 y el 11.º responde 429 con Retry-After', async () => {
     for (let i = 0; i < 10; i++) await intento('203.0.113.7').expect(401);
     const bloqueado = await intento('203.0.113.7').expect(429);
@@ -875,7 +875,7 @@ async function retrocederUltimoEnlace(app: AppDePrueba, email: string, seg = 120
   await app.prisma.verificacion.updateMany({ where: { cuentaId: cuenta.id }, data: { creadoEn: new Date(Date.now() - seg * 1000) } });
 }
 
-describe('Reenvío del enlace de verificación (RF-002)', () => {
+describe('[IAM][Core][Slow] Reenvío del enlace de verificación (RF-002)', () => {
   it('el ingreso de una cuenta sin verificar lo dice claramente (solo con la contraseña correcta)', async () => {
     await registrar(t, 'pendiente@lectoaventura.test');
     const r = await t.http().post(`${API}/auth/login`).send({ email: 'pendiente@lectoaventura.test', contrasena: CONTRASENA }).expect(403);
@@ -950,7 +950,7 @@ describe('Reenvío del enlace de verificación (RF-002)', () => {
   });
 });
 
-describe('Verificación después de reiniciar la API', () => {
+describe('[IAM][Core][Slow] Verificación después de reiniciar la API', () => {
   it('el enlace sigue funcionando y, si el correo se perdió, se puede pedir otro', async () => {
     await registrar(t, 'antes@lectoaventura.test');
     await registrar(t, 'perdido@lectoaventura.test');
@@ -1038,7 +1038,7 @@ import {
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
 /** Nivel 3 — Casos negativos y de seguridad de IAM vistos desde la interfaz. */
-test.describe('IAM — seguridad de acceso', () => {
+test.describe('[IAM][Core][Slow] IAM — seguridad de acceso', () => {
   test('credenciales incorrectas muestran un error claro y no dejan entrar (RF-003)', async ({ page, request }) => {
     const { email } = await cuentaVerificada(request);
     await ingresarComoAdulto(page, email, 'no-es-la-contraseña');
@@ -1118,7 +1118,7 @@ test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
  * Nivel 3 — Recorrido completo de IAM desde la interfaz, como lo haría una familia real:
  * RF-001 → RF-002 → RF-003 → RF-005 → RF-006 → RF-007 → RF-009.
  */
-test('una familia se registra, crea el perfil de su hijo y el niño entra con avatar y PIN', async ({ page, request }) => {
+test('[IAM][Core][Slow] una familia se registra, crea el perfil de su hijo y el niño entra con avatar y PIN', async ({ page, request }) => {
   const email = correoUnico('familia');
 
   // RF-001: registro desde la web.
@@ -1182,7 +1182,7 @@ import {
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
 /** Nivel 3 — Tablet del aula sin código (RF-007, RN-04, CR-01) y cierre por inactividad (RF-010, R-02). */
-test.describe('IAM — tablet del aula e inactividad', () => {
+test.describe('[IAM][Core][Slow] IAM — tablet del aula e inactividad', () => {
   test('la docente activa la tablet y el niño entra con su avatar y el PIN de su tarjeta, sin escribir códigos', async ({ page, request }) => {
     const tarjeta = await aulaConEstudiante(request, { alias: 'Sofía', avatar: 'buho' });
 
@@ -1246,7 +1246,7 @@ const CONFIRMA = /Confirma tu correo/;
 const rutaDe = (enlace: string) => new URL(enlace).pathname + new URL(enlace).search;
 
 /** Nivel 3 — Verificación de correo y reenvío del enlace desde la interfaz (RF-002). */
-test.describe('IAM — verificación de correo', () => {
+test.describe('[IAM][Core][Slow] IAM — verificación de correo', () => {
   test('si el enlace se perdió, se pide otro desde el ingreso; el anterior deja de servir', async ({ page, request }) => {
     const { email, contrasena } = await cuentaSinVerificar(request);
     const primero = await enlaceDelCorreo(request, email, CONFIRMA);
@@ -1338,7 +1338,7 @@ async function revisarPantalla(page: Page): Promise<void> {
   expect(resultado.pequenos, 'objetivos táctiles menores de 48 px').toEqual([]);
 }
 
-test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
+test.describe('[Diseno][Menor][Slow] Diseño responsivo (RNF-022, RNF-023)', () => {
   for (const ruta of ['/', '/ingresar', '/registro', '/recuperar', '/ingresar/estudiante']) {
     test(`${ruta} se adapta sin desbordes y con objetivos táctiles grandes`, async ({ page }) => {
       await page.goto(ruta);
@@ -2363,9 +2363,22 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+  # Puerta rápida (suites priorizadas): corre a la par de lo estático, sin base de datos ni navegador.
+  # Si se rompe una regla crítica, avisa en cuanto termina y no se gastan los demás niveles.
+  puerta-core:
+    name: 'Puerta rápida: suite Core y Fast'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - run: npm run test:core:fast
+
   unitarias:
     name: 'Nivel 1: unitarias + cobertura'
-    needs: estatico
+    needs: [estatico, puerta-core]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2376,6 +2389,7 @@ jobs:
       # Falla si la cobertura baja de los umbrales de vitest.config.ts.
       - run: npm run test:unit
         env: { CI: 'true' }
+      - run: npm run test:web
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: cobertura-unitaria, path: apps/api/reports/unit }
@@ -2430,8 +2444,14 @@ jobs:
             sleep 20
             npm run build --workspace @lectoaventura/web
           }
-      - name: 'Nivel 3: sistema E2E (escritorio y tablet)'
-        run: npm run test:e2e
+      # Las mismas pruebas de siempre, primero las críticas: si una falla, no se espera a las demás.
+      # --grep-invert corre todo lo que no sea [Core], así que una prueba sin etiqueta tampoco queda afuera.
+      - name: 'Nivel 3: sistema E2E, primero lo crítico (Core)'
+        run: |
+          npm run test:e2e:core
+          mv tests/e2e/reportes/sistema tests/e2e/reportes/sistema-core
+      - name: 'Nivel 3: sistema E2E, el resto'
+        run: npm run test:e2e:resto
       - name: 'Nivel 4: aceptación (Gherkin)'
         run: npm run test:uat
       - name: 'Nivel 3: humo de carga con k6 (RNF-001, RNF-003, RNF-008)'

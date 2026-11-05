@@ -9,7 +9,7 @@ import { crearEntornoDiagnostico, EntornoDiagnostico, generarBanco } from '../do
 const NINO = 'nino-9';
 const DOCENTE = 'docente';
 
-describe('Diagnóstico: reto del estudiante y reevaluación del docente', () => {
+describe('[Diagnostico][Core][Fast] Diagnóstico: reto del estudiante y reevaluación del docente', () => {
   let e: EntornoDiagnostico;
 
   beforeEach(() => {
