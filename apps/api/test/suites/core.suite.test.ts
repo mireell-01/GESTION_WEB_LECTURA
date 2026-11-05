@@ -28,6 +28,7 @@ import '../unit/iam/infraestructura/seguridad.spec';
 import '../unit/iam/interface/guards.spec';
 import '../unit/iam/interface/limite-tasa.spec';
 import '../unit/lectura/aplicacion/lectura-casos-de-uso.spec';
+import '../unit/lectura/dominio/correccion-caja-blanca.spec';
 import '../unit/lectura/dominio/dominio-lectura.spec';
 import '../unit/progreso/aplicacion/progreso-casos-de-uso.spec';
 import '../unit/progreso/dominio/dominio-progreso.spec';

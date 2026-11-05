@@ -72,50 +72,69 @@ export function evidenciaCorrecta(seleccion: string[], clave: string[]): boolean
 
 const esEntero = (v: unknown, min: number, max: number): v is number => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
 
+function corregirSeleccionUnica(item: ItemLectura, entrada: EntradaRespuesta): Correccion {
+  if (!esEntero(entrada.indice, 0, item.opciones.length - 1)) throw new RespuestaInvalidaError('Elige una de las opciones');
+  return { contenido: { indice: entrada.indice }, esCorrecta: item.esCerrado ? item.indicesCorrectos.includes(entrada.indice) : null, filtrado: false };
+}
+
+function corregirSeleccionMultiple(item: ItemLectura, entrada: EntradaRespuesta): Correccion {
+  const n = item.opciones.length;
+  const indices = [...new Set(entrada.indices ?? [])].sort((a, b) => a - b);
+  if (indices.length === 0 || !indices.every((i) => esEntero(i, 0, n - 1))) throw new RespuestaInvalidaError('Elige una o más opciones');
+  const correctos = [...item.indicesCorrectos].sort((a, b) => a - b);
+  const esCorrecta = indices.length === correctos.length && indices.every((v, i) => v === correctos[i]);
+  return { contenido: { indices }, esCorrecta: item.esCerrado ? esCorrecta : null, filtrado: false };
+}
+
+function corregirOrdenamiento(item: ItemLectura, entrada: EntradaRespuesta, claveOrden: string): Correccion {
+  const n = item.elementos.length;
+  const orden = entrada.orden ?? [];
+  if (orden.length !== n || new Set(orden).size !== n || !orden.every((i) => esEntero(i, 0, n - 1))) {
+    throw new RespuestaInvalidaError('Ordena todos los elementos');
+  }
+  const mostrado = ordenMostrado(n, claveOrden);
+  return { contenido: { orden }, esCorrecta: orden.every((posicion, k) => mostrado[posicion] === k), filtrado: false };
+}
+
+function corregirEvidencia(item: ItemLectura, entrada: EntradaRespuesta, oracionesValidas: Set<string>): Correccion {
+  const oraciones = [...new Set(entrada.oraciones ?? [])];
+  if (oraciones.length === 0) throw new RespuestaInvalidaError('Toca las oraciones del texto que respaldan tu respuesta');
+  if (oraciones.some((id) => !oracionesValidas.has(id))) throw new RespuestaInvalidaError('Elige oraciones del texto que estás leyendo');
+  return { contenido: { oraciones }, esCorrecta: evidenciaCorrecta(oraciones, item.clavesEvidencia), filtrado: false };
+}
+
+function corregirAbierta(item: ItemLectura, entrada: EntradaRespuesta): Correccion {
+  const texto = String(entrada.texto ?? '').trim();
+  if (texto.length === 0) throw new RespuestaInvalidaError(item.modalidad === 'VOZ' ? 'Di o escribe tu respuesta' : 'Escribe tu respuesta');
+  if (texto.length > MAX_CARACTERES_RESPUESTA) throw new RespuestaInvalidaError(`Tu respuesta puede tener hasta ${MAX_CARACTERES_RESPUESTA} letras`);
+  if (item.minPalabras && palabrasDe(texto) < item.minPalabras) {
+    throw new RespuestaInvalidaError(`Escribe un poco más: al menos ${item.minPalabras} ${item.minPalabras === 1 ? 'palabra' : 'palabras'}`);
+  }
+  const filtro = filtrarPalabras(texto);
+  // RF-049: solo llega el texto que el niño confirmó; el audio nunca sale de su dispositivo.
+  return { contenido: { texto: filtro.texto, porVoz: entrada.porVoz === true }, esCorrecta: null, filtrado: filtro.filtrado };
+}
+
 /**
  * Valida la respuesta según la modalidad del ítem y la corrige en el servidor (RF-040 a RF-043); en
  * las abiertas aplica el filtro de palabras (RF-041). La clave nunca sale de aquí.
  */
 export function corregir(item: ItemLectura, entrada: EntradaRespuesta, ctx: { claveOrden: string; oracionesValidas: Set<string> }): Correccion {
   switch (item.modalidad) {
-    case 'SELECCION': {
-      const n = item.opciones.length;
-      if (item.multiple) {
-        const indices = [...new Set(entrada.indices ?? [])].sort((a, b) => a - b);
-        if (indices.length === 0 || !indices.every((i) => esEntero(i, 0, n - 1))) throw new RespuestaInvalidaError('Elige una o más opciones');
-        const correctos = [...item.indicesCorrectos].sort((a, b) => a - b);
-        const esCorrecta = indices.length === correctos.length && indices.every((v, i) => v === correctos[i]);
-        return { contenido: { indices }, esCorrecta: item.esCerrado ? esCorrecta : null, filtrado: false };
-      }
-      if (!esEntero(entrada.indice, 0, n - 1)) throw new RespuestaInvalidaError('Elige una de las opciones');
-      return { contenido: { indice: entrada.indice }, esCorrecta: item.esCerrado ? item.indicesCorrectos.includes(entrada.indice) : null, filtrado: false };
-    }
-    case 'ORDENAMIENTO': {
-      const n = item.elementos.length;
-      const orden = entrada.orden ?? [];
-      if (orden.length !== n || new Set(orden).size !== n || !orden.every((i) => esEntero(i, 0, n - 1))) {
-        throw new RespuestaInvalidaError('Ordena todos los elementos');
-      }
-      const mostrado = ordenMostrado(n, ctx.claveOrden);
-      return { contenido: { orden }, esCorrecta: orden.every((posicion, k) => mostrado[posicion] === k), filtrado: false };
-    }
-    case 'EVIDENCIA': {
-      const oraciones = [...new Set(entrada.oraciones ?? [])];
-      if (oraciones.length === 0) throw new RespuestaInvalidaError('Toca las oraciones del texto que respaldan tu respuesta');
-      if (oraciones.some((id) => !ctx.oracionesValidas.has(id))) throw new RespuestaInvalidaError('Elige oraciones del texto que estás leyendo');
-      return { contenido: { oraciones }, esCorrecta: evidenciaCorrecta(oraciones, item.clavesEvidencia), filtrado: false };
-    }
+    case 'SELECCION':
+      return item.multiple ? corregirSeleccionMultiple(item, entrada) : corregirSeleccionUnica(item, entrada);
+    case 'ORDENAMIENTO':
+      return corregirOrdenamiento(item, entrada, ctx.claveOrden);
+    case 'EVIDENCIA':
+      return corregirEvidencia(item, entrada, ctx.oracionesValidas);
     case 'ESCRITURA':
-    case 'VOZ': {
-      const texto = String(entrada.texto ?? '').trim();
-      if (texto.length === 0) throw new RespuestaInvalidaError(item.modalidad === 'VOZ' ? 'Di o escribe tu respuesta' : 'Escribe tu respuesta');
-      if (texto.length > MAX_CARACTERES_RESPUESTA) throw new RespuestaInvalidaError(`Tu respuesta puede tener hasta ${MAX_CARACTERES_RESPUESTA} letras`);
-      if (item.minPalabras && palabrasDe(texto) < item.minPalabras) {
-        throw new RespuestaInvalidaError(`Escribe un poco más: al menos ${item.minPalabras} ${item.minPalabras === 1 ? 'palabra' : 'palabras'}`);
-      }
-      const filtro = filtrarPalabras(texto);
-      // RF-049: solo llega el texto que el niño confirmó; el audio nunca sale de su dispositivo.
-      return { contenido: { texto: filtro.texto, porVoz: entrada.porVoz === true }, esCorrecta: null, filtrado: filtro.filtrado };
+    case 'VOZ':
+      return corregirAbierta(item, entrada);
+    default: {
+      // TypeScript exige cubrir todas las modalidades y la base las limita (ck_item_modalidad). Si aun así
+      // llegara otra, es un error del sistema (500), no una respuesta mal escrita del niño.
+      const desconocida: never = item.modalidad;
+      throw new Error(`Modalidad desconocida: ${String(desconocida)}`);
     }
   }
 }

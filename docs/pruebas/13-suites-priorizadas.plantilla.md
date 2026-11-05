@@ -1,6 +1,6 @@
 # Suites de pruebas priorizadas: LectoAventura (Semana 9, C7.I2)
 
-Capacidad UC2.C7, indicador C7.I2. Todo lo que aparece aquí está en el repositorio, en la rama `semana-9-suites-priorizadas`. Los tiempos y registros salen de ejecuciones reales del 5 de noviembre de 2026 y de la ejecución 41557778002 de GitHub Actions.
+Capacidad UC2.C7, indicador C7.I2. Todo lo que aparece aquí está en el repositorio (rama `main`, pull request #17). Los tiempos y registros salen de ejecuciones reales del 5 de noviembre de 2026 y de las ejecuciones 41557778002 y 42042625851 de GitHub Actions.
 
 ---
 
@@ -84,7 +84,7 @@ Lo que estas suites **no** resuelven: el Nivel 1 ya era rápido y el 75 % del ti
 
 # 2. ¿Qué tienes que hacer? (plan de acción)
 
-Los pasos 1 a 7 ya están hechos en la rama. Queda el 8.
+Los 8 pasos ya están hechos: la rama se fusionó con el pull request #17, con las 5 comprobaciones en verde.
 
 1. **Etiquetar** los 182 `describe` de primer nivel de la API y los 17 bloques E2E con `[Componente][Core|Menor][Fast|Slow]`. Solo cambian los títulos; ninguna aserción.
 2. **Crear los barriles** en `apps/api/test/suites/`: uno por riesgo, dos por tiempo y uno por cada uno de los 11 componentes.
@@ -93,7 +93,7 @@ Los pasos 1 a 7 ya están hechos en la rama. Queda el 8.
 5. **Agregar el Nivel 1 de la web**: `apps/web/vitest.config.ts` y `apps/web/test/lectura/ilustracion-lectura.spec.tsx`.
 6. **Agregar los comandos** a `package.json`: `test:core`, `test:core:fast`, `test:fast`, `test:slow`, `test:suite`, `test:int:core`, `test:e2e:core`, `test:e2e:resto` y `test:web`.
 7. **Reordenar CI** en `.github/workflows/calidad.yml`: puerta rápida al inicio y, en E2E, primero lo crítico.
-8. **Abrir el pull request** y confirmar en GitHub los tiempos nuevos de CI, que todavía no están medidos.
+8. **Abrir el pull request** y confirmar en GitHub los tiempos nuevos de CI (sección 6.4).
 
 ---
 
@@ -345,6 +345,24 @@ Registro real del Nivel 1 completo, para comparar. Aquí se ve la causa: `collec
 
 `collect` suma lo que tarda cada proceso, y por eso puede ser mayor que `Duration`, que es el tiempo real de espera. La tabla usa el tiempo total del comando, que incluye el arranque de `npm`, y por eso es algo mayor que `Duration`.
 
+## 6.4 Tiempos reales en GitHub Actions
+
+Ejecución 42042625851 del pull request #17, en la que los 5 trabajos pasaron:
+
+| Trabajo o paso | Antes (41557778002) | Después (42042625851) |
+| :--- | ---: | ---: |
+| Puerta rápida: suite Core y Fast (trabajo nuevo) | no existía | 1,1 min |
+| Lint, arquitectura y tipos | 1,0 min | 1,6 min |
+| Nivel 1: unitarias y cobertura | 1,4 min | 0,9 min |
+| Nivel 2: integración | 2,6 min | 1,6 min |
+| Niveles 3 y 4: sistema, aceptación y carga | 14,6 min | 16,9 min |
+| · dentro de ese trabajo: E2E | 6,4 min | 8,2 min (Core 4,4 y resto 3,8) |
+| **De principio a fin** | **cerca de 19,6 min** | **21,2 min** |
+
+- **La puerta rápida avisa en 1,1 minutos.** Sin ella, una prueba unitaria rota se conocía al terminar lo estático y el Nivel 1: 2,4 minutos en la ejecución de antes y 2,5 con los tiempos de esta.
+- **El E2E crítico termina en 4,4 de sus 8,2 minutos.** Si falla, el resto del E2E, la aceptación y la carga no se ejecutan.
+- **El recorrido completo no bajó, sino que subió 1,6 minutos.** Una sola comparación no separa el efecto del cambio de la variación normal de GitHub; aun así, dividir el E2E en dos pasos no ahorra tiempo cuando todo pasa.
+
 ---
 
 # 7. Punto de control obligatorio: auditoría IA (self-healing testing)
@@ -442,7 +460,7 @@ Tests  406 passed | 180 skipped (586)
 | Entregable | Dónde está | Estado |
 | :--- | :--- | :--- |
 | Código de las suites | `apps/api/test/suites/` (14 archivos), `apps/api/vitest.suites.config.ts`, `apps/api/test/unit/suites/etiquetas.spec.ts`, `apps/web/test/lectura/` | Hecho y probado |
-| Registros de ejecución selectiva | Sección 6.3 de este documento | Hecho en local; los tiempos nuevos de CI faltan hasta abrir el pull request |
+| Registros de ejecución selectiva | Secciones 6.3 (local) y 6.4 (GitHub Actions) de este documento | Hecho y medido |
 | Auditoría IA | Sección 7 de este documento | Hecha con un experimento real; el agente de self-healing fue simulado |
 
 ## 8.2 Reflexión A.I.R.E.
@@ -451,6 +469,6 @@ Tests  406 passed | 180 skipped (586)
 
 **I (Interacción).** La IA propuso y construyó las suites, y su trabajo se auditó con un experimento: se metió un error real en la regla RN-07 y se simuló a un agente de self-healing. Reescribir las aserciones dejó la suite en verde con el error presente, y bajar las pruebas a Menor lo detuvo la guardia. La conclusión es que una aserción de negocio no se acepta porque una IA la "reparó": se contrasta con el requisito.
 
-**R (Retorno).** En el Nivel 1, Core y Fast tarda 13,3 s frente a 29,0 s (−54 %). En el Nivel 2, Core tarda 129,8 s frente a 199,9 s (−35 %). En el Nivel 3, escritorio, lo crítico tarda 4,9 de 9,3 minutos. En CI, el recorrido completo en verde sigue tardando unos 20 minutos, porque se corre lo mismo. Lo que mejora es cuándo llega el aviso: una regla crítica rota del Nivel 1 se debería detectar en cerca de 1 minuto en vez de 2,4 (estimación por confirmar en el primer pull request).
+**R (Retorno).** En el Nivel 1, Core y Fast tarda 13,3 s frente a 29,0 s (−54 %). En el Nivel 2, Core tarda 129,8 s frente a 199,9 s (−35 %). En el Nivel 3, escritorio, lo crítico tarda 4,9 de 9,3 minutos. En CI, el recorrido completo en verde no bajó: pasó de cerca de 19,6 a 21,2 minutos, porque se corre lo mismo. Lo que mejora es cuándo llega el aviso: una regla crítica rota del Nivel 1 se detecta en 1,1 minutos en vez de 2,4, y el E2E crítico termina en 4,4 de sus 8,2 minutos.
 
 **E (Entorno).** Cada prueba declara ahora qué protege y cuánto cuesta. Quien agrega un archivo sin etiquetar o lo deja fuera de su suite recibe un error inmediato, y las reglas críticas no se pueden degradar en silencio. La web ganó sus primeras pruebas de Nivel 1. Falta cubrir con pruebas de componente la pantalla de lectura, que hoy solo se prueba con navegador.
