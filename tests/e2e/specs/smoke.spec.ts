@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 /** Humo: la portada abierta ofrece los caminos de adulto (empezar / ya tengo cuenta) y de estudiante. */
-test.describe('Portada', () => {
+test.describe('[Portada][Core][Slow] Portada', () => {
   test('muestra la propuesta y los accesos de adulto y de estudiante', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'La aventura de leer, comprender y crecer', level: 1 })).toBeVisible();

@@ -16,7 +16,7 @@ import { MUNDOS } from '../dobles';
 const AHORA = new Date('2026-10-17T15:00:00Z');
 const estados = (p: ProgresoAventura) => p.mundos.map((m) => m.estado);
 
-describe('Política de progresión', () => {
+describe('[Aventura][Menor][Fast] Política de progresión', () => {
   it('RF-033: con LIT y VOC ≥ 65 empieza en el mundo 2; si no, en el 1 (nunca más allá del 2)', () => {
     expect(mundoInicial({ LIT: 70, VOC: 68, INF: 10 })).toBe(2); // escenario UAT-01 del SRS
     expect(mundoInicial({ LIT: 65, VOC: 65 })).toBe(2); // el umbral es inclusivo
@@ -50,7 +50,7 @@ describe('Política de progresión', () => {
   });
 });
 
-describe('ProgresoAventura', () => {
+describe('[Aventura][Menor][Fast] ProgresoAventura', () => {
   it('RF-033: en el mundo 1, el resto bloqueado y sin celebración para el mundo inicial', () => {
     const p = ProgresoAventura.posicionar('nino', MUNDOS, 1, AHORA);
     expect(estados(p)).toEqual(['DISPONIBLE', 'BLOQUEADO', 'BLOQUEADO', 'BLOQUEADO', 'BLOQUEADO']);
@@ -102,7 +102,7 @@ describe('ProgresoAventura', () => {
   });
 });
 
-describe('Misión', () => {
+describe('[Aventura][Menor][Fast] Misión', () => {
   const lecturas = (n: number) => Array.from({ length: n }, () => uuidV7());
   const crear = (datos: Partial<{ titulo: string; descripcion: string; lecturaIds: string[] }> = {}, orden = 1) =>
     Mision.crear({

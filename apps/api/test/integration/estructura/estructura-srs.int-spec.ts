@@ -30,7 +30,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe('Organización de la base (SRS §7)', () => {
+describe('[Estructura][Menor][Slow] Organización de la base (SRS §7)', () => {
   it('cada bounded context tiene su schema con las tablas del SRS', async () => {
     const filas = await prisma.$queryRaw<{ esquema: string; tabla: string }[]>`
       SELECT table_schema AS esquema, table_name AS tabla FROM information_schema.tables
@@ -70,7 +70,7 @@ describe('Organización de la base (SRS §7)', () => {
   });
 });
 
-describe('Repositorios con la nueva estructura', () => {
+describe('[Estructura][Menor][Slow] Repositorios con la nueva estructura', () => {
   const cuenta = () =>
     Cuenta.registrar({
       id: uuidV7(), nombre: 'Ana Ríos', email: Email.de(`ana.${Math.random().toString(36).slice(2, 8)}@lectoaventura.test`), contrasena: Contrasena.de('Lectura-Segura-2026'),
@@ -105,7 +105,7 @@ describe('Repositorios con la nueva estructura', () => {
   });
 });
 
-describe('Reglas del negocio en la base', () => {
+describe('[Estructura][Menor][Slow] Reglas del negocio en la base', () => {
   const crearCuenta = async (datos: Partial<{ rol: string; estado: string }> = {}) =>
     prisma.cuenta.create({ data: { id: uuidV7(), nombre: 'Ana', email: `${uuidV7()}@lectoaventura.test`, hashContrasena: 'h', rol: 'FAMILIAR', ...datos } });
 

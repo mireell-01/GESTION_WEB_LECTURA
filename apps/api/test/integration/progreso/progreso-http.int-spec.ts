@@ -95,7 +95,7 @@ const lecturas = {} as Record<'killa' | 'inf' | 'lit' | 'asignada' | 'mision', s
 const perfil = (token = mateo.token) => t.http().get(`${API}/yo/perfil-lector`).set(bearer(token));
 const maestria = (habilidad: string) => t.prisma.maestriaHabilidad.findUniqueOrThrow({ where: { estudianteId_habilidad: { estudianteId: mateo.id, habilidad } } });
 
-describe('Preparación', () => {
+describe('[Progreso][Core][Slow] Preparación', () => {
   it('lecturas publicadas y una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -120,7 +120,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Perfil lector (RF-052, RF-053, RF-054)', () => {
+describe('[Progreso][Core][Slow] Perfil lector (RF-052, RF-053, RF-054)', () => {
   it('sin reto inicial, las 5 habilidades están por descubrir y no hay nada guardado', async () => {
     const v = (await perfil().expect(200)).body;
     expect(v).toMatchObject({ conDatos: false, nivelLectura: null, actualizadoEn: null });
@@ -190,7 +190,7 @@ describe('Perfil lector (RF-052, RF-053, RF-054)', () => {
   });
 });
 
-describe('El resto de la plataforma recibe la maestría y el nivel', () => {
+describe('[Progreso][Core][Slow] El resto de la plataforma recibe la maestría y el nivel', () => {
   it('RF-028: la biblioteca muestra su nivel ± 1 (antes partía del típico de su edad)', async () => {
     const nivel = (await perfil().expect(200)).body.nivelLectura as number;
     const { alcance } = (await t.http().get(`${API}/biblioteca`).set(bearer(mateo.token)).expect(200)).body;
@@ -206,7 +206,7 @@ describe('El resto de la plataforma recibe la maestría y el nivel', () => {
   });
 });
 
-describe('Recomendaciones (RF-055, RN-20)', () => {
+describe('[Progreso][Core][Slow] Recomendaciones (RF-055, RN-20)', () => {
   it('sin asignación ni misión, recomienda para su habilidad más débil; nunca más de 3', async () => {
     const r = (await t.http().get(`${API}/yo/recomendaciones`).set(bearer(mateo.token)).expect(200)).body;
     expect(r.length).toBeGreaterThanOrEqual(1);

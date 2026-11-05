@@ -49,7 +49,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe('PrismaCuentaRepository', () => {
+describe('[IAM][Core][Slow] PrismaCuentaRepository', () => {
   const repo = new PrismaCuentaRepository(prisma);
 
   it('guarda y reconstruye la cuenta con sus value objects y estado MFA', async () => {
@@ -86,7 +86,7 @@ describe('PrismaCuentaRepository', () => {
   });
 });
 
-describe('PrismaPerfilEstudianteRepository y PrismaSesionRepository', () => {
+describe('[IAM][Core][Slow] PrismaPerfilEstudianteRepository y PrismaSesionRepository', () => {
   it('listarPorResponsable excluye perfiles eliminados', async () => {
     await new PrismaCuentaRepository(prisma).guardar(cuenta(C1, 'ana@lectoaventura.test'));
     const repo = new PrismaPerfilEstudianteRepository(prisma);
@@ -119,7 +119,7 @@ describe('PrismaPerfilEstudianteRepository y PrismaSesionRepository', () => {
   });
 });
 
-describe('PrismaVerificacionRepository', () => {
+describe('[IAM][Core][Slow] PrismaVerificacionRepository', () => {
   it('no confunde un enlace de verificación con uno de recuperación', async () => {
     await new PrismaCuentaRepository(prisma).guardar(cuenta(C1, 'ana@lectoaventura.test'));
     const repo = new PrismaVerificacionRepository(prisma);

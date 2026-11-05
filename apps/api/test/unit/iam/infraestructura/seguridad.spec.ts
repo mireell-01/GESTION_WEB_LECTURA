@@ -10,7 +10,7 @@ import { ListaContrasenasFiltradas } from '../../../../src/modules/iam/infrastru
 const SECRETO = 'secreto-de-pruebas-de-al-menos-32-caracteres!!';
 const DATOS = { sub: 'cuenta-1', rol: 'DOCENTE', mfa: false, sid: 'sesion-1' };
 
-describe('JwtTokenService (RF-003)', () => {
+describe('[IAM][Core][Slow] JwtTokenService (RF-003)', () => {
   const tokens = new JwtTokenService(SECRETO);
 
   afterEach(() => vi.useRealTimers());
@@ -60,7 +60,7 @@ describe('JwtTokenService (RF-003)', () => {
   });
 });
 
-describe('Argon2HashService', () => {
+describe('[IAM][Core][Slow] Argon2HashService', () => {
   const hash = new Argon2HashService();
 
   it('usa argon2id con sal: dos hashes del mismo PIN son distintos y ambos verifican', async () => {
@@ -81,7 +81,7 @@ describe('Argon2HashService', () => {
   });
 });
 
-describe('OtplibTotpService (RF-011)', () => {
+describe('[IAM][Core][Fast] OtplibTotpService (RF-011)', () => {
   const totp = new OtplibTotpService();
 
   it('acepta el código actual de la app autenticadora y rechaza otros', () => {
@@ -99,7 +99,7 @@ describe('OtplibTotpService (RF-011)', () => {
   });
 });
 
-describe('ListaContrasenasFiltradas (RF-001)', () => {
+describe('[IAM][Core][Fast] ListaContrasenasFiltradas (RF-001)', () => {
   const lista = new ListaContrasenasFiltradas();
 
   it.each(['1234567890', 'Contrasena123', 'aaaaaaaaaa', '0123456789012', 'LectoAventura123'])('rechaza "%s"', async (c) => {

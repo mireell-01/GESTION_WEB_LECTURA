@@ -12,7 +12,7 @@ const AHORA = new Date('2026-10-21T15:00:00Z'); // miércoles 21, 10:00 en Lima
 const medidas = (v: Record<string, number>, items = 6) => Object.entries(v).map(([habilidad, valor]) => ({ habilidad, valor, items }));
 const dias = (n: number) => new Date(AHORA.getTime() - n * 86_400_000);
 
-describe('Mapa de calor (RF-063, RN-08)', () => {
+describe('[Reporting][Core][Fast] Mapa de calor (RF-063, RN-08)', () => {
   it('5 celdas en el orden del SRS con su nivel CNEB declarado; sin medir, sin datos', () => {
     const c = celdasDe([...medidas({ INF: 20, LIT: 90, VOC: 64.996 }), { habilidad: 'CRI', valor: 70, items: 4 }]);
     expect(c.map((x) => `${x.habilidad}:${x.nivel}:${x.valor}`)).toEqual(['LIT:AD:90', 'INF:C:20', 'VOC:B:65', 'CRI:null:70', 'ARG:null:null']);
@@ -21,7 +21,7 @@ describe('Mapa de calor (RF-063, RN-08)', () => {
   });
 });
 
-describe('Estudiantes en riesgo (RF-065)', () => {
+describe('[Reporting][Core][Fast] Estudiantes en riesgo (RF-065)', () => {
   const celdas = celdasDe(medidas({ INF: 20, ARG: 30, LIT: 80 }));
 
   it('7 días sin actividad o 2 habilidades en inicio', () => {
@@ -38,7 +38,7 @@ describe('Estudiantes en riesgo (RF-065)', () => {
   });
 });
 
-describe('Refuerzo grupal (RF-066)', () => {
+describe('[Reporting][Menor][Fast] Refuerzo grupal (RF-066)', () => {
   it('habilidades en inicio para el 30 % del aula o más, de la más extendida a la menos', () => {
     const e = (id: string, v: Record<string, number>) => ({ id, celdas: celdasDe(medidas(v)) });
     const aula = [e('a', { INF: 20, CRI: 30 }), e('b', { INF: 25, CRI: 30 }), e('c', { INF: 35 }), e('d', { CRI: 10 }), e('e', { INF: 90, ARG: 20 }), e('f', {}), e('g', {}), e('h', {}), e('i', {}), e('j', {})];
@@ -51,7 +51,7 @@ describe('Refuerzo grupal (RF-066)', () => {
   });
 });
 
-describe('Resumen semanal (RF-065)', () => {
+describe('[Reporting][Menor][Fast] Resumen semanal (RF-065)', () => {
   it('cuánto leyó el aula en la semana; activos = con al menos una sesión', () => {
     const semanal = [
       { estudianteId: 'a', semana: '2026-10-19', lecturas: 2, minutos: 12.4, respuestas: 10 },
@@ -71,7 +71,7 @@ describe('Resumen semanal (RF-065)', () => {
   });
 });
 
-describe('Tasa de acierto sin pista (RF-064)', () => {
+describe('[Reporting][Menor][Fast] Tasa de acierto sin pista (RF-064)', () => {
   const r = (habilidad: string, esCorrecta: boolean | null, pistasUsadas = 0) => ({ habilidad, esCorrecta, pistasUsadas });
 
   it('sobre las cerradas respondidas; las abiertas no cuentan', () => {
@@ -82,7 +82,7 @@ describe('Tasa de acierto sin pista (RF-064)', () => {
   });
 });
 
-describe('Reporte CSV (RF-067)', () => {
+describe('[Reporting][Menor][Fast] Reporte CSV (RF-067)', () => {
   it('UTF-8 con BOM, una fila por estudiante y celdas seguras para la hoja de cálculo', () => {
     const csv = reporteCsv([
       { alias: 'Sofía', celdas: celdasDe(medidas({ LIT: 70, INF: 20 })), ultimaActividad: new Date('2026-10-20T20:00:00Z'), lecturasSemana: 2, motivosRiesgo: ['HABILIDADES_EN_INICIO'] },

@@ -19,7 +19,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAE0lEQVR
  * celular: la editora escribe en la web real, el revisor la devuelve y la publica, y la lectura
  * llega a la biblioteca de docentes, familias y niños.
  */
-test.describe('Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
+test.describe('[Contenido][Core][Slow] Biblioteca y gestión de contenido (RF-021 a RF-028)', () => {
   test.setTimeout(150_000);
 
   async function abrirLectura(page: Page, titulo: string) {

@@ -7,7 +7,7 @@ import { CandidatosRecomendacion, recomendar } from '../../../../src/modules/pro
 /** Nivel 1 — Dominio del perfil lector (RF-052 a RF-055, RN-07, RN-08, RN-20). */
 const AHORA = new Date('2026-10-22T15:00:00Z');
 
-describe('Maestría (RN-07) y refuerzo (RF-054)', () => {
+describe('[Progreso][Core][Fast] Maestría (RN-07) y refuerzo (RF-054)', () => {
   it('el ítem vale su puntaje × (0,8 + 0,1 × dificultad) × 100, acotado a 100', () => {
     expect(factorDificultad(3)).toBeCloseTo(1.1);
     expect(puntajeObservado(1, 1)).toBeCloseTo(90);
@@ -37,7 +37,7 @@ describe('Maestría (RN-07) y refuerzo (RF-054)', () => {
   });
 });
 
-describe('PerfilLector (RF-052, RF-053)', () => {
+describe('[Progreso][Core][Fast] PerfilLector (RF-052, RF-053)', () => {
   it('nace con las 5 habilidades en 0 y parte del reto inicial una sola vez', () => {
     const p = PerfilLector.nuevo('nino');
     expect(p.todas().map((m) => [m.habilidad, m.valor, m.itemsContados])).toEqual([['LIT', 0, 0], ['INF', 0, 0], ['VOC', 0, 0], ['CRI', 0, 0], ['ARG', 0, 0]]);
@@ -81,7 +81,7 @@ describe('PerfilLector (RF-052, RF-053)', () => {
   });
 });
 
-describe('Recomendaciones (RF-055, RN-20)', () => {
+describe('[Progreso][Menor][Fast] Recomendaciones (RF-055, RN-20)', () => {
   const base = (p: Partial<CandidatosRecomendacion> = {}): CandidatosRecomendacion => ({
     asignaciones: [],
     mision: null,

@@ -18,7 +18,7 @@ const test = base.extend({
  * arma misiones en la web real y el niño (9 años) las encuentra en su mapa; los mundos bloqueados no
  * se abren y un desbloqueo se celebra una sola vez.
  */
-test.describe('Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
+test.describe('[Aventura][Menor][Slow] Aventura: mapa, mundos y misiones (RF-030 a RF-033)', () => {
   test.setTimeout(150_000);
 
   async function entrarComoNino(page: Page, aula: AulaPreparada, alias: string) {

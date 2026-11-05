@@ -18,7 +18,7 @@ const test = base.extend({
  * y celular: el reto inicial y las lecturas reales mueven la maestría; el niño la ve en su lenguaje,
  * con lo que conviene practicar y sus próximas lecturas (la de su profe primero).
  */
-test.describe('Perfil lector y recomendaciones (RF-052 a RF-055)', () => {
+test.describe('[Progreso][Menor][Slow] Perfil lector y recomendaciones (RF-052 a RF-055)', () => {
   test.setTimeout(150_000);
 
   async function abrirPerfil(page: Page, alias: string) {

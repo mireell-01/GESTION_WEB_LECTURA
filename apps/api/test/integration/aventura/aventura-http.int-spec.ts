@@ -108,7 +108,7 @@ let mundos: { id: string; numero: number }[];
 const lecturasR2: string[] = [];
 const misionesR2: string[] = [];
 
-describe('Preparación: lecturas publicadas y un aula con dos niños', () => {
+describe('[Aventura][Menor][Slow] Preparación: lecturas publicadas y un aula con dos niños', () => {
   it('editora, revisor, docente y niños de 9 y 11 años con sesión en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisor = await backoffice('REVISOR');
@@ -130,7 +130,7 @@ describe('Preparación: lecturas publicadas y un aula con dos niños', () => {
   });
 });
 
-describe('Backoffice de misiones (RF-032)', () => {
+describe('[Aventura][Menor][Slow] Backoffice de misiones (RF-032)', () => {
   it('solo editores (y revisores para consultar) con MFA; el esqueleto de ejemplo ya no existe', async () => {
     await t.http().get(`${API}/backoffice/mundos`).set(bearer(tokenDocente)).expect(403);
     await t.http().get(`${API}/backoffice/mundos`).set(bearer(ninos.mateo.token)).expect(403);
@@ -185,7 +185,7 @@ describe('Backoffice de misiones (RF-032)', () => {
   });
 });
 
-describe('Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
+describe('[Aventura][Menor][Slow] Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
   it('sin el Módulo 5, Mateo (9 años) empieza en el Explorador; los demás mundos están bloqueados', async () => {
     const mapa = (await t.http().get(`${API}/aventura/mapa`).set(bearer(ninos.mateo.token)).expect(200)).body;
     expect(mapa).toMatchObject({ diagnosticoPendiente: false, mundoActual: 1 });
@@ -224,7 +224,7 @@ describe('Mapa del estudiante (RF-030, RF-032, RF-033)', () => {
   });
 });
 
-describe('Avance y desbloqueo por eventos (RF-031, RF-032, RN-09)', () => {
+describe('[Aventura][Menor][Slow] Avance y desbloqueo por eventos (RF-031, RF-032, RN-09)', () => {
   it('terminar lecturas completa misiones; con LIT y VOC ≥ 65 y 3 misiones se abre el Detective con celebración', async () => {
     const yo = ninos.mateo;
     maestrias.set(yo.id, { LIT: 70, VOC: 68, INF: 40 });

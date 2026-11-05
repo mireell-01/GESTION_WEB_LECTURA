@@ -32,7 +32,7 @@ async function buscarDocente(page: Page, email: string) {
  * Nivel 3 — Administración de la plataforma de punta a punta (RF-076 a RF-078) en escritorio, tablet y
  * celular: docentes (suspender, reactivar, dar de alta), instituciones, auditoría y gamificación.
  */
-test.describe('Administración de la plataforma (RF-076 a RF-078)', () => {
+test.describe('[Administracion][Core][Slow] Administración de la plataforma (RF-076 a RF-078)', () => {
   test.setTimeout(150_000);
   let admin: CuentaBackoffice;
 

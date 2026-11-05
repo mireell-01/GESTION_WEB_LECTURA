@@ -25,7 +25,7 @@ const burbujas = (page: Page) => page.getByRole('list', { name: 'Conversación c
  * familia lo activa, el niño pide ayuda durante su lectura (atajos y texto) y nunca recibe la respuesta;
  * la docente lo activa para su aula y pide un borrador de comentario para una respuesta abierta.
  */
-test.describe('Asistente de lectura (RF-072 a RF-075)', () => {
+test.describe('[Asistente][Core][Slow] Asistente de lectura (RF-072 a RF-075)', () => {
   test.setTimeout(150_000);
 
   test('RF-072 a RF-074: la familia lo activa y el niño pide ayuda en su lectura sin recibir la respuesta', async ({ page, request }) => {

@@ -7,7 +7,7 @@ import { ajustarAlAncho, PdfLibTarjetas, TARJETAS_POR_HOJA } from '../../../../s
 import { pinesDelPdf, textosDelPdf } from '../../../support/pdf-texto';
 
 /** Nivel 1 — Adaptadores: PDF de tarjetas con pdf-lib (RF-017) y registro de auditoría (RF-077). */
-describe('PdfLibTarjetas (RF-017, CR-01)', () => {
+describe('[Escuela][Menor][Slow] PdfLibTarjetas (RF-017, CR-01)', () => {
   const tarjeta = (i: number) => ({ estudianteId: `e${i}`, alias: `Niño ${i}`, avatar: i % 2 ? 'leon' : 'buho', nombreAula: '3.° B', pin: `${4826 + i}` });
 
   it(`hoja A4 con ${TARJETAS_POR_HOJA} tarjetas: 9 estudiantes ocupan 2 hojas`, async () => {
@@ -72,7 +72,7 @@ describe('PdfLibTarjetas (RF-017, CR-01)', () => {
   });
 });
 
-describe('Auditoría (RF-077)', () => {
+describe('[Escuela][Core][Fast] Auditoría (RF-077)', () => {
   it('registra actor, acción, recurso, fecha e IP; una IP inválida queda como desconocida', async () => {
     const guardados: Auditoria[] = [];
     const caso = new RegistrarAuditoriaUseCase({ agregar: async (r) => void guardados.push(r) }, () => 'aud-1');

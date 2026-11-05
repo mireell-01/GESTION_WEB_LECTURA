@@ -30,7 +30,7 @@ const test = base.extend({
  * Nivel 3 — Modo escuela de punta a punta (RF-014 a RF-020) en escritorio, tablet y celular:
  * la docente usa la web real y los niños entran desde la tablet, como en el aula.
  */
-test.describe('Modo escuela (RF-014 a RF-020)', () => {
+test.describe('[Escuela][Core][Slow] Modo escuela (RF-014 a RF-020)', () => {
   test('la docente crea su aula, matricula, descarga las tarjetas y el niño entra con el PIN impreso', async ({ page, request }) => {
     const docente = await cuentaVerificada(request, { rol: 'DOCENTE', nombre: 'Rosa Docente', prefijo: 'docente' });
     await ingresarComoAdulto(page, docente.email, docente.contrasena);

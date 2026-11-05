@@ -18,7 +18,7 @@ const test = base.extend({
  * una lectura el niño ve lo que ganó y su Pasaporte del Lector lo refleja al instante; el inicio muestra
  * su marcador y el reto del día; en la tienda canjea con monedas sin perder puntos.
  */
-test.describe('Gamificación: pasaporte, reto del día y recompensas (RF-056 a RF-062)', () => {
+test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del día y recompensas (RF-056 a RF-062)', () => {
   test.setTimeout(150_000);
 
   async function entrar(page: Page, alias: string) {

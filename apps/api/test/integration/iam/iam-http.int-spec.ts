@@ -33,7 +33,7 @@ async function cuentaConSesion(email: string, rol: 'FAMILIAR' | 'DOCENTE' = 'FAM
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-describe('Contrato del API (SRS §7)', () => {
+describe('[IAM][Core][Slow] Contrato del API (SRS §7)', () => {
   it('las rutas viven bajo /api/v1 y toda respuesta trae X-Request-Id', async () => {
     const r = await t.http().get(`${API}/auth/yo`).expect(401);
     expect(r.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
@@ -55,7 +55,7 @@ describe('Contrato del API (SRS §7)', () => {
   });
 });
 
-describe('Registro, verificación y almacenamiento seguro (RF-001, RF-002)', () => {
+describe('[IAM][Core][Slow] Registro, verificación y almacenamiento seguro (RF-001, RF-002)', () => {
   it('la contraseña se guarda con argon2id y el enlace solo como huella SHA-256', async () => {
     const { enlace } = await cuentaConSesion('rosa@lectoaventura.test');
     const cuenta = await t.prisma.cuenta.findUniqueOrThrow({ where: { email: 'rosa@lectoaventura.test' } });
@@ -87,7 +87,7 @@ describe('Registro, verificación y almacenamiento seguro (RF-001, RF-002)', () 
   });
 });
 
-describe('Sesión con refresh token rotativo (RF-003, RF-010, ADR-005)', () => {
+describe('[IAM][Core][Slow] Sesión con refresh token rotativo (RF-003, RF-010, ADR-005)', () => {
   it('la cookie es httpOnly, SameSite=Strict y limitada a /api/v1/auth', async () => {
     const { cookie } = await cuentaConSesion('cookie@lectoaventura.test');
     expect(cookie).toMatch(/HttpOnly/i);
@@ -134,7 +134,7 @@ describe('Sesión con refresh token rotativo (RF-003, RF-010, ADR-005)', () => {
   });
 });
 
-describe('Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-009, RF-071)', () => {
+describe('[IAM][Core][Slow] Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-009, RF-071)', () => {
   let familia: { id: string; token: string };
   let perfilId: string;
   let tokenDispositivo: string;
@@ -257,7 +257,7 @@ describe('Familia: consentimiento, perfiles, dispositivo e ingreso (RF-005 a RF-
   });
 });
 
-describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007, RN-04, RF-015, RF-020, CR-01)', () => {
+describe('[IAM][Core][Slow] Tablet del aula activada por la docente, integrada con Escuela (RF-007, RN-04, RF-015, RF-020, CR-01)', () => {
   it('la docente activa la tablet; el niño ve solo su aula y entra sin escribir ningún código', async () => {
     const docente = await cuentaConSesion('docente@lectoaventura.test', 'DOCENTE');
     const aula = await t.http().post(`${API}/aulas`).set(bearer(docente.token)).send({
@@ -307,7 +307,7 @@ describe('Tablet del aula activada por la docente, integrada con Escuela (RF-007
   });
 });
 
-describe('Recuperación de contraseña (RF-004)', () => {
+describe('[IAM][Core][Slow] Recuperación de contraseña (RF-004)', () => {
   it('misma respuesta 202 exista o no la cuenta; el enlace cambia la contraseña y revoca sesiones', async () => {
     const { token } = await cuentaConSesion('recupera@lectoaventura.test');
     const a = await t.http().post(`${API}/auth/recuperar`).send({ email: 'recupera@lectoaventura.test' }).expect(202);

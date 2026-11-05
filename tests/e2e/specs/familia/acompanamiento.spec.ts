@@ -33,7 +33,7 @@ async function sinDesbordes(page: Page) {
  * decide si recibe el resumen semanal y se da de baja con un clic desde el correo; y gestiona los perfiles
  * de sus hijos (avatar, PIN, desactivar, hasta 6).
  */
-test.describe('Acompañamiento familiar (RF-068 a RF-071)', () => {
+test.describe('[Reporting][Menor][Slow] Acompañamiento familiar (RF-068 a RF-071)', () => {
   test.setTimeout(150_000);
 
   test('RF-068, RF-069: el avance de su hijo y cómo acompañarlo en casa', async ({ page, request }) => {

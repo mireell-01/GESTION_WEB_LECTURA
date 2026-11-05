@@ -53,7 +53,7 @@ let aulaId: string;
 const ninos = {} as Record<'mateo' | 'lia', { id: string; token: string }>;
 let retoMateo: string;
 
-describe('Preparación', () => {
+describe('[Diagnostico][Core][Slow] Preparación', () => {
   it('una docente con un aula, Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     tokenDocente = await docente();
     aulaId = (await t.http().post(`${API}/aulas`).set(bearer(tokenDocente)).send({
@@ -71,7 +71,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Reto inicial (RF-034, RF-036, RN-05)', () => {
+describe('[Diagnostico][Core][Slow] Reto inicial (RF-034, RF-036, RN-05)', () => {
   it('RN-05: sin el reto inicial, el mapa no se habilita', async () => {
     const mapa = (await t.http().get(`${API}/aventura/mapa`).set(bearer(ninos.mateo.token)).expect(200)).body;
     expect(mapa.diagnosticoPendiente).toBe(true);
@@ -125,7 +125,7 @@ describe('Reto inicial (RF-034, RF-036, RN-05)', () => {
   });
 });
 
-describe('Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
+describe('[Diagnostico][Core][Slow] Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
   it('Mateo acierta en LIT y VOC: nivel por habilidad y empieza en el Detective con el Explorador completado (UAT-01)', async () => {
     await t.http().post(`${API}/diagnosticos/${retoMateo}/finalizar`).set(bearer(ninos.mateo.token)).expect(409); // aún faltan
     await responderTodo(ninos.mateo.token, retoMateo, ['LIT', 'VOC']);
@@ -160,7 +160,7 @@ describe('Nivel inicial y posición en el mapa (RF-035, RF-033)', () => {
   });
 });
 
-describe('Reevaluación periódica del docente (RF-037)', () => {
+describe('[Diagnostico][Core][Slow] Reevaluación periódica del docente (RF-037)', () => {
   it('la docente la asigna a su aula; otra docente no puede', async () => {
     const otra = await docente();
     await t.http().post(`${API}/aulas/${aulaId}/reevaluaciones`).set(bearer(otra)).send({}).expect(404);

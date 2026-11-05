@@ -76,7 +76,7 @@ let revisor: Awaited<ReturnType<typeof backoffice>>;
 let lecturaId: string;
 let recursoId: string;
 
-describe('Backoffice protegido (RF-009, RF-011)', () => {
+describe('[Contenido][Core][Slow] Backoffice protegido (RF-009, RF-011)', () => {
   it('solo editores y revisores con MFA verificado; las familias no entran', async () => {
     const sinMfa = await backoffice('EDITOR', false);
     expect(sinMfa.requiereConfigurarMfa).toBe(true);
@@ -90,7 +90,7 @@ describe('Backoffice protegido (RF-009, RF-011)', () => {
   });
 });
 
-describe('Autoría y flujo de publicación (RF-021 a RF-027)', () => {
+describe('[Contenido][Core][Slow] Autoría y flujo de publicación (RF-021 a RF-027)', () => {
   it('la editora crea la lectura en borrador, segmentada en oraciones', async () => {
     editora = await backoffice('EDITOR');
     const r = await t.http().post(`${API}/backoffice/lecturas`).set(bearer(editora.token)).send({ metadatos: metadatos(), texto: TEXTO }).expect(201);
@@ -177,7 +177,7 @@ describe('Autoría y flujo de publicación (RF-021 a RF-027)', () => {
   });
 });
 
-describe('Biblioteca y asignaciones (RF-028, RF-018)', () => {
+describe('[Contenido][Core][Slow] Biblioteca y asignaciones (RF-028, RF-018)', () => {
   let docente: string;
   let ninoR2: string;
 

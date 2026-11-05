@@ -49,7 +49,7 @@ async function hijo(token: string, alias: string, anio: number) {
   return (await t.http().post(`${API}/estudiantes`).set(bearer(token)).send({ alias, anioNacimiento: anio, mesNacimiento: 3, avatar: 'koala', pin: '2580' }).expect(201)).body.id as string;
 }
 
-describe('Preparación', () => {
+describe('[Reporting][Core][Slow] Preparación', () => {
   it('Mateo lee de verdad en su aula; Carmen lo acompaña por invitación y tiene a Lucía; José tiene a Pedro', async () => {
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
     rosa = await docente('Rosa Pérez');
@@ -75,7 +75,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Panel por hijo (RF-068, RF-069)', () => {
+describe('[Reporting][Core][Slow] Panel por hijo (RF-068, RF-069)', () => {
   it('RF-068: el avance real de Mateo, su semana y sus habilidades, aunque lo gestione su docente', async () => {
     const p = (await panel(mateo).expect(200)).body;
     expect(p.estudiante).toMatchObject({ id: mateo, alias: 'Mateo', rangoEdad: 'R2', activo: true, relacion: 'VINCULADO' });
@@ -130,7 +130,7 @@ describe('Panel por hijo (RF-068, RF-069)', () => {
   });
 });
 
-describe('Preferencias y resumen semanal (RF-070)', () => {
+describe('[Reporting][Core][Slow] Preferencias y resumen semanal (RF-070)', () => {
   it('cada familia lo recibe salvo que se dé de baja; lo cambia desde su panel', async () => {
     expect((await t.http().get(`${API}/familia/preferencias-notificacion`).set(bearer(jose.token)).expect(200)).body).toEqual({ resumenSemanal: true });
     await t.http().patch(`${API}/familia/preferencias-notificacion`).set(bearer(jose.token)).send({ resumenSemanal: 'no' }).expect(400);

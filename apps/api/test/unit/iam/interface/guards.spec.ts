@@ -30,7 +30,7 @@ function contexto(usuario: UsuarioAutenticado | undefined, metadatos: Record<str
 
 const usuario = (rol: UsuarioAutenticado['rol'], mfa = false): UsuarioAutenticado => ({ sub: 'u1', rol, mfa, sid: 's1' });
 
-describe('RolesGuard (RF-009, RF-011)', () => {
+describe('[IAM][Core][Fast] RolesGuard (RF-009, RF-011)', () => {
   it('deja pasar endpoints públicos sin usuario', () => {
     const { ctx, reflector } = contexto(undefined, { [ES_PUBLICO]: true });
     expect(new RolesGuard(reflector).canActivate(ctx)).toBe(true);

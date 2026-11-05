@@ -15,7 +15,7 @@ import { generarBanco } from '../dobles';
 const AHORA = new Date('2026-10-21T15:00:00Z');
 const despues = (min: number) => new Date(AHORA.getTime() + min * 60_000);
 
-describe('Plan y cálculo del nivel', () => {
+describe('[Diagnostico][Core][Fast] Plan y cálculo del nivel', () => {
   it('RF-034: 15 ítems (R1: 10); RF-037: la reevaluación alterna a la forma equivalente', () => {
     expect(ITEMS_POR_RANGO).toEqual({ R1: 10, R2: 15, R3: 15 });
     expect(formaDe('INICIAL', 1)).toBe('A');
@@ -55,7 +55,7 @@ describe('Plan y cálculo del nivel', () => {
   });
 });
 
-describe('Diagnóstico', () => {
+describe('[Diagnostico][Core][Fast] Diagnóstico', () => {
   const banco = generarBanco('R2', 'A');
   const nuevo = () => Diagnostico.crearInicial({ id: 'd1', estudianteId: 'nino', rangoEdad: 'R2' });
   const responderTodo = (d: Diagnostico, acierta: (i: number) => boolean = () => true) => {

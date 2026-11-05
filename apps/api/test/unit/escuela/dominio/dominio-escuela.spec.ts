@@ -20,7 +20,7 @@ import { FechaLima } from '../../../../src/modules/escuela/domain/value-objects/
 /** Nivel 1 — Dominio de Escuela (RF-014 a RF-020): reglas puras, sin base de datos. */
 const AHORA = new Date('2026-10-15T15:00:00Z'); // jueves, 10:00 en Lima
 
-describe('Aula (RF-014, RF-020)', () => {
+describe('[Escuela][Menor][Fast] Aula (RF-014, RF-020)', () => {
   const crear = (cambios: Partial<Parameters<typeof Aula.crear>[0]> = {}) =>
     Aula.crear({
       id: 'aula-1', docenteId: 'doc-1', nombre: ' 3.° B ', grado: '3', anioLectivo: 2026, institucion: 'IE 1234',
@@ -63,7 +63,7 @@ describe('Aula (RF-014, RF-020)', () => {
   });
 });
 
-describe('Matrícula y política de matrícula (RF-015, RF-016)', () => {
+describe('[Escuela][Core][Fast] Matrícula y política de matrícula (RF-015, RF-016)', () => {
   it('retirar conserva la fecha y es idempotente', () => {
     const m = Matricula.crear({ id: 'm-1', aulaId: 'a', estudianteId: 'e', ahora: AHORA });
     m.retirar(AHORA);
@@ -93,7 +93,7 @@ describe('Matrícula y política de matrícula (RF-015, RF-016)', () => {
   });
 });
 
-describe('FechaLima: días del calendario escolar en hora de Lima', () => {
+describe('[Escuela][Menor][Fast] FechaLima: días del calendario escolar en hora de Lima', () => {
   it('un día va de 00:00 a 23:59:59.999 en Lima (UTC−5)', () => {
     const dia = FechaLima.de('2026-10-20');
     expect(dia.inicio.toISOString()).toBe('2026-10-20T05:00:00.000Z');
@@ -117,7 +117,7 @@ describe('FechaLima: días del calendario escolar en hora de Lima', () => {
   });
 });
 
-describe('Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', () => {
+describe('[Escuela][Menor][Fast] Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', () => {
   const crear = (desde: string, hasta: string, estudianteIds: string[] = []) =>
     Asignacion.crear({
       id: 'asig-1', aulaId: 'aula-1', docenteId: 'doc-1', tipo: 'LECTURA', contenidoId: 'lectura-1',
@@ -177,7 +177,7 @@ describe('Asignación (RF-018): PROGRAMADA → ACTIVA → VENCIDA → CERRADA', 
   });
 });
 
-describe('Invitación familiar (RF-019): código de un solo uso por 7 días', () => {
+describe('[Escuela][Core][Fast] Invitación familiar (RF-019): código de un solo uso por 7 días', () => {
   it('el código tiene 8 caracteres sin ambiguos y se lee como ABCD-2345', () => {
     let i = 0;
     const codigo = CodigoInvitacion.generar((n) => i++ % n);

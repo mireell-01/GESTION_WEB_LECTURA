@@ -8,7 +8,7 @@ import { crearEntornoAdministracion, EntornoAdministracion } from './dobles';
 /** Nivel 1 — Administración de la plataforma (RF-076 a RF-078) con dobles. */
 const ADMIN = '0192f000-0000-7000-8000-00000000a001';
 
-describe('Auditoría: dominio (RF-077)', () => {
+describe('[Administracion][Core][Fast] Auditoría: dominio (RF-077)', () => {
   it('cada acción auditada tiene su nombre para la administración', () => {
     expect(etiquetaAccion('PIN_RESTABLECIDO')).toBe('PIN restablecido');
     expect(etiquetaAccion('ACCION_ANTIGUA')).toBe('ACCION_ANTIGUA');
@@ -41,7 +41,7 @@ describe('Auditoría: dominio (RF-077)', () => {
   });
 });
 
-describe('Auditoría: registrar, consultar y depurar (RF-077)', () => {
+describe('[Administracion][Core][Fast] Auditoría: registrar, consultar y depurar (RF-077)', () => {
   let e: EntornoAdministracion;
   beforeEach(() => {
     e = crearEntornoAdministracion();
@@ -121,7 +121,7 @@ describe('Auditoría: registrar, consultar y depurar (RF-077)', () => {
   });
 });
 
-describe('Docentes, instituciones y parámetros (RF-076, RF-078)', () => {
+describe('[Administracion][Core][Fast] Docentes, instituciones y parámetros (RF-076, RF-078)', () => {
   let e: EntornoAdministracion;
   beforeEach(() => {
     e = crearEntornoAdministracion();

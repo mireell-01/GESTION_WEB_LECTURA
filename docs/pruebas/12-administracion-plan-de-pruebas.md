@@ -216,7 +216,7 @@ import { crearEntornoAdministracion, EntornoAdministracion } from './dobles';
 /** Nivel 1 — Administración de la plataforma (RF-076 a RF-078) con dobles. */
 const ADMIN = '0192f000-0000-7000-8000-00000000a001';
 
-describe('Auditoría: dominio (RF-077)', () => {
+describe('[Administracion][Core][Fast] Auditoría: dominio (RF-077)', () => {
   it('cada acción auditada tiene su nombre para la administración', () => {
     expect(etiquetaAccion('PIN_RESTABLECIDO')).toBe('PIN restablecido');
     expect(etiquetaAccion('ACCION_ANTIGUA')).toBe('ACCION_ANTIGUA');
@@ -249,7 +249,7 @@ describe('Auditoría: dominio (RF-077)', () => {
   });
 });
 
-describe('Auditoría: registrar, consultar y depurar (RF-077)', () => {
+describe('[Administracion][Core][Fast] Auditoría: registrar, consultar y depurar (RF-077)', () => {
   let e: EntornoAdministracion;
   beforeEach(() => {
     e = crearEntornoAdministracion();
@@ -329,7 +329,7 @@ describe('Auditoría: registrar, consultar y depurar (RF-077)', () => {
   });
 });
 
-describe('Docentes, instituciones y parámetros (RF-076, RF-078)', () => {
+describe('[Administracion][Core][Fast] Docentes, instituciones y parámetros (RF-076, RF-078)', () => {
   let e: EntornoAdministracion;
   beforeEach(() => {
     e = crearEntornoAdministracion();
@@ -383,7 +383,7 @@ const URL_WEB = 'http://localhost:3002';
 const ADMIN = 'admin-1';
 const CONTRASENA = 'Lectura-Segura-2026';
 
-describe('Gestión de cuentas docentes por la administración (RF-076)', () => {
+describe('[IAM][Core][Fast] Gestión de cuentas docentes por la administración (RF-076)', () => {
   let e: Entorno;
   let gestion: AdministrarDocentesUseCase;
   let ingresar: AutenticarAdultoUseCase;
@@ -504,7 +504,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn, Institucione
 const ADMIN = 'admin-1';
 const DOCENTE = 'doc-1';
 
-describe('Instituciones educativas (RF-076)', () => {
+describe('[Escuela][Menor][Fast] Instituciones educativas (RF-076)', () => {
   let e: EntornoEscuela;
   let repo: InstitucionesEnMemoria;
   let instituciones: InstitucionesUseCase;
@@ -587,7 +587,7 @@ describe('Instituciones educativas (RF-076)', () => {
   });
 });
 
-describe('Aulas de un docente suspendido: solo lectura (RF-076)', () => {
+describe('[Escuela][Core][Fast] Aulas de un docente suspendido: solo lectura (RF-076)', () => {
   it('el código para la familia ya no se puede canjear; nada se gasta ni se vincula', async () => {
     const e = crearEntornoEscuela();
     const generar = new GenerarInvitacionFamiliarUseCase(e.aulas, e.matriculas, e.invitaciones, e.identidad, e.bus, e.huella, e.aleatorio, e.generarId, e.reloj.ahora);
@@ -646,7 +646,7 @@ class VersionesEnMemoria implements ParametrosRepository {
   }
 }
 
-describe('Validación de una versión nueva (RF-078)', () => {
+describe('[Gamificacion][Menor][Fast] Validación de una versión nueva (RF-078)', () => {
   it('acepta una versión completa en rango y la guarda en el formato de la versión 1', () => {
     const p = validarParametros(editables(), CON_UMBRAL);
     expect(p.insignias).toEqual({ DETECTIVE_EVIDENCIAS: 3 });
@@ -694,7 +694,7 @@ describe('Validación de una versión nueva (RF-078)', () => {
   });
 });
 
-describe('Umbrales de insignias (RF-078)', () => {
+describe('[Gamificacion][Menor][Fast] Umbrales de insignias (RF-078)', () => {
   it('cambian lecturas, evidencias o días de racha; las de nivel y de mundo no tienen umbral', () => {
     const ajustado = aplicarUmbrales(CATALOGO, { PRIMERA_LECTURA: 2, DETECTIVE_EVIDENCIAS: 3, LECTOR_PERSEVERANTE: 5, RANGO_DETECTIVE: 9, MAESTRO_INFERENCIAS: 1 });
     expect(ajustado.map((i) => i.regla)).toEqual([
@@ -712,7 +712,7 @@ describe('Umbrales de insignias (RF-078)', () => {
   });
 });
 
-describe('Publicar parámetros (RF-078): aplica solo a lo que ocurre después', () => {
+describe('[Gamificacion][Menor][Fast] Publicar parámetros (RF-078): aplica solo a lo que ocurre después', () => {
   let e: EntornoGamificacion;
   let versiones: VersionesEnMemoria;
   let caso: ParametrosAdminUseCase;
@@ -1020,7 +1020,7 @@ let tokenAna: string;
 let codigoFamilia: string;
 let institucionId: string;
 
-describe('Preparación', () => {
+describe('[Administracion][Core][Slow] Preparación', () => {
   it('una administradora; Rosa con su aula "4.° A" del "IE 1234"; un código para la familia de Mateo', async () => {
     admin = await administrador();
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
@@ -1042,7 +1042,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('RF-076: instituciones', () => {
+describe('[Administracion][Core][Slow] RF-076: instituciones', () => {
   const url = `${API}/admin/instituciones`;
   const nuevaAula = (institucion: string) =>
     t.http().post(`${API}/aulas`).set(bearer(rosa.token)).send({ nombre: '5.° B', grado: '5', anioLectivo: new Date().getFullYear(), institucion, autoridadConsentimiento: 'Dir. Ruiz', declaraConsentimiento: true });
@@ -1079,7 +1079,7 @@ describe('RF-076: instituciones', () => {
   });
 });
 
-describe('RF-076: cuentas docentes', () => {
+describe('[Administracion][Core][Slow] RF-076: cuentas docentes', () => {
   const url = `${API}/admin/docentes`;
 
   it('alta: el docente crea su contraseña con el enlace del correo y ya ingresa', async () => {
@@ -1129,7 +1129,7 @@ describe('RF-076: cuentas docentes', () => {
   });
 });
 
-describe('RF-077: auditoría', () => {
+describe('[Administracion][Core][Slow] RF-077: auditoría', () => {
   it('registra las acciones sensibles con actor, rol, recurso, fecha e IP', async () => {
     const [suspension] = await registros('CUENTA_SUSPENDIDA');
     expect(suspension).toMatchObject({ actorId: admin.id, actorRol: 'ADMIN_PLATAFORMA', recursoTipo: 'cuenta_adulta', recursoId: rosa.id, ip: IP });
@@ -1201,7 +1201,7 @@ describe('RF-077: auditoría', () => {
   });
 });
 
-describe('RF-078: parámetros de gamificación', () => {
+describe('[Administracion][Core][Slow] RF-078: parámetros de gamificación', () => {
   const url = `${API}/admin/parametros-gamificacion`;
 
   it('muestra la versión vigente con los umbrales de las insignias', async () => {
@@ -1324,7 +1324,7 @@ async function buscarDocente(page: Page, email: string) {
  * Nivel 3 — Administración de la plataforma de punta a punta (RF-076 a RF-078) en escritorio, tablet y
  * celular: docentes (suspender, reactivar, dar de alta), instituciones, auditoría y gamificación.
  */
-test.describe('Administración de la plataforma (RF-076 a RF-078)', () => {
+test.describe('[Administracion][Core][Slow] Administración de la plataforma (RF-076 a RF-078)', () => {
   test.setTimeout(150_000);
   let admin: CuentaBackoffice;
 

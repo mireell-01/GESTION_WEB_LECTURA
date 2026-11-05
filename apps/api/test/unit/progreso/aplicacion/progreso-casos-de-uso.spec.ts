@@ -24,7 +24,7 @@ const item = (p: Partial<DatosItemRespondido> = {}): DatosItemRespondido => ({
   ...p,
 });
 
-describe('Progreso: perfil lector, maestría y recomendaciones', () => {
+describe('[Progreso][Core][Fast] Progreso: perfil lector, maestría y recomendaciones', () => {
   let e: EntornoProgreso;
 
   beforeEach(() => {

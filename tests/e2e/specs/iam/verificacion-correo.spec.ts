@@ -15,7 +15,7 @@ const CONFIRMA = /Confirma tu correo/;
 const rutaDe = (enlace: string) => new URL(enlace).pathname + new URL(enlace).search;
 
 /** Nivel 3 — Verificación de correo y reenvío del enlace desde la interfaz (RF-002). */
-test.describe('IAM — verificación de correo', () => {
+test.describe('[IAM][Core][Slow] IAM — verificación de correo', () => {
   test('si el enlace se perdió, se pide otro desde el ingreso; el anterior deja de servir', async ({ page, request }) => {
     const { email, contrasena } = await cuentaSinVerificar(request);
     const primero = await enlaceDelCorreo(request, email, CONFIRMA);

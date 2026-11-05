@@ -15,7 +15,7 @@ import { crearEntornoAventura, EntornoAventura } from '../dobles';
 const NINO = 'nino-9-anios';
 const EDITORA = 'editora';
 
-describe('Aventura: mapa, misiones, progreso y backoffice', () => {
+describe('[Aventura][Menor][Fast] Aventura: mapa, misiones, progreso y backoffice', () => {
   let e: EntornoAventura;
 
   beforeEach(() => {

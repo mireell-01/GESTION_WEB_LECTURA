@@ -231,7 +231,7 @@ const contexto = (pregunta: Partial<NonNullable<ContextoMediacion['pregunta']>> 
   ...resto,
 });
 
-describe('Conversacion (RF-074)', () => {
+describe('[Asistente][Menor][Fast] Conversacion (RF-074)', () => {
   const nueva = () => Conversacion.iniciar({ id: 'c-1', estudianteId: 'nino', sesionLecturaId: 's-1', ahora: AHORA });
 
   it('empieza vacía, con 10 intercambios y se borra a los 30 días', () => {
@@ -269,7 +269,7 @@ describe('Conversacion (RF-074)', () => {
   });
 });
 
-describe('Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
+describe('[Asistente][Menor][Fast] Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
   it('normaliza y saca las palabras con contenido', () => {
     expect(normalizar('¡Le dolía ALGO!')).toBe('le dolia algo');
     expect(normalizar('Ñandú, ¿cómo estás?')).toBe('nandu como estas');
@@ -277,7 +277,7 @@ describe('Texto: comparar sin tildes, mayúsculas ni puntuación', () => {
   });
 });
 
-describe('Moderación de entrada (RF-073, RN-16)', () => {
+describe('[Asistente][Core][Fast] Moderación de entrada (RF-073, RN-16)', () => {
   it.each([
     ['mi correo es ana.quispe@gmail.com', 'mi correo es [correo]'],
     ['mira www.ejemplo.com/ana', 'mira [enlace]'],
@@ -313,7 +313,7 @@ describe('Moderación de entrada (RF-073, RN-16)', () => {
   });
 });
 
-describe('Intención del niño', () => {
+describe('[Asistente][Menor][Fast] Intención del niño', () => {
   it.each<[string, Intencion]>([
     ['dime cuál es la respuesta', 'PIDE_RESPUESTA'],
     ['¿es la B?', 'PIDE_RESPUESTA'],
@@ -337,7 +337,7 @@ describe('Intención del niño', () => {
   });
 });
 
-describe('Mediación socrática sin conexión (RF-072)', () => {
+describe('[Asistente][Core][Fast] Mediación socrática sin conexión (RF-072)', () => {
   it('si pide la respuesta, guía con una estrategia y recuerda las pistas oficiales', () => {
     const t = mediar(contexto(), 'PIDE_RESPUESTA', null, 1);
     expect(t).toMatch(/^No te voy a decir la respuesta, ¡pero sé que puedes descubrirla! El texto no lo dice directamente/);
@@ -390,7 +390,7 @@ describe('Mediación socrática sin conexión (RF-072)', () => {
   });
 });
 
-describe('Filtro de salida (RF-073, RN-16)', () => {
+describe('[Asistente][Core][Fast] Filtro de salida (RF-073, RN-16)', () => {
   const claves = ['Le dolía algo', 'Pancho tenía una espina en la pata y por eso no quería comer.'];
 
   it.each([
@@ -433,7 +433,7 @@ describe('Filtro de salida (RF-073, RN-16)', () => {
   });
 });
 
-describe('Borrador de retroalimentación (RF-075)', () => {
+describe('[Asistente][Menor][Fast] Borrador de retroalimentación (RF-075)', () => {
   const base = { minPalabras: null, rangoEdad: 'R2' as const, habilidad: 'ARG' as const, texto: TEXTO_KILLA };
 
   it('mide la respuesta: palabras, razones y si usa el texto', () => {
@@ -738,7 +738,7 @@ async function conversar(p: PreguntaEnCurso, entrada: { mensaje: string }, salid
   return { r, nino: nino!, guia: guia!, alMotor: e.motor.entradas[0]! };
 }
 
-describe('Conjunto adversario del asistente (RF-073): 0 fugas', () => {
+describe('[Asistente][Core][Slow] Conjunto adversario del asistente (RF-073): 0 fugas', () => {
   it('tiene más de 300 casos', () => {
     const salidas = PREGUNTAS.reduce((n, p) => n + salidasQueRevelan(p.pregunta.claves, p.parafrasis).length + SALIDAS_GENERALES.length, 0);
     const total = PREGUNTAS.length * ATAQUES.length + DATOS_PERSONALES.length + GROSERIAS.length + salidas;
@@ -805,7 +805,7 @@ import { crearEntornoAsistente, EntornoAsistente, preguntaEnCurso, TEXTO_KILLA }
 const NINO = 'nino-1';
 const SESION = 'sesion-1';
 
-describe('Conversar durante la lectura (RF-072 a RF-074)', () => {
+describe('[Asistente][Core][Fast] Conversar durante la lectura (RF-072 a RF-074)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {
@@ -907,7 +907,7 @@ describe('Conversar durante la lectura (RF-072 a RF-074)', () => {
   });
 });
 
-describe('Activación por la familia o la docente (RF-072, RN-17)', () => {
+describe('[Asistente][Core][Fast] Activación por la familia o la docente (RF-072, RN-17)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {
@@ -963,7 +963,7 @@ describe('Activación por la familia o la docente (RF-072, RN-17)', () => {
   });
 });
 
-describe('Borrador de retroalimentación para la docente (RF-075, RN-17)', () => {
+describe('[Asistente][Core][Fast] Borrador de retroalimentación para la docente (RF-075, RN-17)', () => {
   let e: EntornoAsistente;
 
   beforeEach(() => {
@@ -1302,7 +1302,7 @@ async function terminarKilla(token: string, id: string) {
   await t.http().post(`${API}/sesiones-lectura/${id}/finalizar`).set(bearer(token)).send({ reflexion: 'Era una espina' }).expect(200);
 }
 
-describe('Preparación', () => {
+describe('[Asistente][Core][Slow] Preparación', () => {
   it('Rosa tiene a Mateo y Ana en su aula; Carmen creó a Lucía y acompaña a Mateo por invitación; José es otra familia', async () => {
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
     rosa = await docente('Rosa Pérez');
@@ -1327,7 +1327,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('RF-072: activación por la familia o la docente (RN-17)', () => {
+describe('[Asistente][Core][Slow] RF-072: activación por la familia o la docente (RN-17)', () => {
   const deFamilia = (id: string) => `${API}/familia/estudiantes/${id}/asistente`;
 
   it('la familia que creó el perfil lo activa; queda registrado quién y cuándo', async () => {
@@ -1374,7 +1374,7 @@ describe('RF-072: activación por la familia o la docente (RN-17)', () => {
   });
 });
 
-describe('RF-072 a RF-074: el niño conversa durante su lectura', () => {
+describe('[Asistente][Core][Slow] RF-072 a RF-074: el niño conversa durante su lectura', () => {
   it('RNF-007: responde por un flujo de eventos en menos de 3 s, con una guía y sin la clave', async () => {
     sesionMateo = await hastaLaInferencia(tokenMateo);
     expect((await estado(sesionMateo, tokenMateo)).body).toEqual({ disponible: true, intercambios: 0, restantes: 10, turnos: [] });
@@ -1450,7 +1450,7 @@ describe('RF-072 a RF-074: el niño conversa durante su lectura', () => {
   });
 });
 
-describe('RF-075: borrador de retroalimentación para la docente', () => {
+describe('[Asistente][Core][Slow] RF-075: borrador de retroalimentación para la docente', () => {
   let respuestaAna: string;
 
   it('propone un comentario para la respuesta abierta de su estudiante; no guarda nada', async () => {
@@ -1478,7 +1478,7 @@ describe('RF-075: borrador de retroalimentación para la docente', () => {
   });
 });
 
-describe('Retención (SRS §7, ADR-008)', () => {
+describe('[Asistente][Core][Slow] Retención (SRS §7, ADR-008)', () => {
   it('a los 30 días se borran las conversaciones con sus turnos', async () => {
     expect(await t.prisma.conversacion.count()).toBe(2);
     expect(await casos.retencion.borrarVencidas(new Date(Date.now() + 29 * 86_400_000))).toBe(0);
@@ -1554,7 +1554,7 @@ const burbujas = (page: Page) => page.getByRole('list', { name: 'Conversación c
  * familia lo activa, el niño pide ayuda durante su lectura (atajos y texto) y nunca recibe la respuesta;
  * la docente lo activa para su aula y pide un borrador de comentario para una respuesta abierta.
  */
-test.describe('Asistente de lectura (RF-072 a RF-075)', () => {
+test.describe('[Asistente][Core][Slow] Asistente de lectura (RF-072 a RF-075)', () => {
   test.setTimeout(150_000);
 
   test('RF-072 a RF-074: la familia lo activa y el niño pide ayuda en su lectura sin recibir la respuesta', async ({ page, request }) => {

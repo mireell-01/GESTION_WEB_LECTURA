@@ -14,7 +14,7 @@ import {
 test.use({ extraHTTPHeaders: { 'X-Forwarded-For': ipSimulada() } });
 
 /** Nivel 3 — Casos negativos y de seguridad de IAM vistos desde la interfaz. */
-test.describe('IAM — seguridad de acceso', () => {
+test.describe('[IAM][Core][Slow] IAM — seguridad de acceso', () => {
   test('credenciales incorrectas muestran un error claro y no dejan entrar (RF-003)', async ({ page, request }) => {
     const { email } = await cuentaVerificada(request);
     await ingresarComoAdulto(page, email, 'no-es-la-contraseña');

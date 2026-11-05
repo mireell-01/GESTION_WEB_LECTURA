@@ -197,7 +197,7 @@ import { HABILIDADES, RANGOS_EDAD } from '../../../../src/modules/shared-kernel/
 const medidas = (v: Record<string, number>, items = 6) => Object.entries(v).map(([habilidad, valor]) => ({ habilidad, valor, items }));
 const CUENTA = '0192f1c4-7a10-7c3e-9b2a-1f0e5d6c7b8a';
 
-describe('Habilidades a reforzar (RF-068)', () => {
+describe('[Reporting][Menor][Fast] Habilidades a reforzar (RF-068)', () => {
   it('las medidas por debajo de "Logrado" (65), de la más baja a la más alta, hasta 3', () => {
     const celdas = celdasDe(medidas({ LIT: 80, INF: 31, VOC: 48, CRI: 64.9, ARG: 20 }));
     expect(habilidadesAReforzar(celdas)).toEqual([
@@ -219,7 +219,7 @@ describe('Habilidades a reforzar (RF-068)', () => {
   });
 });
 
-describe('Consejos para casa (RF-069)', () => {
+describe('[Reporting][Menor][Fast] Consejos para casa (RF-069)', () => {
   it('al menos un consejo práctico por habilidad y edad, para no especialistas', () => {
     for (const h of HABILIDADES) {
       for (const r of RANGOS_EDAD) {
@@ -245,7 +245,7 @@ describe('Consejos para casa (RF-069)', () => {
   });
 });
 
-describe('Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
+describe('[Reporting][Menor][Fast] Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
   it('el domingo desde las 18:00 resume la semana en curso; antes, la anterior', () => {
     expect(semanaFamiliarPorResumir(new Date('2026-10-25T22:59:00Z'))).toBe('2026-10-12'); // domingo 25, 17:59
     expect(semanaFamiliarPorResumir(new Date('2026-10-25T23:00:00Z'))).toBe('2026-10-19'); // domingo 25, 18:00
@@ -258,7 +258,7 @@ describe('Semana del resumen (RF-070: domingos a las 18:00 de Lima)', () => {
   });
 });
 
-describe('Enlace de baja firmado (RF-070)', () => {
+describe('[Reporting][Core][Fast] Enlace de baja firmado (RF-070)', () => {
   const firma = new HmacFirmaBaja('secreto-de-prueba');
 
   it('lleva la cuenta y su firma; se verifica en tiempo constante', () => {
@@ -304,7 +304,7 @@ const PEDRO = 'est-pedro';
 const BENJA = 'est-benja';
 const DOMINGO_1830 = new Date('2026-10-25T23:30:00Z'); // domingo 25, 18:30 en Lima
 
-describe('Acompañamiento familiar: panel por hijo, preferencias y resumen semanal', () => {
+describe('[Reporting][Core][Fast] Acompañamiento familiar: panel por hijo, preferencias y resumen semanal', () => {
   let e: EntornoFamilia;
 
   beforeEach(() => {
@@ -664,7 +664,7 @@ async function hijo(token: string, alias: string, anio: number) {
   return (await t.http().post(`${API}/estudiantes`).set(bearer(token)).send({ alias, anioNacimiento: anio, mesNacimiento: 3, avatar: 'koala', pin: '2580' }).expect(201)).body.id as string;
 }
 
-describe('Preparación', () => {
+describe('[Reporting][Core][Slow] Preparación', () => {
   it('Mateo lee de verdad en su aula; Carmen lo acompaña por invitación y tiene a Lucía; José tiene a Pedro', async () => {
     killa = await publicarKilla(await backoffice('EDITOR'), await backoffice('REVISOR'));
     rosa = await docente('Rosa Pérez');
@@ -690,7 +690,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Panel por hijo (RF-068, RF-069)', () => {
+describe('[Reporting][Core][Slow] Panel por hijo (RF-068, RF-069)', () => {
   it('RF-068: el avance real de Mateo, su semana y sus habilidades, aunque lo gestione su docente', async () => {
     const p = (await panel(mateo).expect(200)).body;
     expect(p.estudiante).toMatchObject({ id: mateo, alias: 'Mateo', rangoEdad: 'R2', activo: true, relacion: 'VINCULADO' });
@@ -745,7 +745,7 @@ describe('Panel por hijo (RF-068, RF-069)', () => {
   });
 });
 
-describe('Preferencias y resumen semanal (RF-070)', () => {
+describe('[Reporting][Core][Slow] Preferencias y resumen semanal (RF-070)', () => {
   it('cada familia lo recibe salvo que se dé de baja; lo cambia desde su panel', async () => {
     expect((await t.http().get(`${API}/familia/preferencias-notificacion`).set(bearer(jose.token)).expect(200)).body).toEqual({ resumenSemanal: true });
     await t.http().patch(`${API}/familia/preferencias-notificacion`).set(bearer(jose.token)).send({ resumenSemanal: 'no' }).expect(400);
@@ -1012,7 +1012,7 @@ async function sinDesbordes(page: Page) {
  * decide si recibe el resumen semanal y se da de baja con un clic desde el correo; y gestiona los perfiles
  * de sus hijos (avatar, PIN, desactivar, hasta 6).
  */
-test.describe('Acompañamiento familiar (RF-068 a RF-071)', () => {
+test.describe('[Reporting][Menor][Slow] Acompañamiento familiar (RF-068 a RF-071)', () => {
   test.setTimeout(150_000);
 
   test('RF-068, RF-069: el avance de su hijo y cómo acompañarlo en casa', async ({ page, request }) => {

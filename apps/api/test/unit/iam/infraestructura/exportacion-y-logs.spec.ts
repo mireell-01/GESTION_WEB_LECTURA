@@ -8,7 +8,7 @@ import { ErrorDeNegocio, FiltroErrores, redactar } from '../../../../src/modules
 
 const SECRETO = 'secreto-de-pruebas-unitarias-con-mas-de-32-caracteres';
 
-describe('HmacFirmador (RF-012, enlaces firmados)', () => {
+describe('[IAM][Core][Fast] HmacFirmador (RF-012, enlaces firmados)', () => {
   const firmador = new HmacFirmador(SECRETO, 'exportaciones');
 
   it('verifica su propia firma y rechaza cualquier cambio en el texto o la firma', () => {
@@ -25,7 +25,7 @@ describe('HmacFirmador (RF-012, enlaces firmados)', () => {
   });
 });
 
-describe('PdfLibGenerador (RF-012)', () => {
+describe('[IAM][Menor][Slow] PdfLibGenerador (RF-012)', () => {
   it('genera un PDF A4 válido, con título, idioma y páginas numeradas aunque haya mucho contenido', async () => {
     const pdf = await new PdfLibGenerador().generar({
       generadoEn: '2026-10-16T15:00:00.000Z',
@@ -45,7 +45,7 @@ describe('PdfLibGenerador (RF-012)', () => {
   });
 });
 
-describe('redactar — logs sin secretos (RNF-031)', () => {
+describe('[IAM][Core][Fast] redactar — logs sin secretos (RNF-031)', () => {
   it.each([
     ['{"email":"ana@x.pe","contrasena":"Lectura-Segura-2026"}', 'Lectura-Segura-2026'],
     ['pin=2580&perfilId=p1', '2580'],
@@ -67,7 +67,7 @@ describe('redactar — logs sin secretos (RNF-031)', () => {
   });
 });
 
-describe('FiltroErrores — Problem Details RFC 9457 (SRS §7)', () => {
+describe('[IAM][Menor][Fast] FiltroErrores — Problem Details RFC 9457 (SRS §7)', () => {
   function capturar(excepcion: unknown) {
     const salida: { estado?: number; tipo?: string; cuerpo?: Record<string, unknown> } = {};
     const res = {

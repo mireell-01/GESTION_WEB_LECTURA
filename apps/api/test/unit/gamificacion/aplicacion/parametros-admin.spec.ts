@@ -32,7 +32,7 @@ class VersionesEnMemoria implements ParametrosRepository {
   }
 }
 
-describe('Validación de una versión nueva (RF-078)', () => {
+describe('[Gamificacion][Menor][Fast] Validación de una versión nueva (RF-078)', () => {
   it('acepta una versión completa en rango y la guarda en el formato de la versión 1', () => {
     const p = validarParametros(editables(), CON_UMBRAL);
     expect(p.insignias).toEqual({ DETECTIVE_EVIDENCIAS: 3 });
@@ -80,7 +80,7 @@ describe('Validación de una versión nueva (RF-078)', () => {
   });
 });
 
-describe('Umbrales de insignias (RF-078)', () => {
+describe('[Gamificacion][Menor][Fast] Umbrales de insignias (RF-078)', () => {
   it('cambian lecturas, evidencias o días de racha; las de nivel y de mundo no tienen umbral', () => {
     const ajustado = aplicarUmbrales(CATALOGO, { PRIMERA_LECTURA: 2, DETECTIVE_EVIDENCIAS: 3, LECTOR_PERSEVERANTE: 5, RANGO_DETECTIVE: 9, MAESTRO_INFERENCIAS: 1 });
     expect(ajustado.map((i) => i.regla)).toEqual([
@@ -98,7 +98,7 @@ describe('Umbrales de insignias (RF-078)', () => {
   });
 });
 
-describe('Publicar parámetros (RF-078): aplica solo a lo que ocurre después', () => {
+describe('[Gamificacion][Menor][Fast] Publicar parámetros (RF-078): aplica solo a lo que ocurre después', () => {
   let e: EntornoGamificacion;
   let versiones: VersionesEnMemoria;
   let caso: ParametrosAdminUseCase;

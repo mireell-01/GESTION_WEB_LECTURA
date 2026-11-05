@@ -44,7 +44,7 @@ let tokenMateo: string;
 const panel = (aulaId = aula.aulaId, token = rosa.token) => t.http().get(`${API}/aulas/${aulaId}/panel`).set(bearer(token));
 const estudiante = (v: { estudiantes: { alias: string }[] }, alias: string) => v.estudiantes.find((e) => e.alias === alias) as unknown as Record<string, unknown> & { celdas: { habilidad: string; nivel: string | null; valor: number | null }[]; riesgo: { motivos: string[]; diasSinActividad: number | null } };
 
-describe('Preparación', () => {
+describe('[Reporting][Core][Slow] Preparación', () => {
   it('una lectura publicada, la docente Rosa con 5 estudiantes de 9 años y otra docente con su aula', async () => {
     const editora = await backoffice('EDITOR');
     killa = await publicarKilla(editora, await backoffice('REVISOR'));
@@ -69,7 +69,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Panel del aula (RF-063, RF-065, RF-066)', () => {
+describe('[Reporting][Core][Slow] Panel del aula (RF-063, RF-065, RF-066)', () => {
   it('RF-063: mapa de calor estudiantes × habilidades con el nivel CNEB declarado (RN-08)', async () => {
     const v = (await panel().expect(200)).body;
     expect(v.aula).toMatchObject({ id: aula.aulaId, nombre: '4.° A', estado: 'ACTIVA' });
@@ -131,7 +131,7 @@ describe('Panel del aula (RF-063, RF-065, RF-066)', () => {
   });
 });
 
-describe('Detalle del estudiante (RF-064)', () => {
+describe('[Reporting][Core][Slow] Detalle del estudiante (RF-064)', () => {
   it('sus últimas sesiones con lo que respondió, las evidencias que eligió y las pistas que usó', async () => {
     const v = (await t.http().get(`${API}/aulas/${aula.aulaId}/estudiantes/${aula.ids['Mateo']}/detalle`).set(bearer(rosa.token)).expect(200)).body;
     expect(v.estudiante).toMatchObject({ id: aula.ids['Mateo'], alias: 'Mateo', avatar: 'zorro' });
@@ -157,7 +157,7 @@ describe('Detalle del estudiante (RF-064)', () => {
   });
 });
 
-describe('Reporte del aula (RF-067)', () => {
+describe('[Reporting][Core][Slow] Reporte del aula (RF-067)', () => {
   const reporte = (formato: string) => t.http().get(`${API}/aulas/${aula.aulaId}/reporte?formato=${formato}`).set(bearer(rosa.token)).buffer(true).parse((res, cb) => {
     const partes: Buffer[] = [];
     res.on('data', (c: Buffer) => partes.push(c));
@@ -190,7 +190,7 @@ describe('Reporte del aula (RF-067)', () => {
   });
 });
 
-describe('Resumen semanal (RF-065)', () => {
+describe('[Reporting][Core][Slow] Resumen semanal (RF-065)', () => {
   it('desde el lunes a las 07:00 de Lima se envía una vez a cada docente con sus aulas', async () => {
     const lunes = lunesDeLaSemana(fechaLocalLima(new Date()));
     // El miércoles de la próxima semana: toca resumir la semana en curso (la de las lecturas de Mateo).
@@ -219,7 +219,7 @@ describe('Resumen semanal (RF-065)', () => {
   });
 });
 
-describe('Riesgo por inactividad (RF-065)', () => {
+describe('[Reporting][Core][Slow] Riesgo por inactividad (RF-065)', () => {
   it('RF-065: con 9 días sin leer aparece en riesgo con sus días', async () => {
     await t.prisma.sesionLectura.updateMany({ where: { estudianteId: aula.ids['Mateo'] }, data: { iniciadaEn: haceDias(9), ultimaActividadEn: haceDias(9) } });
     await t.prisma.respuestaDiagnostico.updateMany({ where: { diagnostico: { estudianteId: aula.ids['Mateo'] } }, data: { respondidaEn: haceDias(12) } });
@@ -229,7 +229,7 @@ describe('Riesgo por inactividad (RF-065)', () => {
   });
 });
 
-describe('Acceso (RN-17, RNF-012)', () => {
+describe('[Reporting][Core][Slow] Acceso (RN-17, RNF-012)', () => {
   it('solo la docente del aula ve su panel', async () => {
     await panel(aula.aulaId, otra.token).expect(404);
     await panel('no-es-un-id').expect(404);
@@ -238,7 +238,7 @@ describe('Acceso (RN-17, RNF-012)', () => {
   });
 });
 
-describe('Rendimiento (RNF-003)', () => {
+describe('[Reporting][Core][Slow] Rendimiento (RNF-003)', () => {
   it('el panel de un aula de 40 estudiantes con datos responde en menos de 1,5 s', async () => {
     const grande = await crearAula(rosa.token, '4.° C', Array.from({ length: 40 }, (_, i) => `Niño ${i + 1}`));
     for (const [i, id] of Object.values(grande.ids).entries()) await maestria(id, { INF: i % 3 === 0 ? 20 : 75, CRI: i % 4 === 0 ? 30 : 60 });

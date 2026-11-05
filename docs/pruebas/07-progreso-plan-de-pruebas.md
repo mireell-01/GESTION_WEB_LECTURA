@@ -182,7 +182,7 @@ import { CandidatosRecomendacion, recomendar } from '../../../../src/modules/pro
 /** Nivel 1 — Dominio del perfil lector (RF-052 a RF-055, RN-07, RN-08, RN-20). */
 const AHORA = new Date('2026-10-22T15:00:00Z');
 
-describe('Maestría (RN-07) y refuerzo (RF-054)', () => {
+describe('[Progreso][Core][Fast] Maestría (RN-07) y refuerzo (RF-054)', () => {
   it('el ítem vale su puntaje × (0,8 + 0,1 × dificultad) × 100, acotado a 100', () => {
     expect(factorDificultad(3)).toBeCloseTo(1.1);
     expect(puntajeObservado(1, 1)).toBeCloseTo(90);
@@ -212,7 +212,7 @@ describe('Maestría (RN-07) y refuerzo (RF-054)', () => {
   });
 });
 
-describe('PerfilLector (RF-052, RF-053)', () => {
+describe('[Progreso][Core][Fast] PerfilLector (RF-052, RF-053)', () => {
   it('nace con las 5 habilidades en 0 y parte del reto inicial una sola vez', () => {
     const p = PerfilLector.nuevo('nino');
     expect(p.todas().map((m) => [m.habilidad, m.valor, m.itemsContados])).toEqual([['LIT', 0, 0], ['INF', 0, 0], ['VOC', 0, 0], ['CRI', 0, 0], ['ARG', 0, 0]]);
@@ -256,7 +256,7 @@ describe('PerfilLector (RF-052, RF-053)', () => {
   });
 });
 
-describe('Recomendaciones (RF-055, RN-20)', () => {
+describe('[Progreso][Menor][Fast] Recomendaciones (RF-055, RN-20)', () => {
   const base = (p: Partial<CandidatosRecomendacion> = {}): CandidatosRecomendacion => ({
     asignaciones: [],
     mision: null,
@@ -344,7 +344,7 @@ const item = (p: Partial<DatosItemRespondido> = {}): DatosItemRespondido => ({
   ...p,
 });
 
-describe('Progreso: perfil lector, maestría y recomendaciones', () => {
+describe('[Progreso][Core][Fast] Progreso: perfil lector, maestría y recomendaciones', () => {
   let e: EntornoProgreso;
 
   beforeEach(() => {
@@ -795,7 +795,7 @@ const lecturas = {} as Record<'killa' | 'inf' | 'lit' | 'asignada' | 'mision', s
 const perfil = (token = mateo.token) => t.http().get(`${API}/yo/perfil-lector`).set(bearer(token));
 const maestria = (habilidad: string) => t.prisma.maestriaHabilidad.findUniqueOrThrow({ where: { estudianteId_habilidad: { estudianteId: mateo.id, habilidad } } });
 
-describe('Preparación', () => {
+describe('[Progreso][Core][Slow] Preparación', () => {
   it('lecturas publicadas y una docente con Mateo (9 años) y Lía (6 años) en la tablet del aula', async () => {
     editora = await backoffice('EDITOR');
     revisora = await backoffice('REVISOR');
@@ -820,7 +820,7 @@ describe('Preparación', () => {
   });
 });
 
-describe('Perfil lector (RF-052, RF-053, RF-054)', () => {
+describe('[Progreso][Core][Slow] Perfil lector (RF-052, RF-053, RF-054)', () => {
   it('sin reto inicial, las 5 habilidades están por descubrir y no hay nada guardado', async () => {
     const v = (await perfil().expect(200)).body;
     expect(v).toMatchObject({ conDatos: false, nivelLectura: null, actualizadoEn: null });
@@ -890,7 +890,7 @@ describe('Perfil lector (RF-052, RF-053, RF-054)', () => {
   });
 });
 
-describe('El resto de la plataforma recibe la maestría y el nivel', () => {
+describe('[Progreso][Core][Slow] El resto de la plataforma recibe la maestría y el nivel', () => {
   it('RF-028: la biblioteca muestra su nivel ± 1 (antes partía del típico de su edad)', async () => {
     const nivel = (await perfil().expect(200)).body.nivelLectura as number;
     const { alcance } = (await t.http().get(`${API}/biblioteca`).set(bearer(mateo.token)).expect(200)).body;
@@ -906,7 +906,7 @@ describe('El resto de la plataforma recibe la maestría y el nivel', () => {
   });
 });
 
-describe('Recomendaciones (RF-055, RN-20)', () => {
+describe('[Progreso][Core][Slow] Recomendaciones (RF-055, RN-20)', () => {
   it('sin asignación ni misión, recomienda para su habilidad más débil; nunca más de 3', async () => {
     const r = (await t.http().get(`${API}/yo/recomendaciones`).set(bearer(mateo.token)).expect(200)).body;
     expect(r.length).toBeGreaterThanOrEqual(1);
@@ -1005,7 +1005,7 @@ const test = base.extend({
  * y celular: el reto inicial y las lecturas reales mueven la maestría; el niño la ve en su lenguaje,
  * con lo que conviene practicar y sus próximas lecturas (la de su profe primero).
  */
-test.describe('Perfil lector y recomendaciones (RF-052 a RF-055)', () => {
+test.describe('[Progreso][Menor][Slow] Perfil lector y recomendaciones (RF-052 a RF-055)', () => {
   test.setTimeout(150_000);
 
   async function abrirPerfil(page: Page, alias: string) {

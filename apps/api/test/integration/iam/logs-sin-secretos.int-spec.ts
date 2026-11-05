@@ -34,7 +34,7 @@ afterAll(async () => {
   await t?.cerrar();
 });
 
-describe('Logs sin secretos (RNF-031)', () => {
+describe('[IAM][Core][Slow] Logs sin secretos (RNF-031)', () => {
   it('un recorrido completo de IAM no deja contraseñas, PIN, tokens ni códigos en los logs', async () => {
     const secretos: string[] = [CONTRASENA, PIN];
     const email = 'secretos@lectoaventura.test';

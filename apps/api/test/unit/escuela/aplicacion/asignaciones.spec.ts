@@ -23,7 +23,7 @@ import { aulaDe, crearEntornoEscuela, EntornoEscuela, estudianteEn } from '../do
 /** Nivel 1 — Asignaciones (RF-018): crear, listar, cerrar y verlas en la aventura del estudiante. */
 const DOCENTE = 'doc-1';
 
-describe('Asignaciones de la docente (RF-018)', () => {
+describe('[Escuela][Menor][Fast] Asignaciones de la docente (RF-018)', () => {
   let e: EntornoEscuela;
   let crear: CrearAsignacionUseCase;
   let listar: ListarAsignacionesUseCase;

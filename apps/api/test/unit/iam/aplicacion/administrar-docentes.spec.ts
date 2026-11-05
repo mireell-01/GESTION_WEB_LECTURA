@@ -15,7 +15,7 @@ const URL_WEB = 'http://localhost:3002';
 const ADMIN = 'admin-1';
 const CONTRASENA = 'Lectura-Segura-2026';
 
-describe('Gestión de cuentas docentes por la administración (RF-076)', () => {
+describe('[IAM][Core][Fast] Gestión de cuentas docentes por la administración (RF-076)', () => {
   let e: Entorno;
   let gestion: AdministrarDocentesUseCase;
   let ingresar: AutenticarAdultoUseCase;

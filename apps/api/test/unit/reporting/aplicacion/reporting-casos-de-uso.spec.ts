@@ -33,7 +33,7 @@ const sesion = (id: string, respuestas: Partial<SesionDeHistorial['respuestas'][
   })),
 });
 
-describe('Seguimiento docente: panel, detalle, reporte y resumen semanal', () => {
+describe('[Reporting][Core][Fast] Seguimiento docente: panel, detalle, reporte y resumen semanal', () => {
   let e: EntornoReporting;
 
   beforeEach(() => {

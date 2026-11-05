@@ -44,7 +44,7 @@ async function revisarPantalla(page: Page): Promise<void> {
   expect(resultado.pequenos, 'objetivos táctiles menores de 48 px').toEqual([]);
 }
 
-test.describe('Diseño responsivo (RNF-022, RNF-023)', () => {
+test.describe('[Diseno][Menor][Slow] Diseño responsivo (RNF-022, RNF-023)', () => {
   for (const ruta of ['/', '/ingresar', '/registro', '/recuperar', '/ingresar/estudiante']) {
     test(`${ruta} se adapta sin desbordes y con objetivos táctiles grandes`, async ({ page }) => {
       await page.goto(ruta);
