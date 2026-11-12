@@ -2630,6 +2630,64 @@ p {
   margin: 0;
 }
 
+/* Una estrella recorre la barra de avance (va fuera de .la-barra, que recorta lo que sobresale). */
+.avance-lectura {
+  position: relative;
+}
+
+.avance-lectura__estrella {
+  position: absolute;
+  top: 50%;
+  left: clamp(14px, var(--avance), calc(100% - 14px));
+  display: grid;
+  color: var(--la-color-secundario);
+  filter: drop-shadow(0 1px 0 var(--la-color-secundario-fuerte));
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Prender o apagar los sonidos: un botón con forma de píldora junto a «Salir». */
+.boton-sonido {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--la-target-min);
+  padding: 0 16px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 999px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-primario);
+  font: 700 1rem / 1 var(--la-font-titulo);
+  cursor: pointer;
+}
+
+.boton-sonido:hover {
+  border-color: var(--la-color-primario);
+}
+
+.boton-sonido:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.boton-sonido[aria-pressed='false'] {
+  color: var(--la-color-texto-suave);
+}
+
+/* En el celular, solo el ícono: así cabe junto a «Salir» sin ocupar otra fila. */
+@media (max-width: 559px) {
+  .boton-sonido {
+    justify-content: center;
+    min-width: var(--la-target-min);
+    margin-left: auto;
+    padding: 0;
+  }
+
+  .boton-sonido__texto {
+    display: none;
+  }
+}
+
 /* RF-038: portada con título e imagen, antes del texto. */
 .portada-lectura {
   display: grid;
@@ -2993,8 +3051,37 @@ p {
   }
 }
 
+.lectura-fin {
+  position: relative;
+  overflow: hidden;
+}
+
 .lectura-fin h2 {
   margin: 0;
+}
+
+/* Confeti al terminar la lectura: cae tres veces y se va (no ocupa lugar en la rejilla). */
+.lectura-fin__confeti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lectura-fin__confeti > span {
+  position: absolute;
+  top: -18px;
+  left: calc(var(--i) * 5.4% + 2%);
+  width: 10px;
+  height: 14px;
+  border-radius: 3px;
+  background: hsl(calc(var(--i) * 47deg) 85% 62%);
+  opacity: 0;
+}
+
+.lectura-fin__confeti > span:nth-child(3n) {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
 }
 
 .lectura-fin__resumen {
@@ -4448,21 +4535,58 @@ p {
   object-fit: cover;
 }
 
-/* La mascota acompaña cada aviso: celebra cuando acierta y anima cuando le falta poco. */
+/* La mascota acompaña cada aviso: celebra cuando acierta y anima cuando le falta poco; en su globo le
+   dice algo al niño, y debajo queda el aviso. */
 .aviso-lectura {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 6px 12px;
 }
 
 .aviso-lectura > .la-mascota {
-  flex-shrink: 0;
+  grid-row: 1 / span 2;
 }
 
 .aviso-lectura > .la-alerta {
-  flex: 1;
-  min-width: 0;
+  grid-column: 2;
+}
+
+.aviso-lectura--error > .la-alerta {
+  grid-column: 1 / -1;
+}
+
+.aviso-lectura__globo {
+  position: relative;
+  grid-column: 2;
+  justify-self: start;
+  max-width: 100%;
+  padding: 6px 14px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 18px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-primario);
+  font: 700 1.0625rem / 1.25 var(--la-font-titulo);
+}
+
+/* La colita del globo apunta a la mascota. */
+.aviso-lectura__globo::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 3px solid var(--la-color-secundario);
+  border-left: 3px solid var(--la-color-secundario);
+  background: var(--la-color-superficie);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.aviso-lectura--info .aviso-lectura__globo,
+.aviso-lectura--info .aviso-lectura__globo::before {
+  border-color: var(--la-color-primario-borde);
 }
 
 .aviso-lectura__chispas {
@@ -4532,6 +4656,27 @@ p {
   .mascota-festeja { animation: mascota-festeja 0.9s ease-out both; }
   .mascota-anima { animation: mascota-anima 0.4s ease-in-out 3 alternate; }
   .aviso-lectura__chispas > span { animation: chispa 0.9s ease-out both; }
+  .aviso-lectura__globo { transform-origin: 0 50%; animation: globo-aparece 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) 0.15s both; }
+  .avance-lectura__estrella { transition: left 0.6s cubic-bezier(0.3, 1.4, 0.5, 1); }
+  .avance-lectura__estrella .la-icono { animation: estrella-late 0.9s ease-in-out infinite alternate; }
+  .lectura-fin__confeti > span { animation: confeti-fin var(--caida, 2s) ease-in var(--retraso, 0s) 3 both; }
+  .reto__opcion { transition: transform 0.12s ease; }
+  .reto__opcion:active { transform: scale(0.97); }
+  .boton-sonido:active { transform: scale(0.95); }
+}
+
+@keyframes estrella-late {
+  to { transform: scale(1.18); }
+}
+
+@keyframes globo-aparece {
+  from { opacity: 0; transform: scale(0.5); }
+}
+
+@keyframes confeti-fin {
+  from { opacity: 1; transform: translateY(0) rotate(0deg); }
+  85% { opacity: 1; }
+  to { opacity: 0; transform: translateY(320px) rotate(480deg); }
 }
 
 @keyframes bloque-aparece {
