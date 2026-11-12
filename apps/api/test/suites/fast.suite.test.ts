@@ -34,6 +34,7 @@ import '../unit/lectura/dominio/correccion-caja-blanca.spec';
 import '../unit/lectura/dominio/dominio-lectura.spec';
 import '../unit/progreso/aplicacion/progreso-casos-de-uso.spec';
 import '../unit/progreso/dominio/dominio-progreso.spec';
+import '../unit/progreso/dominio/maestria-caja-negra.spec';
 import '../unit/reporting/aplicacion/familia-casos-de-uso.spec';
 import '../unit/reporting/aplicacion/reporting-casos-de-uso.spec';
 import '../unit/reporting/dominio/dominio-familia.spec';

@@ -2,3 +2,4 @@
 //   npm run test:suite -- componentes/progreso
 import '../../unit/progreso/aplicacion/progreso-casos-de-uso.spec';
 import '../../unit/progreso/dominio/dominio-progreso.spec';
+import '../../unit/progreso/dominio/maestria-caja-negra.spec';
