@@ -6,6 +6,7 @@ import '../unit/asistente/dominio/dominio-asistente.spec';
 import '../unit/aventura/aplicacion/aventura-casos-de-uso.spec';
 import '../unit/aventura/dominio/dominio-aventura.spec';
 import '../unit/contenido/aplicacion/contenido-casos-de-uso.spec';
+import '../unit/contenido/dominio/cuentos-iniciales.spec';
 import '../unit/contenido/dominio/dominio-contenido.spec';
 import '../unit/contenido/infraestructura/almacen-y-firma.spec';
 import '../unit/diagnostico/aplicacion/diagnostico-casos-de-uso.spec';

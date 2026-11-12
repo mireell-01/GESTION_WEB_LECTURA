@@ -2335,7 +2335,7 @@ p {
   gap: 8px 10px;
 }
 
-.mision__lecturas li > span:not(.la-chip) {
+.mision__lecturas li > span:not(.la-chip):not(.mision__escena) {
   flex: 1 1 140px;
 }
 
@@ -4646,4 +4646,35 @@ p {
 @keyframes chispa {
   from { opacity: 1; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(0.4); }
   to { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(-46px) scale(1); }
+}
+/* Contenido inicial: cada cuento muestra su escena también en la biblioteca, su ficha y las misiones. */
+.ficha__escena {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.ficha__escena > .escena,
+.mision__escena > .escena {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lectura > .ilustracion-lectura {
+  width: 100%;
+  max-width: 560px;
+}
+
+.mision__escena {
+  flex: 0 0 auto;
+  width: 84px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 12px;
+  background: var(--la-color-fondo-alterno);
 }

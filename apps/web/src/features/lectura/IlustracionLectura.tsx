@@ -33,7 +33,7 @@ const CIELOS: [Cielo, RegExp][] = [
 ];
 
 const LUGARES: [Lugar, RegExp][] = [
-  ['agua', /\b(rio|lago|laguna|mar|playa|agua|titicaca|puno|pez|peces|pesca\w*|bote|totora)\b/],
+  ['agua', /\b(rio|lago|laguna|mar|playa|agua|titicaca|puno|pez|peces|pesca\w*|bote|totora|islas?|cascadas?)\b/],
   ['montana', /\b(cerros?|montan\w*|nevados?|volcan\w*|andes|puna|cumbre|condor)\b/],
   ['bosque', /\b(bosque|selva|arbol\w*|planta\w*|flor\w*|jardin|chacra|huerto|semilla\w*)\b/],
 ];
@@ -47,7 +47,7 @@ const ANIMALES: [Animal, RegExp][] = [
   ['conejo', /\b(conej\w*|liebres?)\b/],
   ['oveja', /\b(ovejas?|ovejit[ao]s?|corder\w*|carner\w*)\b/],
   ['rana', /\b(ranas?|ranit[ao]s?|sapos?|sapit[oa]s?)\b/],
-  ['aves', /\b(pajar\w*|aves?|condor\w*|palomas?|loros?|gallinas?|volar|vuela\w*)\b/],
+  ['aves', /\b(pajar\w*|aves?|condor\w*|palomas?|loros?|gallin\w*|gallos?|patos?|patitos?|picaflor\w*|colibri\w*|buhos?|lechuzas?|volar|vuela\w*)\b/],
   ['peces', /\b(pez|peces|pescad\w*|truchas?)\b/],
   ['mariposa', /\b(mariposas?|insectos?|abejas?|flor\w*)\b/],
 ];

@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 import { Alerta, Boton, Campo, Cargando, Chip, clasesBoton, Icono, Selector } from '@lectoaventura/ui';
 
+import { EscenaAnimada, IlustracionParrafo, repartoDe } from '@/features/lectura/IlustracionLectura';
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArchivoProtegido } from './ArchivoProtegido';
@@ -106,8 +107,9 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
           {pagina.lecturas.map((l) => (
             <li key={l.lecturaId}>
               <Link href={`${base}/${l.lecturaId}`} className="ficha" aria-label={`Abrir ${l.titulo}`}>
-                <span className="ficha__icono" aria-hidden="true">
-                  <Icono nombre={l.esRamificada ? 'brujula' : 'libro'} tamano={30} />
+                {/* La escena del cuento, la misma que verá al leerlo (decorativa: el título ya dice de qué trata). */}
+                <span className="ficha__escena" aria-hidden="true">
+                  <EscenaAnimada texto={`${l.titulo}. ${l.resumen}`} reparto={repartoDe(l.titulo, l.resumen)} />
                 </span>
                 <span className="ficha__titulo">{l.titulo}</span>
                 <span className="ficha__resumen">{l.resumen}</span>
@@ -134,6 +136,8 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
 }
 
 /** Detalle de una lectura publicada (sin respuestas). El estudiante la lee con sus actividades en /estudiante/lecturas (Módulo 6). */
+const primerParrafo = (l: DetalleBiblioteca) => l.parrafos[0]?.oraciones.map((o) => o.texto).join(' ') ?? '';
+
 export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: { lecturaId: string; base: string; infantil?: boolean }) {
   const [lectura, setLectura] = useState<DetalleBiblioteca | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -166,7 +170,9 @@ export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: 
         </span>
         {lectura.imagenes[0] ? (
           <ArchivoProtegido url={lectura.imagenes[0].url} tipo="IMAGEN" alt={lectura.imagenes[0].textoAlternativo} className="lectura__imagen" />
-        ) : null}
+        ) : (
+          <IlustracionParrafo imagen={null} texto={lectura.titulo} reparto={repartoDe(lectura.titulo, primerParrafo(lectura))} />
+        )}
         <div className="lectura__texto">
           {lectura.parrafos.map((p) => (
             <p key={p.numero}>{p.oraciones.map((o) => o.texto).join(' ')}</p>
