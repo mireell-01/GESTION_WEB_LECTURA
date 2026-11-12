@@ -21,7 +21,8 @@
         "test:core:fast": "vitest run -c vitest.suites.config.ts test/suites/core -t \"\\[Core\\]\\[Fast\\]\"",
         "test:fast": "vitest run -c vitest.suites.config.ts test/suites/fast -t \"\\[Fast\\]\"",
         "test:slow": "vitest run -c vitest.suites.config.ts test/suites/slow -t \"\\[Slow\\]\"",
-        "test:suite": "vitest run -c vitest.suites.config.ts"
+        "test:suite": "vitest run -c vitest.suites.config.ts",
+        "test:condiciones": "node test/herramientas/condiciones/medir.mjs"
     },
     "dependencies": {
         "@nestjs/common": "^10.4.6",
