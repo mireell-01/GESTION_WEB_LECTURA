@@ -2,13 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Modulo = typeof import('@/features/lectura/sonidos');
 
-/** Un AudioContext de mentira: anota cada nota que se toca. */
+const nodo = () => ({ connect: (siguiente: unknown) => siguiente });
+const parametro = () => ({ value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() });
+
+/** Un AudioContext de mentira: anota cada oscilador que suena (frecuencia, inicio y fin). */
 class AudioFalso {
   static creados: AudioFalso[] = [];
   state = 'suspended';
   currentTime = 10;
   destination = {};
-  notas: { forma: string; frecuencia: number; inicio: number; fin: number }[] = [];
+  osciladores: { frecuencia: number; inicio: number; fin: number }[] = [];
   resume = vi.fn(() => {
     this.state = 'running';
     return Promise.resolve();
@@ -19,29 +22,35 @@ class AudioFalso {
   }
 
   createOscillator() {
-    const nota = { forma: '', frecuencia: 0, inicio: 0, fin: 0 };
-    this.notas.push(nota);
+    const o = { frecuencia: 0, inicio: 0, fin: 0 };
+    this.osciladores.push(o);
     return {
-      set type(v: string) {
-        nota.forma = v;
-      },
+      ...nodo(),
+      type: '',
       frequency: {
         set value(v: number) {
-          nota.frecuencia = v;
+          o.frecuencia = v;
         },
       },
-      connect: (siguiente: unknown) => siguiente,
       start: (t: number) => {
-        nota.inicio = t;
+        o.inicio = t;
       },
       stop: (t: number) => {
-        nota.fin = t;
+        o.fin = t;
       },
     };
   }
 
   createGain() {
-    return { gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: (siguiente: unknown) => siguiente };
+    return { ...nodo(), gain: parametro() };
+  }
+
+  createDelay() {
+    return { ...nodo(), delayTime: parametro() };
+  }
+
+  createBiquadFilter() {
+    return { ...nodo(), type: '', frequency: parametro() };
   }
 }
 
@@ -73,35 +82,51 @@ afterEach(() => {
 });
 
 describe('[Lectura][Menor][Fast] Los sonidos de la lectura', () => {
-  it('cada melodía es corta y suave para el oído: notas audibles y en menos de un segundo y medio', () => {
+  it('cada melodía es corta y agradable: notas en el rango cómodo del oído y en poco más de dos segundos', () => {
     for (const { notas } of Object.values(sonidos.MELODIAS)) {
       expect(notas.length).toBeGreaterThan(0);
-      for (const [frecuencia, inicio, duracion] of notas) {
+      for (const [frecuencia, inicio, duracion, volumen = 1] of notas) {
         expect(frecuencia).toBeGreaterThanOrEqual(200);
-        expect(frecuencia).toBeLessThanOrEqual(1200);
-        expect(inicio + duracion).toBeLessThanOrEqual(1.5);
+        expect(frecuencia).toBeLessThanOrEqual(2200);
+        expect(inicio + duracion).toBeLessThanOrEqual(2.1);
+        expect(volumen).toBeGreaterThan(0);
+        expect(volumen).toBeLessThanOrEqual(1);
       }
     }
   });
 
-  it('el acierto y la fanfarria suben (suenan a alegría); el «casi» baja suave, sin sonar a error', () => {
-    const tonos = (n: keyof Modulo['MELODIAS']) => sonidos.MELODIAS[n].notas.map(([f]) => f);
-    for (const n of ['acierto', 'final'] as const) {
-      const t = tonos(n);
-      expect(t).toEqual([...t].sort((a, b) => a - b));
+  it('cada timbre tiene su nota principal entera y brillos más bajitos que se apagan antes', () => {
+    for (const parciales of Object.values(sonidos.TIMBRES)) {
+      expect(parciales[0]).toEqual([1, 1, 1]);
+      for (const [, volumen, fraccion] of parciales.slice(1)) {
+        expect(volumen).toBeLessThan(1);
+        expect(fraccion).toBeLessThanOrEqual(1);
+      }
     }
-    const casi = tonos('casi');
-    expect(casi[casi.length - 1]).toBeLessThan(casi[0] as number);
-    expect(sonidos.MELODIAS.casi.forma).toBe('sine');
   });
 
-  it('al acertar toca do, mi y sol, una nota tras otra, y despierta el audio del navegador', () => {
+  it('el acierto y la fanfarria suben (suenan a alegría); el «casi» baja suave, con soplo y no con campana', () => {
+    const tonos = (n: keyof Modulo['MELODIAS']) => sonidos.MELODIAS[n].notas.map(([f]) => f);
+    const acierto = tonos('acierto');
+    expect(acierto).toEqual([...acierto].sort((a, b) => a - b));
+    const fanfarria = tonos('final');
+    expect(fanfarria[0]).toBeLessThan(fanfarria[fanfarria.length - 3] as number);
+    const casi = tonos('casi');
+    expect(casi[casi.length - 1]).toBeLessThan(casi[0] as number);
+    expect(sonidos.MELODIAS.casi.timbre).toBe('soplo');
+    expect(sonidos.MELODIAS.acierto.timbre).toBe('campanita');
+  });
+
+  it('al acertar toca do, mi, sol y do agudo, una nota tras otra, cada una con sus brillos, y despierta el audio', () => {
     sonidos.sonar('acierto');
     const [audio] = AudioFalso.creados;
     expect(audio?.resume).toHaveBeenCalled();
-    expect(audio?.notas.map((n) => n.frecuencia)).toEqual([523.25, 659.25, 783.99]);
-    expect(audio?.notas.map((n) => n.inicio)).toEqual([10, 10.1, 10.2]);
-    for (const n of audio?.notas ?? []) expect(n.fin).toBeGreaterThan(n.inicio);
+    const parciales = sonidos.TIMBRES.campanita.length;
+    expect(audio?.osciladores).toHaveLength(4 * parciales);
+    const fundamentales = audio?.osciladores.filter((_, i) => i % parciales === 0) ?? [];
+    expect(fundamentales.map((o) => o.frecuencia)).toEqual([523.25, 659.25, 783.99, 1046.5]);
+    expect(fundamentales.map((o) => o.inicio)).toEqual([10, 10.09, 10.18, 10.27].map((t) => expect.closeTo(t, 6)));
+    for (const o of audio?.osciladores ?? []) expect(o.fin).toBeGreaterThan(o.inicio);
   });
 
   it('usa un solo AudioContext para todos los sonidos', () => {
@@ -109,7 +134,6 @@ describe('[Lectura][Menor][Fast] Los sonidos de la lectura', () => {
     sonidos.sonar('pista');
     sonidos.sonar('final');
     expect(AudioFalso.creados).toHaveLength(1);
-    expect(AudioFalso.creados[0]?.notas).toHaveLength(3 + 3 + 4);
   });
 
   it('el sonido viene prendido; si el niño lo apaga, queda apagado en este dispositivo y no suena nada', () => {

@@ -16,7 +16,8 @@ interface Cuento {
 
 const cuentos = CUENTOS as Cuento[];
 const generica = (e: ReturnType<typeof escenaDe>) => e.cielo === 'dia' && e.lugar === 'campo' && e.animales.join() === 'mariposa';
-const hablaDeMariposas = (t: string) => /mariposa|abeja|flor/i.test(t.normalize('NFD').replace(/\p{M}/gu, ''));
+// Los insectos del cuento (hormigas, cigarras) se dibujan como la mariposa de la escena.
+const hablaDeMariposas = (t: string) => /mariposa|abeja|flor|hormiga|cigarra|grillo|insecto/i.test(t.normalize('NFD').replace(/\p{M}/gu, ''));
 
 describe('[Lectura][Menor][Fast] Las escenas de los cuentos del contenido inicial', () => {
   it.each(cuentos.map((c) => [c.clave, c] as const))('%s: la portada muestra algo del título', (_clave, c) => {

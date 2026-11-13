@@ -4,7 +4,9 @@ import {
   DatosMaestriaActualizada,
   DatosMaestriaNivelSubido,
   DatosSesionLectura,
+  AvanceLectura,
   esHabilidad,
+  FichaLecturaPublicada,
   fechaLocalLima,
   FuenteFichasLectura,
   Habilidad,
@@ -13,12 +15,28 @@ import {
   ResolutorMaestria,
 } from '../../../shared-kernel/public-api';
 import { CuentaGamificacion } from '../../domain/entities/cuenta-gamificacion';
-import { habilidadDelReto, LecturaSugerida, RetoDiario } from '../../domain/entities/reto-diario';
+import { habilidadesPorDebilidad, LecturaSugerida, RetoDiario } from '../../domain/entities/reto-diario';
 import { idDeterminista } from '../../domain/services/id-origen';
 import { ParametrosGamificacion } from '../../domain/services/parametros';
 import { puntosDeItem } from '../../domain/services/politica-puntos';
 import { alcanzaNivel, aplicarUmbrales } from '../../domain/services/reglas-insignia';
 import { ClaveEvento, GamificacionRepository, IdentidadEstudiantes } from '../ports/gamificacion.ports';
+
+/**
+ * RF-060: el cuento del día para una habilidad, entre las lecturas de su edad que la trabajan: la más
+ * sencilla que aún no terminó; si ya las leyó todas, una para releer que cambia cada día.
+ */
+export function cuentoDelDia(candidatas: FichaLecturaPublicada[], avance: Map<string, AvanceLectura>, hoy: string): LecturaSugerida | null {
+  const orden = [...candidatas].sort((a, b) => a.nivelDificultad - b.nivelDificultad || a.titulo.localeCompare(b.titulo, 'es'));
+  if (orden.length === 0) return null;
+  const elegida = orden.find((f) => avance.get(f.id) !== 'FINALIZADA') ?? orden[diaDelCalendario(hoy) % orden.length]!;
+  return { id: elegida.id, titulo: elegida.titulo };
+}
+
+/** Días desde 1970 de una fecha "AAAA-MM-DD": cambia una vez al día. */
+function diaDelCalendario(fecha: string): number {
+  return Math.floor(Date.parse(`${fecha}T00:00:00Z`) / 86_400_000);
+}
 
 /**
  * Gamificación escucha lo que el niño logra en el resto de la plataforma (SAD §6) y lo convierte en
@@ -92,26 +110,37 @@ export class LogrosUseCase {
     await this.aplicar(d.estudianteId, { tipo: 'MUNDO', origenId }, this.ahora(), (cuenta) => cuenta.completarMundo(d.mundoCompletado, origenId));
   }
 
-  /** RF-060, RN-18: el reto de hoy; si aún no existe, lo propone para la habilidad más débil. */
+  /**
+   * RF-060, RN-18: el reto de hoy. Si aún no existe, lo propone para la habilidad más débil que tenga
+   * lecturas de su edad (así cada día trae su cuento); sin ninguna, para la más débil y sin cuento.
+   */
   async retoDeHoy(estudianteId: string, hoy: string): Promise<RetoDiario> {
     const existente = await this.repo.retoDe(estudianteId, hoy);
     if (existente) return existente;
-    const habilidad = habilidadDelReto(await this.maestria.maestriasDe(estudianteId));
-    const lectura = await this.lecturaPara(estudianteId, habilidad);
+    const orden = habilidadesPorDebilidad(await this.maestria.maestriasDe(estudianteId));
+    const cuento = await this.cuentosDelDia(estudianteId, hoy);
+    const habilidad = orden.find((h) => cuento(h) !== null) ?? orden[0]!;
+    const lectura = cuento(habilidad);
     return this.repo.proponerReto(RetoDiario.proponer({ id: this.generarId(), estudianteId, fecha: hoy, habilidad, lectura }));
   }
 
-  /** Una lectura de su edad que trabaje esa habilidad y que aún no haya terminado (la más sencilla). */
-  private async lecturaPara(estudianteId: string, habilidad: Habilidad): Promise<LecturaSugerida | null> {
+  /**
+   * El reto que ve el niño. Si se propuso cuando aún no había lecturas de su edad para esa habilidad
+   * (por ejemplo, antes de publicar los cuentos), recibe su cuento en cuanto lo haya.
+   */
+  async retoConCuento(estudianteId: string, hoy: string): Promise<RetoDiario> {
+    const reto = await this.retoDeHoy(estudianteId, hoy);
+    if (reto.datos.lectura || reto.datos.estado !== 'PROPUESTO') return reto;
+    const lectura = (await this.cuentosDelDia(estudianteId, hoy))(reto.datos.habilidad);
+    return lectura && reto.sugerir(lectura) ? this.repo.sugerirLectura(reto) : reto;
+  }
+
+  /** Las lecturas publicadas de su edad (RN-02) y su avance: para cada habilidad, su cuento del día. */
+  private async cuentosDelDia(estudianteId: string, hoy: string): Promise<(habilidad: Habilidad) => LecturaSugerida | null> {
     const perfil = await this.identidad.perfil(estudianteId);
-    if (!perfil) return null;
-    const candidatas = (await this.fichas.publicadas(perfil.rangoEdad)).filter((f) => f.habilidadesObjetivo?.includes(habilidad));
-    if (candidatas.length === 0) return null;
-    const avance = await this.avance.avanceDe(estudianteId, candidatas.map((f) => f.id));
-    const elegida = candidatas
-      .filter((f) => avance.get(f.id) !== 'FINALIZADA')
-      .sort((a, b) => a.nivelDificultad - b.nivelDificultad || a.titulo.localeCompare(b.titulo, 'es'))[0];
-    return elegida ? { id: elegida.id, titulo: elegida.titulo } : null;
+    const fichas = perfil ? await this.fichas.publicadas(perfil.rangoEdad) : [];
+    const avance = fichas.length > 0 ? await this.avance.avanceDe(estudianteId, fichas.map((f) => f.id)) : new Map<string, AvanceLectura>();
+    return (habilidad) => cuentoDelDia(fichas.filter((f) => f.habilidadesObjetivo?.includes(habilidad)), avance, hoy);
   }
 
   private async aplicar(

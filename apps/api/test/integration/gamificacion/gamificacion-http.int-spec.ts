@@ -1,6 +1,8 @@
 import { authenticator } from 'otplib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { RetoDiario } from '../../../src/modules/gamificacion/domain/entities/reto-diario';
+import { PrismaGamificacionRepository } from '../../../src/modules/gamificacion/infrastructure/persistence/prisma-gamificacion-repository';
 import { Argon2HashService } from '../../../src/modules/iam/infrastructure/crypto/argon2-hash.service';
 import {
   BUS_EVENTOS,
@@ -199,6 +201,16 @@ describe('[Gamificacion][Menor][Slow] Pasaporte del Lector y reto del día (RF-0
     const v = (await t.http().get(`${API}/yo/reto-del-dia`).set(bearer(lia.token)).expect(200)).body;
     expect(v.fecha).toBe(hoy());
     expect((await t.prisma.retoDiario.findUniqueOrThrow({ where: { id: ayer.id } })).estado).toBe('VENCIDO');
+  });
+
+  it('RF-060: un reto que quedó sin cuento lo recibe sin tocar su avance; el que ya tiene uno no cambia', async () => {
+    const repo = new PrismaGamificacionRepository(t.prisma);
+    await t.prisma.retoDiario.updateMany({ where: { estudianteId: lia.id, fechaLima: diaAntes(0) }, data: { contenido: { meta: 3, avance: 2, lectura: null } } });
+    const reto = (await repo.retoDe(lia.id, hoy())) as RetoDiario;
+    expect(reto.sugerir({ id: bosque.lecturaId, titulo: 'Pistas en el bosque' })).toBe(true);
+    expect((await repo.sugerirLectura(reto)).datos).toMatchObject({ avance: 2, estado: 'PROPUESTO', lectura: { id: bosque.lecturaId, titulo: 'Pistas en el bosque' } });
+    const otro = RetoDiario.desdePersistencia({ ...reto.datos, lectura: { id: killa.lecturaId, titulo: 'Killa y la llama' } });
+    expect((await repo.sugerirLectura(otro)).datos.lectura).toEqual({ id: bosque.lecturaId, titulo: 'Pistas en el bosque' });
   });
 });
 

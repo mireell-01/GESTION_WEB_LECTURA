@@ -1,27 +1,53 @@
 /**
  * Los sonidos de la lectura, creados con la Web Audio API del navegador: no hay archivos que descargar
- * (RNF-006). Una melodía alegre al acertar, un tono suave cuando le falta poco, uno para la pista y una
- * fanfarria al terminar. Solo suenan tras un toque del niño (los navegadores no dejan sonar antes) y se
- * pueden apagar; la preferencia queda guardada en este dispositivo.
+ * (RNF-006). Cada nota suma unos pocos parciales que se apagan solos, como los instrumentos de verdad:
+ * una campanita (celesta) para acertar y para la pista, una marimba para "¡listo!" y un soplo suave para
+ * cuando le falta poco (sin sonar a error). Un eco corto y cálido los une. Solo suenan tras un toque del
+ * niño (los navegadores no dejan sonar antes) y se pueden apagar; la preferencia queda en este dispositivo.
  */
 export type Sonido = 'acierto' | 'enviado' | 'casi' | 'pista' | 'final';
+export type Timbre = 'campanita' | 'marimba' | 'soplo';
 
-/** [frecuencia en Hz, inicio en segundos, duración en segundos] */
-type Nota = [number, number, number];
+/** [frecuencia en Hz, inicio en segundos, duración en segundos, volumen relativo (1 si se omite)] */
+export type Nota = [number, number, number, number?];
 
-export const MELODIAS: Record<Sonido, { forma: OscillatorType; notas: Nota[] }> = {
-  // Do, mi, sol: un acorde que sube.
-  acierto: { forma: 'triangle', notas: [[523.25, 0, 0.16], [659.25, 0.1, 0.16], [783.99, 0.2, 0.32]] },
-  // Re, la: "¡listo!".
-  enviado: { forma: 'triangle', notas: [[587.33, 0, 0.14], [880, 0.1, 0.26]] },
-  // La, sol: baja suave, sin sonar a error.
-  casi: { forma: 'sine', notas: [[440, 0, 0.18], [392, 0.16, 0.3]] },
-  // Mi, sol, mi: un guiño.
-  pista: { forma: 'sine', notas: [[659.25, 0, 0.12], [783.99, 0.1, 0.12], [659.25, 0.2, 0.2]] },
-  // Do, mi, sol y do agudo: fanfarria.
-  final: { forma: 'triangle', notas: [[523.25, 0, 0.14], [659.25, 0.13, 0.14], [783.99, 0.26, 0.14], [1046.5, 0.4, 0.6]] },
+/** Parciales de cada timbre: [múltiplo de la frecuencia, volumen, fracción de la duración que suena]. */
+export const TIMBRES: Record<Timbre, [number, number, number][]> = {
+  // Celesta: fundamental limpia y un brillo agudo que se apaga antes.
+  campanita: [[1, 1, 1], [2, 0.3, 0.55], [3, 0.1, 0.3], [4.2, 0.05, 0.18]],
+  // Marimba: golpe de madera cálido, con su armónico 4 característico que dura muy poco.
+  marimba: [[1, 1, 1], [4, 0.22, 0.22], [9.2, 0.04, 0.08]],
+  // Soplo: redondo como una flauta dulce.
+  soplo: [[1, 1, 1], [2, 0.1, 0.8]],
 };
 
+const DO = 523.25;
+const MI = 659.25;
+const SOL = 783.99;
+const DO_AGUDO = 1046.5;
+
+export const MELODIAS: Record<Sonido, { timbre: Timbre; notas: Nota[] }> = {
+  // Do, mi, sol y do agudo que suben como una escalera de campanitas: "¡lo lograste!".
+  acierto: { timbre: 'campanita', notas: [[DO, 0, 0.5], [MI, 0.09, 0.5], [SOL, 0.18, 0.55], [DO_AGUDO, 0.27, 1.1]] },
+  // Dos golpecitos de marimba: "¡listo!".
+  enviado: { timbre: 'marimba', notas: [[SOL, 0, 0.35], [DO_AGUDO, 0.11, 0.6]] },
+  // Mi y do suaves, como un "mmm… casi": invita a intentarlo otra vez.
+  casi: { timbre: 'soplo', notas: [[MI, 0, 0.35, 0.8], [DO, 0.2, 0.55, 0.8]] },
+  // Destellos de varita mágica: tres notas agudas y bajitas que suben.
+  pista: { timbre: 'campanita', notas: [[1318.51, 0, 0.3, 0.45], [1567.98, 0.07, 0.3, 0.45], [2093, 0.14, 0.5, 0.4]] },
+  // Fanfarria: sol, do, mi, sol… y un acorde de do mayor que queda sonando.
+  final: {
+    timbre: 'campanita',
+    notas: [
+      [392, 0, 0.3], [DO, 0.12, 0.3], [MI, 0.24, 0.3], [SOL, 0.36, 0.4], [MI, 0.52, 0.25], [SOL, 0.62, 0.3],
+      [DO_AGUDO, 0.74, 1.3], [SOL, 0.74, 1.3, 0.5], [MI, 0.74, 1.3, 0.5],
+    ],
+  },
+};
+
+/** Volumen de cada nota antes del volumen general: con acordes de tres notas no satura. */
+const VOLUMEN_NOTA = 0.22;
+const VOLUMEN_GENERAL = 0.6;
 const CLAVE = 'lectoaventura.sonido';
 
 export function sonidoActivo(): boolean {
@@ -40,36 +66,59 @@ export function guardarSonido(activo: boolean): void {
   }
 }
 
-let contexto: AudioContext | null = null;
+let audio: { contexto: AudioContext; salida: AudioNode } | null = null;
 
-function audio(): AudioContext | null {
+/** Un solo AudioContext con su salida: volumen general y un eco corto, cálido (sin agudos) y que se apaga. */
+function prepararAudio(): { contexto: AudioContext; salida: AudioNode } | null {
   if (typeof window === 'undefined') return null;
   const Constructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Constructor) return null;
-  contexto ??= new Constructor();
-  if (contexto.state === 'suspended') void contexto.resume();
-  return contexto;
+  if (!audio) {
+    const contexto = new Constructor();
+    const salida = contexto.createGain();
+    salida.gain.value = VOLUMEN_GENERAL;
+    salida.connect(contexto.destination);
+    const eco = contexto.createDelay(1);
+    eco.delayTime.value = 0.16;
+    const repite = contexto.createGain();
+    repite.gain.value = 0.28;
+    const calido = contexto.createBiquadFilter();
+    calido.type = 'lowpass';
+    calido.frequency.value = 2400;
+    salida.connect(eco);
+    eco.connect(calido);
+    calido.connect(repite);
+    repite.connect(eco);
+    repite.connect(contexto.destination);
+    audio = { contexto, salida };
+  }
+  if (audio.contexto.state === 'suspended') void audio.contexto.resume();
+  return audio;
 }
 
 /** Toca la melodía, si el sonido está activo y el navegador puede (si no, no pasa nada). */
 export function sonar(nombre: Sonido): void {
   if (!sonidoActivo()) return;
   try {
-    const c = audio();
-    if (!c) return;
-    const { forma, notas } = MELODIAS[nombre];
-    for (const [frecuencia, inicio, duracion] of notas) {
-      const t = c.currentTime + inicio;
-      const oscilador = c.createOscillator();
-      const volumen = c.createGain();
-      oscilador.type = forma;
-      oscilador.frequency.value = frecuencia;
-      volumen.gain.setValueAtTime(0.0001, t);
-      volumen.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
-      volumen.gain.exponentialRampToValueAtTime(0.0001, t + duracion);
-      oscilador.connect(volumen).connect(c.destination);
-      oscilador.start(t);
-      oscilador.stop(t + duracion + 0.05);
+    const a = prepararAudio();
+    if (!a) return;
+    const { timbre, notas } = MELODIAS[nombre];
+    for (const [frecuencia, inicio, duracion, volumen = 1] of notas) {
+      const t = a.contexto.currentTime + inicio;
+      for (const [multiplo, parcial, fraccion] of TIMBRES[timbre]) {
+        const oscilador = a.contexto.createOscillator();
+        const envolvente = a.contexto.createGain();
+        const fin = t + Math.max(0.05, duracion * fraccion);
+        oscilador.type = 'sine';
+        oscilador.frequency.value = frecuencia * multiplo;
+        // Ataque casi inmediato (como un golpe suave) y caída exponencial, natural para el oído.
+        envolvente.gain.setValueAtTime(0.0001, t);
+        envolvente.gain.exponentialRampToValueAtTime(VOLUMEN_NOTA * volumen * parcial, t + 0.008);
+        envolvente.gain.exponentialRampToValueAtTime(0.0001, fin);
+        oscilador.connect(envolvente).connect(a.salida);
+        oscilador.start(t);
+        oscilador.stop(fin + 0.05);
+      }
     }
   } catch {
     // Un navegador sin audio no debe interrumpir la lectura.

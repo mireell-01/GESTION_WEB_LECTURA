@@ -150,6 +150,19 @@ export class PrismaGamificacionRepository implements GamificacionRepository {
     return (await this.retoDe(d.estudianteId, d.fecha)) ?? reto;
   }
 
+  async sugerirLectura(reto: RetoDiario): Promise<RetoDiario> {
+    const d = reto.datos;
+    if (d.lectura) {
+      const lectura = JSON.stringify({ id: d.lectura.id, titulo: d.lectura.titulo });
+      // Solo el campo del cuento (el avance pudo cambiar mientras tanto) y solo si aún no tenía uno.
+      await this.prisma.$executeRaw`
+        UPDATE gamificacion.reto_diario
+        SET contenido = jsonb_set(contenido, '{lectura}', ${lectura}::jsonb)
+        WHERE id = ${d.id}::uuid AND estado = 'PROPUESTO' AND coalesce(jsonb_typeof(contenido->'lectura'), 'null') = 'null'`;
+    }
+    return (await this.retoDe(d.estudianteId, d.fecha)) ?? reto;
+  }
+
   canjear(
     estudianteId: string,
     recompensa: RecompensaCatalogo,

@@ -4,7 +4,9 @@
 //
 // Solo para desarrollo. Usa dos cuentas de contenido (EDITOR y REVISOR) del dominio contenido.lectoaventura.test,
 // que la limpieza de las pruebas E2E no borra; en cada ejecución reciben una contraseña y un secreto de MFA nuevos,
-// al azar, que no se muestran ni se guardan. Lo ya publicado no se toca: si un cuento o una misión existen, se saltan.
+// al azar, que no se muestran ni se guardan. Un cuento ya publicado con el mismo texto se salta; si su texto cambió
+// (por ejemplo, porque se le agregó su moraleja), recibe una versión nueva (RF-027) que también revisa el revisor.
+// Las misiones que ya existen se saltan.
 //
 // Uso, con la API en marcha:  npm run contenido:publicar --workspace @lectoaventura/api
 import { randomBytes } from 'node:crypto';
@@ -77,11 +79,25 @@ try {
   const mundos = new Map((await prisma.mundo.findMany({ select: { id: true, numero: true } })).map((m) => [m.numero, m.id]));
 
   const lecturaDe = new Map();
+  const mismoTexto = (a, b) => a.replace(/\s+/g, ' ').trim() === b.replace(/\s+/g, ' ').trim();
   let publicados = 0;
+  let actualizados = 0;
   for (const c of CUENTOS) {
-    const ya = await prisma.versionLectura.findFirst({ where: { titulo: c.titulo, estado: 'PUBLICADO' }, select: { lecturaId: true } });
+    const ya = await prisma.versionLectura.findFirst({ where: { titulo: c.titulo, estado: 'PUBLICADO' }, select: { lecturaId: true, texto: true } });
     if (ya) {
       lecturaDe.set(c.clave, ya.lecturaId);
+      if (mismoTexto(ya.texto, textoDe(c))) continue;
+      // Versión nueva con el texto y las actividades de ahora; si una ejecución anterior la dejó a medias, se retoma.
+      const enCurso = await prisma.versionLectura.findFirst({ where: { lecturaId: ya.lecturaId, estado: { in: ['BORRADOR', 'EN_REVISION'] } }, select: { estado: true } });
+      if (!enCurso) await llamar('POST', `/backoffice/lecturas/${ya.lecturaId}/nueva-version`, undefined, editora);
+      if (enCurso?.estado !== 'EN_REVISION') {
+        const { detalle } = await llamar('PUT', `/backoffice/lecturas/${ya.lecturaId}/borrador`, { metadatos: metadatosDe(c), texto: textoDe(c) }, editora);
+        await llamar('PUT', `/backoffice/lecturas/${ya.lecturaId}/actividades`, { actividades: actividadesDe(c, detalle.oraciones) }, editora);
+        await llamar('POST', `/backoffice/lecturas/${ya.lecturaId}/enviar-revision`, undefined, editora);
+      }
+      await llamar('POST', `/backoffice/lecturas/${ya.lecturaId}/aprobar`, undefined, revisor);
+      actualizados += 1;
+      console.log(`↻ ${c.rango} · mundo ${c.mundo} · ${c.titulo} (versión nueva)`);
       continue;
     }
     const { lecturaId, oraciones } = await llamar('POST', '/backoffice/lecturas', { metadatos: metadatosDe(c), texto: textoDe(c) }, editora);
@@ -103,7 +119,7 @@ try {
     await llamar('POST', `/backoffice/mundos/${mundoId}/misiones`, { rangoEdad: c.rango, titulo: c.mision.titulo, descripcion: c.mision.descripcion, lecturaIds: [lecturaDe.get(c.clave)] }, editora);
     misiones += 1;
   }
-  console.log(`\nCuentos publicados ahora: ${publicados} (ya estaban: ${CUENTOS.length - publicados}). Misiones nuevas: ${misiones}.`);
+  console.log(`\nCuentos nuevos: ${publicados}. Con versión nueva: ${actualizados}. Sin cambios: ${CUENTOS.length - publicados - actualizados}. Misiones nuevas: ${misiones}.`);
 } finally {
   await prisma.$disconnect();
 }

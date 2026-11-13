@@ -6,6 +6,10 @@
 /** RN-15 exige declarar la licencia: estos textos se escribieron con IA y necesitan revisión pedagógica. */
 export const LICENCIA = 'CC BY 4.0 · Texto de demostración escrito con IA para LectoAventura; requiere revisión pedagógica';
 
+/** Los clásicos (Esopo, Perrault, los Grimm, Andersen…) son de dominio público; la adaptación también se revisa. */
+export const licenciaDe = (cuento) =>
+  cuento.autor ? `CC BY 4.0 · Adaptación con IA de ${cuento.autor} (dominio público); requiere revisión pedagógica` : LICENCIA;
+
 /** Las habilidades foco de cada mundo (aventura.mundo, SRS §1): las misiones las miden para desbloquear (RN-09). */
 export const HABILIDADES_DEL_MUNDO = {
   1: ['LIT', 'VOC'],
@@ -58,12 +62,40 @@ function mezclar(correctas, otras, clave) {
 
 const pistasDe = (pistas = []) => pistas.map((texto, i) => ({ nivel: `P${i + 1}`, texto }));
 
-/** Cada párrafo es una lista de oraciones; el texto lleva un párrafo por línea (RF-022). */
-export const textoDe = (cuento) => cuento.texto.map((parrafo) => parrafo.join(' ')).join('\n');
+/** Los textos que cuentan una historia cierran con «Moraleja»; los demás, con «Para reflexionar». */
+const NARRATIVOS = ['CUENTO', 'HISTORIETA', 'POEMA'];
+
+/** El último párrafo: el mensaje del cuento, en una sola oración (la web lo muestra como «El mensaje del cuento»). */
+export function moralejaDe(cuento) {
+  const prefijo = NARRATIVOS.includes(cuento.tipoTexto ?? 'CUENTO') ? 'Moraleja' : 'Para reflexionar';
+  return `${prefijo}: ${cuento.moraleja.charAt(0).toLocaleLowerCase('es')}${cuento.moraleja.slice(1)}`;
+}
+
+/** Cada párrafo es una lista de oraciones; si el cuento tiene moraleja, va como párrafo final. */
+export const parrafosDe = (cuento) => (cuento.moraleja ? [...cuento.texto, [moralejaDe(cuento)]] : cuento.texto);
+
+/** El texto lleva un párrafo por línea (RF-022). */
+export const textoDe = (cuento) => parrafosDe(cuento).map((parrafo) => parrafo.join(' ')).join('\n');
+
+/**
+ * La pregunta que lleva el valor del cuento a la vida del niño, después de leer (pensamiento crítico). De 6 a 7
+ * años elige qué haría; desde los 8 lo escribe (RN-19: 5 palabras a los 8–9 años y 10 a los 10–12).
+ */
+export function preguntaDeVida(cuento) {
+  if (!cuento.vida) return null;
+  if (Array.isArray(cuento.vida)) {
+    const [enunciado, mejor, otras] = cuento.vida;
+    return sel('CRI', enunciado, mejor, otras, ['Piensa en lo que pasó en el cuento.', 'Lee otra vez el mensaje del final.'], cuento.moraleja, { vida: true });
+  }
+  return escribir('ARG', cuento.vida, cuento.rango === 'R3' ? 10 : 5, `Este cuento habla de ${cuento.valor.toLocaleLowerCase('es')}: pensar en tu vida te ayuda a ponerlo en práctica.`, { vida: true });
+}
+
+/** Todas las preguntas del cuento: las de comprensión y, al final, la de su valor. */
+export const preguntasDe = (cuento) => [...cuento.preguntas, ...(cuento.vida ? [preguntaDeVida(cuento)] : [])];
 
 /** Paso 1 de la API (POST /backoffice/lecturas): metadatos y texto. */
 export function metadatosDe(cuento) {
-  const habilidades = [...new Set(cuento.preguntas.map((p) => p.habilidad))];
+  const habilidades = [...new Set(preguntasDe(cuento).map((p) => p.habilidad))];
   return {
     titulo: cuento.titulo,
     rangoEdad: cuento.rango,
@@ -71,7 +103,7 @@ export function metadatosDe(cuento) {
     tematica: cuento.tematica,
     tipoTexto: cuento.tipoTexto ?? 'CUENTO',
     habilidadesObjetivo: habilidades,
-    licencia: LICENCIA,
+    licencia: licenciaDe(cuento),
   };
 }
 
@@ -93,7 +125,7 @@ export function actividadesDe(cuento, oraciones) {
       items: [{ habilidad: 'INF', nivelDificultad: dificultad, modalidad: 'ESCRITURA', enunciado: cuento.prediccion, explicacionModelada: 'Al leer comprobarás si tu idea se parece a lo que pasa.' }],
     },
   ];
-  for (const p of cuento.preguntas) {
+  for (const p of preguntasDe(cuento)) {
     const base = { habilidad: p.habilidad, nivelDificultad: dificultad, enunciado: p.enunciado, explicacionModelada: p.explicacion };
     let tipo;
     let item;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CuentaGamificacion, EstadoCuenta } from '../../../../src/modules/gamificacion/domain/entities/cuenta-gamificacion';
-import { habilidadDelReto, RetoDiario } from '../../../../src/modules/gamificacion/domain/entities/reto-diario';
+import { habilidadDelReto, habilidadesPorDebilidad, RetoDiario } from '../../../../src/modules/gamificacion/domain/entities/reto-diario';
 import { MonedasInsuficientesError, RecompensaYaCanjeadaError } from '../../../../src/modules/gamificacion/domain/errors/errores-gamificacion';
 import { idDeterminista } from '../../../../src/modules/gamificacion/domain/services/id-origen';
 import { monedasDisponibles, validarCanje } from '../../../../src/modules/gamificacion/domain/services/monedas';
@@ -171,6 +171,18 @@ describe('[Gamificacion][Menor][Fast] Reto del día (RF-060, RN-18)', () => {
     expect(habilidadDelReto({ LIT: 70, INF: 0, VOC: 60, CRI: 0, ARG: 0 })).toBe('INF');
     expect(habilidadDelReto({ LIT: 70 })).toBe('INF');
     expect(habilidadDelReto(null)).toBe('LIT');
+    expect(habilidadesPorDebilidad({ LIT: 70, INF: 30, VOC: 60, CRI: 50, ARG: 40 })).toEqual(['INF', 'ARG', 'CRI', 'VOC', 'LIT']);
+  });
+
+  it('un reto sin cuento recibe uno; con cuento o ya completado, el cuento del día no cambia', () => {
+    const r = reto();
+    expect(r.sugerir({ id: 'l-1', titulo: 'Uno' })).toBe(true);
+    expect(r.sugerir({ id: 'l-2', titulo: 'Dos' })).toBe(false);
+    expect(r.datos.lectura).toEqual({ id: 'l-1', titulo: 'Uno' });
+    const completo = reto();
+    for (let i = 0; i < 3; i++) completo.registrarAcierto('INF', AHORA);
+    expect(completo.sugerir({ id: 'l-1', titulo: 'Uno' })).toBe(false);
+    expect(completo.datos.lectura).toBeNull();
   });
 
   it('avanza con aciertos de su habilidad y se completa al llegar a 3; después ya no cambia', () => {

@@ -1,5 +1,3 @@
-import type { TonoMundo } from '@lectoaventura/ui';
-
 /** Tipos de las respuestas de Aventura que usa la web (RF-030 a RF-033) y sus nombres en pantalla. */
 
 export type EstadoMundo = 'BLOQUEADO' | 'DISPONIBLE' | 'COMPLETADO';
@@ -63,9 +61,6 @@ export interface FichaLectura {
   nivelDificultad: number;
   tematica: string;
 }
-
-/** Ilustración de cada mundo (la misma del inicio del estudiante). */
-export const TONO_MUNDO: Record<number, TonoMundo> = { 1: 'bosque', 2: 'valle', 3: 'montana', 4: 'desierto', 5: 'cielo' };
 
 export const EDADES: Record<RangoEdad, string> = { R1: '6–7 años', R2: '8–9 años', R3: '10–12 años' };
 

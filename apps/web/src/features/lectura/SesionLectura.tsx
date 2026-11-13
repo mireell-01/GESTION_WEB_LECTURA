@@ -15,6 +15,7 @@ import { RespuestaEscrita } from './RespuestaEscrita';
 import { LectorEnVozAlta, TextoLectura } from './TextoLectura';
 import { IconoLectura } from './iconos';
 import { IlustracionParrafo, repartoDe } from './IlustracionLectura';
+import { Corazon, mensajeDe, textoDelMensaje } from './MensajeCuento';
 import { guardarSonido, sonar, sonidoActivo } from './sonidos';
 import { EntradaRespuesta, ResultadoRespuesta, Sesion } from './tipos';
 
@@ -371,6 +372,16 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
               {sesion.resumen.conPista > 0 ? <li>{sesion.resumen.conPista} con ayuda de una pista.</li> : null}
               {sesion.resumen.abiertas > 0 ? <li>Tu profe leerá lo que escribiste.</li> : null}
             </ul>
+            {/* Lo que se lleva: el mensaje del cuento, para recordarlo. */}
+            {mensajeDe(texto.parrafos) ? (
+              <div className="lectura-fin__mensaje">
+                <Corazon tamano={32} />
+                <div>
+                  <p className="lectura-fin__mensaje-titulo">Lo que aprendimos hoy</p>
+                  <p>{textoDelMensaje(mensajeDe(texto.parrafos) as string)}</p>
+                </div>
+              </div>
+            ) : null}
             <div className="fila">
               <Link href="/estudiante/mundos" className={clasesBoton('primario', { tamano: 'grande' })}>
                 <Icono nombre="globo" tamano={24} />

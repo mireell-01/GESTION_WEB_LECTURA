@@ -128,6 +128,33 @@ describe('[Gamificacion][Menor][Fast] Gamificación: logros, pasaporte, reto del
       expect(a).toEqual({ id: 'id-1', fecha: HOY, habilidad: 'INF', meta: 3, avance: 0, estado: 'PROPUESTO', minutos: 5, puntos: 15, completadoEn: null, lectura: { id: 'l-facil', titulo: 'Pistas en el bosque' } });
     });
 
+    it('si su habilidad más débil no tiene lecturas de su edad, el reto va a la siguiente que sí: cada día trae su cuento', async () => {
+      e.maestria.valores.set(NINO, { LIT: 50, INF: 60, VOC: 90, CRI: 0, ARG: 10 });
+      expect(await e.pasaporte.retoDelDia(NINO)).toMatchObject({ habilidad: 'LIT', lectura: { id: 'l-facil' } });
+    });
+
+    it('si ya leyó todas las de esa habilidad, le propone releer una, distinta cada día y siempre de su edad', async () => {
+      for (const id of ['l-dificil', 'l-facil']) e.avance.estados.set(id, 'FINALIZADA');
+      const dias = ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24'];
+      const cuentos = [];
+      for (const dia of dias) cuentos.push((await e.logros.retoDeHoy(NINO, dia)).datos);
+      expect(cuentos.map((c) => c.habilidad)).toEqual(['INF', 'INF', 'INF', 'INF']);
+      const ids = cuentos.map((c) => c.lectura?.id);
+      for (const id of ids) expect(['l-dificil', 'l-leida', 'l-facil']).toContain(id);
+      for (let i = 1; i < ids.length; i++) expect(ids[i]).not.toBe(ids[i - 1]);
+    });
+
+    it('un reto propuesto sin cuento lo recibe cuando se publica uno de su habilidad, sin perder su avance', async () => {
+      const guardadas = e.fichas.lista.splice(0);
+      expect((await e.pasaporte.retoDelDia(NINO)).lectura).toBeNull();
+      await e.logros.alItem(item({ respuestaId: 'r-1' }));
+      e.fichas.lista.push(...guardadas);
+      expect(await e.pasaporte.retoDelDia(NINO)).toMatchObject({ habilidad: 'INF', avance: 1, lectura: { id: 'l-facil', titulo: 'Pistas en el bosque' } });
+      // El cuento del día ya no cambia, aunque aparezca otro más sencillo.
+      e.fichas.lista.push({ id: 'l-nueva', titulo: 'A más sencilla', rangoEdad: 'R2', nivelDificultad: 1, tematica: 'Mar', habilidadesObjetivo: ['INF'] });
+      expect((await e.pasaporte.retoDelDia(NINO)).lectura?.id).toBe('l-facil');
+    });
+
     it('sin lectura que trabaje esa habilidad, el reto va sin sugerencia; sin perfil activo responde 404', async () => {
       e.maestria.valores.set(NINO, { LIT: 0, INF: 90, VOC: 90, CRI: 90, ARG: 90 });
       e.fichas.lista.splice(0);

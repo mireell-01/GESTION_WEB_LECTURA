@@ -1539,6 +1539,85 @@ p {
   background: var(--la-color-secundario-suave);
 }
 
+/* Los temas de la biblioteca del niño: dibujos para tocar en lugar de escribir. */
+.temas-biblioteca {
+  display: grid;
+  gap: 10px;
+}
+
+.temas-biblioteca h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.625rem);
+}
+
+.temas-biblioteca__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tema-biblioteca {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--la-target-min);
+  padding: 10px 6px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+  font: 700 0.9375rem / 1.15 var(--la-font-titulo);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tema-biblioteca:hover {
+  border-color: var(--la-color-primario);
+}
+
+.tema-biblioteca:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.tema-biblioteca[aria-pressed='true'] {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+}
+
+.ficha__tema {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font: 700 0.875rem var(--la-font-titulo);
+  color: var(--la-color-texto-suave);
+}
+
+.ficha__tema .tema-biblioteca__dibujo {
+  width: 24px;
+  height: 24px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tema-biblioteca {
+    transition: transform 0.15s ease;
+  }
+
+  .tema-biblioteca:hover {
+    transform: translateY(-2px);
+  }
+
+  .tema-biblioteca:active {
+    transform: scale(0.96);
+  }
+}
+
 .fichas {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 14px;
@@ -2127,6 +2206,95 @@ p {
 
 .est-mundo__sello {
   background: var(--la-color-secundario-fuerte);
+}
+
+/* Los dibujos de cada mundo (ArteMundo) se mueven solo si el niño no pidió menos movimiento, y los
+   mundos bloqueados quedan quietos: así resalta el mundo donde está. */
+@media (prefers-reduced-motion: no-preference) {
+  .arte-mundo :where([class*='arte__']) {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .arte__rayos { animation: escena-gira 22s linear infinite; }
+  .arte__pino { transform-origin: 50% 100%; animation: escena-mece 3s ease-in-out infinite alternate; }
+  .arte__bandera { transform-origin: 0 50%; animation: arte-ondea 0.7s ease-in-out infinite alternate; }
+  .arte__mariposa { animation: arte-revolotea 6s ease-in-out infinite; }
+  .arte__estrellas circle,
+  .arte__brillos path { animation: escena-brillo 1.4s ease-in-out infinite alternate; }
+  .arte__ventana { animation: arte-ventana 4s steps(1) infinite; }
+  .arte__lupa { animation: arte-lupa 5s ease-in-out infinite alternate; }
+  .arte__fugaz { animation: arte-fugaz 4.5s ease-in infinite; }
+  .arte__planeta,
+  .arte__globo { animation: arte-flota 2.6s ease-in-out infinite alternate; }
+  .arte__globo--2 { animation-delay: -1.3s; }
+  .arte__burbujas circle { animation: arte-burbuja 1.8s ease-in infinite; }
+  .arte__burbujas circle:nth-of-type(2) { animation-delay: -0.9s; }
+  .arte__buho { transform-origin: 50% 100%; animation: arte-buho 2.8s ease-in-out infinite alternate; }
+  .arte__ojos { animation: arte-parpadeo 4.5s infinite; }
+  .arte__nube { animation: escena-nube 7s ease-in-out infinite alternate; }
+  .arte__pagina { transform-origin: 0 50%; animation: arte-pagina 3.4s ease-in-out infinite; }
+
+  .est-mundo--bloqueado .arte-mundo * {
+    animation: none;
+  }
+}
+
+@keyframes corazon-late {
+  0%, 60%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+}
+
+@keyframes arte-ondea {
+  to { transform: scaleX(0.75) skewY(4deg); }
+}
+
+@keyframes arte-revolotea {
+  0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+  25% { transform: translate(-24px, -12px) rotate(6deg); }
+  50% { transform: translate(-40px, 4px) rotate(-4deg); }
+  75% { transform: translate(-14px, 10px) rotate(4deg); }
+}
+
+@keyframes arte-ventana {
+  0%, 70% { opacity: 1; }
+  71%, 85% { opacity: 0.25; }
+}
+
+@keyframes arte-lupa {
+  from { transform: translate(-112px, 6px) rotate(-8deg); }
+  to { transform: translate(0, 0) rotate(4deg); }
+}
+
+@keyframes arte-fugaz {
+  0% { opacity: 0; transform: translate(0, 0); }
+  8% { opacity: 1; }
+  40% { opacity: 0; transform: translate(110px, 46px); }
+  100% { opacity: 0; transform: translate(110px, 46px); }
+}
+
+@keyframes arte-flota {
+  to { transform: translateY(-6px); }
+}
+
+@keyframes arte-burbuja {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-26px); }
+}
+
+@keyframes arte-buho {
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
+}
+
+@keyframes arte-parpadeo {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes arte-pagina {
+  0%, 30% { transform: scaleX(1); }
+  60%, 100% { transform: scaleX(-1); }
 }
 
 .est-mundo__texto .la-barra {
@@ -3084,6 +3252,69 @@ p {
   border-radius: 50%;
 }
 
+/* Lo que aprendimos: el mensaje del cuento al terminar. */
+.lectura-fin__mensaje {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 3px solid #ffc2d4;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.lectura-fin__mensaje p {
+  margin: 0;
+  font: 600 var(--la-texto-lg) / 1.35 var(--la-font-titulo);
+  color: var(--la-color-texto);
+}
+
+.est-preparando .lectura-fin__mensaje p.lectura-fin__mensaje-titulo,
+.lectura-fin__mensaje p.lectura-fin__mensaje-titulo {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c42b67;
+}
+
+/* El mensaje del cuento dentro del texto: un recuadro con corazón (las oraciones siguen siendo las mismas). */
+.mensaje-cuento {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 3px dashed #ffb3c8;
+  border-radius: 22px;
+  background: #fff5f8;
+}
+
+.mensaje-cuento__cuerpo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mensaje-cuento p {
+  margin: 0;
+}
+
+.mensaje-cuento p.mensaje-cuento__titulo {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c42b67;
+}
+
+.mensaje-cuento .texto-lectura__parrafo {
+  font-weight: 700;
+}
+
+.texto-lectura__bloque--mensaje {
+  display: block;
+}
+
 .lectura-fin__resumen {
   display: grid;
   gap: 4px;
@@ -3361,6 +3592,49 @@ p {
 
 .reto-dia__avance {
   color: var(--la-color-texto-suave);
+}
+
+/* El cuento de hoy: su dibujo junto al botón para leerlo. */
+.reto-dia__cuento {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 20px;
+  background: var(--la-color-primario-suave);
+}
+
+.reto-dia__escena {
+  display: grid;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  aspect-ratio: 16 / 10;
+}
+
+.reto-dia__escena svg {
+  width: 100%;
+  height: 100%;
+}
+
+.reto-dia p.reto-dia__titulo {
+  font: 700 var(--la-texto-lg) / 1.25 var(--la-font-titulo);
+  color: var(--la-color-texto);
+}
+
+.reto-dia p.reto-dia__etiqueta {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--la-color-primario);
+}
+
+@media (max-width: 479px) {
+  .reto-dia__cuento {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* RF-058, RF-059: lo que ganó al terminar una lectura. */
@@ -4652,6 +4926,10 @@ p {
   .escena__animal { animation: escena-salta 1.4s ease-in-out infinite alternate; }
   .escena__animal--rana { animation: escena-brinco 2.2s ease-in-out infinite; }
   .escena__cola { animation: escena-cola 0.5s ease-in-out infinite alternate; }
+  .escena__bandera { transform-origin: 0 50%; animation: arte-ondea 0.7s ease-in-out infinite alternate; }
+  .escena__animal--tortuga { animation-duration: 3.2s; }
+  .mensaje-cuento__corazon,
+  .lectura-fin__mensaje .mensaje-cuento__corazon { animation: corazon-late 1.2s ease-in-out infinite; }
 
   .mascota-festeja { animation: mascota-festeja 0.9s ease-out both; }
   .mascota-anima { animation: mascota-anima 0.4s ease-in-out 3 alternate; }
