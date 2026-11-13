@@ -82,7 +82,7 @@ export class LecturasEnMemoria implements LecturaRepository {
     const pagina = todas.slice(desde, desde + f.limite);
     return { versiones: pagina.map(copiar), siguiente: desde + f.limite < todas.length ? String(desde + f.limite) : null };
   }
-  async tiposEnBiblioteca(f: Pick<FiltroBiblioteca, 'rangos' | 'niveles'>) {
+  async tiposEnBiblioteca(f: Pick<FiltroBiblioteca, 'rangos' | 'niveles' | 'tema'>) {
     const { versiones } = await this.biblioteca({ ...f, limite: Number.MAX_SAFE_INTEGER, cursor: null });
     return [...new Set(versiones.map((v) => v.propsSnapshot.metadatos.tipoTexto))];
   }

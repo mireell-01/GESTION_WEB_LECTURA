@@ -235,12 +235,15 @@ describe('[Contenido][Core][Fast] Contenido: autoría, publicación, recursos y 
       expect((await biblioteca.explorar({ sub: 'desconocido', rol: 'ESTUDIANTE' }, {})).lecturas).toEqual([]);
     });
 
-    it('el filtro de tipo de texto ofrece solo los tipos que hay en su alcance, aunque ya haya elegido uno', async () => {
+    it('el filtro de tipo de texto ofrece solo los tipos que hay en su alcance y en su tema, aunque ya haya elegido uno', async () => {
       const adulto = { sub: 'docente', rol: 'DOCENTE' as const };
       expect((await biblioteca.explorar(adulto, {})).tipos).toEqual(['CUENTO', 'POEMA', 'CIENTIFICO']);
       expect((await biblioteca.explorar(adulto, { edad: 'R1' })).tipos).toEqual(['POEMA']);
-      // Elegir un tipo o un tema no borra los demás de la lista: puede cambiar de tipo.
-      expect((await biblioteca.explorar(adulto, { tipo: 'POEMA', tema: 'nada' })).tipos).toEqual(['CUENTO', 'POEMA', 'CIENTIFICO']);
+      // Elegir un tipo no borra los demás de la lista: puede cambiar de tipo.
+      expect((await biblioteca.explorar(adulto, { tipo: 'POEMA' })).tipos).toEqual(['CUENTO', 'POEMA', 'CIENTIFICO']);
+      // Con un tema elegido, solo los tipos que hay en ese tema: ninguno lleva a una lista vacía.
+      expect((await biblioteca.explorar(adulto, { tema: 'cien', tipo: 'CUENTO' })).tipos).toEqual(['CIENTIFICO']);
+      expect((await biblioteca.explorar(adulto, { tema: 'nada' })).tipos).toEqual([]);
       e.lectores.rangos.set('nino-r1', 'R1');
       e.lectores.rangos.set('nino-r2', 'R2');
       expect((await biblioteca.explorar({ sub: 'nino-r1', rol: 'ESTUDIANTE' }, { tipo: 'CUENTO' })).tipos).toEqual(['POEMA']);
