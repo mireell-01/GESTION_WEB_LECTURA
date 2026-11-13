@@ -1539,6 +1539,85 @@ p {
   background: var(--la-color-secundario-suave);
 }
 
+/* Los temas de la biblioteca del niño: dibujos para tocar en lugar de escribir. */
+.temas-biblioteca {
+  display: grid;
+  gap: 10px;
+}
+
+.temas-biblioteca h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.625rem);
+}
+
+.temas-biblioteca__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tema-biblioteca {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--la-target-min);
+  padding: 10px 6px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 20px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-texto);
+  font: 700 0.9375rem / 1.15 var(--la-font-titulo);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tema-biblioteca:hover {
+  border-color: var(--la-color-primario);
+}
+
+.tema-biblioteca:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.tema-biblioteca[aria-pressed='true'] {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+}
+
+.ficha__tema {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font: 700 0.875rem var(--la-font-titulo);
+  color: var(--la-color-texto-suave);
+}
+
+.ficha__tema .tema-biblioteca__dibujo {
+  width: 24px;
+  height: 24px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tema-biblioteca {
+    transition: transform 0.15s ease;
+  }
+
+  .tema-biblioteca:hover {
+    transform: translateY(-2px);
+  }
+
+  .tema-biblioteca:active {
+    transform: scale(0.96);
+  }
+}
+
 .fichas {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 14px;
@@ -2129,6 +2208,95 @@ p {
   background: var(--la-color-secundario-fuerte);
 }
 
+/* Los dibujos de cada mundo (ArteMundo) se mueven solo si el niño no pidió menos movimiento, y los
+   mundos bloqueados quedan quietos: así resalta el mundo donde está. */
+@media (prefers-reduced-motion: no-preference) {
+  .arte-mundo :where([class*='arte__']) {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .arte__rayos { animation: escena-gira 22s linear infinite; }
+  .arte__pino { transform-origin: 50% 100%; animation: escena-mece 3s ease-in-out infinite alternate; }
+  .arte__bandera { transform-origin: 0 50%; animation: arte-ondea 0.7s ease-in-out infinite alternate; }
+  .arte__mariposa { animation: arte-revolotea 6s ease-in-out infinite; }
+  .arte__estrellas circle,
+  .arte__brillos path { animation: escena-brillo 1.4s ease-in-out infinite alternate; }
+  .arte__ventana { animation: arte-ventana 4s steps(1) infinite; }
+  .arte__lupa { animation: arte-lupa 5s ease-in-out infinite alternate; }
+  .arte__fugaz { animation: arte-fugaz 4.5s ease-in infinite; }
+  .arte__planeta,
+  .arte__globo { animation: arte-flota 2.6s ease-in-out infinite alternate; }
+  .arte__globo--2 { animation-delay: -1.3s; }
+  .arte__burbujas circle { animation: arte-burbuja 1.8s ease-in infinite; }
+  .arte__burbujas circle:nth-of-type(2) { animation-delay: -0.9s; }
+  .arte__buho { transform-origin: 50% 100%; animation: arte-buho 2.8s ease-in-out infinite alternate; }
+  .arte__ojos { animation: arte-parpadeo 4.5s infinite; }
+  .arte__nube { animation: escena-nube 7s ease-in-out infinite alternate; }
+  .arte__pagina { transform-origin: 0 50%; animation: arte-pagina 3.4s ease-in-out infinite; }
+
+  .est-mundo--bloqueado .arte-mundo * {
+    animation: none;
+  }
+}
+
+@keyframes corazon-late {
+  0%, 60%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+}
+
+@keyframes arte-ondea {
+  to { transform: scaleX(0.75) skewY(4deg); }
+}
+
+@keyframes arte-revolotea {
+  0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+  25% { transform: translate(-24px, -12px) rotate(6deg); }
+  50% { transform: translate(-40px, 4px) rotate(-4deg); }
+  75% { transform: translate(-14px, 10px) rotate(4deg); }
+}
+
+@keyframes arte-ventana {
+  0%, 70% { opacity: 1; }
+  71%, 85% { opacity: 0.25; }
+}
+
+@keyframes arte-lupa {
+  from { transform: translate(-112px, 6px) rotate(-8deg); }
+  to { transform: translate(0, 0) rotate(4deg); }
+}
+
+@keyframes arte-fugaz {
+  0% { opacity: 0; transform: translate(0, 0); }
+  8% { opacity: 1; }
+  40% { opacity: 0; transform: translate(110px, 46px); }
+  100% { opacity: 0; transform: translate(110px, 46px); }
+}
+
+@keyframes arte-flota {
+  to { transform: translateY(-6px); }
+}
+
+@keyframes arte-burbuja {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-26px); }
+}
+
+@keyframes arte-buho {
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
+}
+
+@keyframes arte-parpadeo {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes arte-pagina {
+  0%, 30% { transform: scaleX(1); }
+  60%, 100% { transform: scaleX(-1); }
+}
+
 .est-mundo__texto .la-barra {
   margin-top: 6px;
 }
@@ -2335,7 +2503,7 @@ p {
   gap: 8px 10px;
 }
 
-.mision__lecturas li > span:not(.la-chip) {
+.mision__lecturas li > span:not(.la-chip):not(.mision__escena) {
   flex: 1 1 140px;
 }
 
@@ -2628,6 +2796,64 @@ p {
 
 .sesion-lectura__cabecera h1 {
   margin: 0;
+}
+
+/* Una estrella recorre la barra de avance (va fuera de .la-barra, que recorta lo que sobresale). */
+.avance-lectura {
+  position: relative;
+}
+
+.avance-lectura__estrella {
+  position: absolute;
+  top: 50%;
+  left: clamp(14px, var(--avance), calc(100% - 14px));
+  display: grid;
+  color: var(--la-color-secundario);
+  filter: drop-shadow(0 1px 0 var(--la-color-secundario-fuerte));
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Prender o apagar los sonidos: un botón con forma de píldora junto a «Salir». */
+.boton-sonido {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--la-target-min);
+  padding: 0 16px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: 999px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-primario);
+  font: 700 1rem / 1 var(--la-font-titulo);
+  cursor: pointer;
+}
+
+.boton-sonido:hover {
+  border-color: var(--la-color-primario);
+}
+
+.boton-sonido:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.boton-sonido[aria-pressed='false'] {
+  color: var(--la-color-texto-suave);
+}
+
+/* En el celular, solo el ícono: así cabe junto a «Salir» sin ocupar otra fila. */
+@media (max-width: 559px) {
+  .boton-sonido {
+    justify-content: center;
+    min-width: var(--la-target-min);
+    margin-left: auto;
+    padding: 0;
+  }
+
+  .boton-sonido__texto {
+    display: none;
+  }
 }
 
 /* RF-038: portada con título e imagen, antes del texto. */
@@ -2993,8 +3219,100 @@ p {
   }
 }
 
+.lectura-fin {
+  position: relative;
+  overflow: hidden;
+}
+
 .lectura-fin h2 {
   margin: 0;
+}
+
+/* Confeti al terminar la lectura: cae tres veces y se va (no ocupa lugar en la rejilla). */
+.lectura-fin__confeti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lectura-fin__confeti > span {
+  position: absolute;
+  top: -18px;
+  left: calc(var(--i) * 5.4% + 2%);
+  width: 10px;
+  height: 14px;
+  border-radius: 3px;
+  background: hsl(calc(var(--i) * 47deg) 85% 62%);
+  opacity: 0;
+}
+
+.lectura-fin__confeti > span:nth-child(3n) {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+/* Lo que aprendimos: el mensaje del cuento al terminar. */
+.lectura-fin__mensaje {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 3px solid #ffc2d4;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.lectura-fin__mensaje p {
+  margin: 0;
+  font: 600 var(--la-texto-lg) / 1.35 var(--la-font-titulo);
+  color: var(--la-color-texto);
+}
+
+.est-preparando .lectura-fin__mensaje p.lectura-fin__mensaje-titulo,
+.lectura-fin__mensaje p.lectura-fin__mensaje-titulo {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c42b67;
+}
+
+/* El mensaje del cuento dentro del texto: un recuadro con corazón (las oraciones siguen siendo las mismas). */
+.mensaje-cuento {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 3px dashed #ffb3c8;
+  border-radius: 22px;
+  background: #fff5f8;
+}
+
+.mensaje-cuento__cuerpo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mensaje-cuento p {
+  margin: 0;
+}
+
+.mensaje-cuento p.mensaje-cuento__titulo {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c42b67;
+}
+
+.mensaje-cuento .texto-lectura__parrafo {
+  font-weight: 700;
+}
+
+.texto-lectura__bloque--mensaje {
+  display: block;
 }
 
 .lectura-fin__resumen {
@@ -3274,6 +3592,49 @@ p {
 
 .reto-dia__avance {
   color: var(--la-color-texto-suave);
+}
+
+/* El cuento de hoy: su dibujo junto al botón para leerlo. */
+.reto-dia__cuento {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 20px;
+  background: var(--la-color-primario-suave);
+}
+
+.reto-dia__escena {
+  display: grid;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  aspect-ratio: 16 / 10;
+}
+
+.reto-dia__escena svg {
+  width: 100%;
+  height: 100%;
+}
+
+.reto-dia p.reto-dia__titulo {
+  font: 700 var(--la-texto-lg) / 1.25 var(--la-font-titulo);
+  color: var(--la-color-texto);
+}
+
+.reto-dia p.reto-dia__etiqueta {
+  font: 700 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--la-color-primario);
+}
+
+@media (max-width: 479px) {
+  .reto-dia__cuento {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* RF-058, RF-059: lo que ganó al terminar una lectura. */
@@ -4448,21 +4809,58 @@ p {
   object-fit: cover;
 }
 
-/* La mascota acompaña cada aviso: celebra cuando acierta y anima cuando le falta poco. */
+/* La mascota acompaña cada aviso: celebra cuando acierta y anima cuando le falta poco; en su globo le
+   dice algo al niño, y debajo queda el aviso. */
 .aviso-lectura {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 6px 12px;
 }
 
 .aviso-lectura > .la-mascota {
-  flex-shrink: 0;
+  grid-row: 1 / span 2;
 }
 
 .aviso-lectura > .la-alerta {
-  flex: 1;
-  min-width: 0;
+  grid-column: 2;
+}
+
+.aviso-lectura--error > .la-alerta {
+  grid-column: 1 / -1;
+}
+
+.aviso-lectura__globo {
+  position: relative;
+  grid-column: 2;
+  justify-self: start;
+  max-width: 100%;
+  padding: 6px 14px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 18px;
+  background: var(--la-color-superficie);
+  color: var(--la-color-primario);
+  font: 700 1.0625rem / 1.25 var(--la-font-titulo);
+}
+
+/* La colita del globo apunta a la mascota. */
+.aviso-lectura__globo::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 3px solid var(--la-color-secundario);
+  border-left: 3px solid var(--la-color-secundario);
+  background: var(--la-color-superficie);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.aviso-lectura--info .aviso-lectura__globo,
+.aviso-lectura--info .aviso-lectura__globo::before {
+  border-color: var(--la-color-primario-borde);
 }
 
 .aviso-lectura__chispas {
@@ -4528,10 +4926,35 @@ p {
   .escena__animal { animation: escena-salta 1.4s ease-in-out infinite alternate; }
   .escena__animal--rana { animation: escena-brinco 2.2s ease-in-out infinite; }
   .escena__cola { animation: escena-cola 0.5s ease-in-out infinite alternate; }
+  .escena__bandera { transform-origin: 0 50%; animation: arte-ondea 0.7s ease-in-out infinite alternate; }
+  .escena__animal--tortuga { animation-duration: 3.2s; }
+  .mensaje-cuento__corazon,
+  .lectura-fin__mensaje .mensaje-cuento__corazon { animation: corazon-late 1.2s ease-in-out infinite; }
 
   .mascota-festeja { animation: mascota-festeja 0.9s ease-out both; }
   .mascota-anima { animation: mascota-anima 0.4s ease-in-out 3 alternate; }
   .aviso-lectura__chispas > span { animation: chispa 0.9s ease-out both; }
+  .aviso-lectura__globo { transform-origin: 0 50%; animation: globo-aparece 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) 0.15s both; }
+  .avance-lectura__estrella { transition: left 0.6s cubic-bezier(0.3, 1.4, 0.5, 1); }
+  .avance-lectura__estrella .la-icono { animation: estrella-late 0.9s ease-in-out infinite alternate; }
+  .lectura-fin__confeti > span { animation: confeti-fin var(--caida, 2s) ease-in var(--retraso, 0s) 3 both; }
+  .reto__opcion { transition: transform 0.12s ease; }
+  .reto__opcion:active { transform: scale(0.97); }
+  .boton-sonido:active { transform: scale(0.95); }
+}
+
+@keyframes estrella-late {
+  to { transform: scale(1.18); }
+}
+
+@keyframes globo-aparece {
+  from { opacity: 0; transform: scale(0.5); }
+}
+
+@keyframes confeti-fin {
+  from { opacity: 1; transform: translateY(0) rotate(0deg); }
+  85% { opacity: 1; }
+  to { opacity: 0; transform: translateY(320px) rotate(480deg); }
 }
 
 @keyframes bloque-aparece {
@@ -4646,4 +5069,35 @@ p {
 @keyframes chispa {
   from { opacity: 1; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(0.4); }
   to { opacity: 0; transform: rotate(calc(var(--i) * 45deg)) translateY(-46px) scale(1); }
+}
+/* Contenido inicial: cada cuento muestra su escena también en la biblioteca, su ficha y las misiones. */
+.ficha__escena {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.ficha__escena > .escena,
+.mision__escena > .escena {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lectura > .ilustracion-lectura {
+  width: 100%;
+  max-width: 560px;
+}
+
+.mision__escena {
+  flex: 0 0 auto;
+  width: 84px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 12px;
+  background: var(--la-color-fondo-alterno);
 }

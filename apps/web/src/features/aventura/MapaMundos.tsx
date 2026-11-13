@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Alerta, BarraProgreso, Cargando, clasesBoton, EscenaMundo, Icono, Mascota } from '@lectoaventura/ui';
+import { Alerta, BarraProgreso, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
+import { ArteMundo } from './ArteMundo';
 import { Celebracion } from './Celebracion';
-import { Mapa, MundoMapa, TONO_MUNDO } from './tipos';
+import { Mapa, MundoMapa } from './tipos';
 
 /**
  * Mapa de aventuras del estudiante (RF-030): los 5 mundos con su estado. El mundo actual y los
@@ -80,7 +81,7 @@ function ContenidoMundo({ mundo: m }: { mundo: MundoMapa }) {
   return (
     <>
       <span className="est-mundo__escena">
-        <EscenaMundo tono={TONO_MUNDO[m.numero] ?? 'bosque'} />
+        <ArteMundo numero={m.numero} />
         {m.estado === 'BLOQUEADO' ? (
           <span className="est-mundo__candado">
             <Icono nombre="candado" tamano={22} />
@@ -97,7 +98,7 @@ function ContenidoMundo({ mundo: m }: { mundo: MundoMapa }) {
         {m.estado === 'DISPONIBLE' ? (
           <>
             <span className="est-mundo__estado">
-              ¡Estás aquí! · {Math.min(completadas, necesarias)} de {necesarias} misiones
+              ¡Estás aquí! · {Math.min(completadas, necesarias)} de {necesarias} misiones para avanzar
             </span>
             <BarraProgreso valor={(Math.min(completadas, necesarias) / necesarias) * 100} etiqueta={`Misiones del mundo ${m.nombre}`} />
           </>

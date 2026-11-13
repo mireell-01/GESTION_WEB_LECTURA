@@ -94,10 +94,10 @@ export class PasaporteUseCase {
     };
   }
 
-  /** RF-060, RN-18: un reto por día (00:00 de Lima), orientado a su habilidad más débil. */
+  /** RF-060, RN-18: un reto por día (00:00 de Lima), orientado a su habilidad más débil y con su cuento. */
   async retoDelDia(estudianteId: string): Promise<RetoVista> {
     if (!(await this.identidad.perfil(estudianteId))) throw new NoEncontradoError('Estudiante');
-    const [reto, p] = await Promise.all([this.logros.retoDeHoy(estudianteId, fechaLocalLima(this.ahora())), this.repo.parametros()]);
+    const [reto, p] = await Promise.all([this.logros.retoConCuento(estudianteId, fechaLocalLima(this.ahora())), this.repo.parametros()]);
     return vistaReto(reto, p.puntos.retoDelDia);
   }
 

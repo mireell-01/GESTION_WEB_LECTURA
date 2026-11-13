@@ -6,6 +6,7 @@ import { Boton, Icono } from '@lectoaventura/ui';
 
 import { IconoLectura } from './iconos';
 import { IlustracionParrafo, repartoDe } from './IlustracionLectura';
+import { esMensaje, RecuadroMensaje } from './MensajeCuento';
 import { Parrafo } from './tipos';
 import { leerEnVozAlta, puedeLeerEnVozAlta, VELOCIDADES } from './voz';
 
@@ -92,9 +93,10 @@ export function TextoLectura({
   const reparto = repartoDe(titulo, parrafos[0] ? textoDe(parrafos[0]) : '');
   return (
     <div className="texto-lectura">
-      {parrafos.map((p, i) => (
-        <div key={p.numero} className={i % 2 ? 'texto-lectura__bloque texto-lectura__bloque--alterno' : 'texto-lectura__bloque'}>
-          <IlustracionParrafo imagen={imagenes[p.numero - 1] ?? null} texto={textoDe(p)} reparto={reparto} numero={p.numero} />
+      {parrafos.map((p, i) => {
+        // El mensaje del cuento (su moraleja) va en su recuadro, sin escena: es para recordarlo.
+        const mensaje = p.oraciones.length === 1 && esMensaje(p.oraciones[0]?.texto ?? '');
+        const parrafo = (
           <p className={resaltarParrafo === p.numero ? 'texto-lectura__parrafo texto-lectura__parrafo--pista' : 'texto-lectura__parrafo'}>
             {p.oraciones.map((o) => {
               const clases = ['lectura-oracion', oracionLeida === o.id ? 'lectura-oracion--leyendo' : '', anclajeId === o.id ? 'lectura-oracion--anclaje' : ''].filter(Boolean).join(' ');
@@ -122,8 +124,18 @@ export function TextoLectura({
               );
             })}
           </p>
-        </div>
-      ))}
+        );
+        return mensaje ? (
+          <div key={p.numero} className="texto-lectura__bloque texto-lectura__bloque--mensaje">
+            <RecuadroMensaje>{parrafo}</RecuadroMensaje>
+          </div>
+        ) : (
+          <div key={p.numero} className={i % 2 ? 'texto-lectura__bloque texto-lectura__bloque--alterno' : 'texto-lectura__bloque'}>
+            <IlustracionParrafo imagen={imagenes[p.numero - 1] ?? null} texto={textoDe(p)} reparto={reparto} numero={p.numero} />
+            {parrafo}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -3,18 +3,47 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
+import { Alerta, BarraProgreso, Boton, Cargando, Chip, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
 import { AsistenteLectura } from '@/features/asistente/AsistenteLectura';
 import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
+import { EDADES } from '@/features/contenido/tipos';
 import { LogrosDeLectura } from '@/features/gamificacion/LogrosDeLectura';
-import { api, mensajeDeError } from '@/shared/api/client';
+import { api, ErrorApi, mensajeDeError } from '@/shared/api/client';
 
 import { PreguntaLectura } from './PreguntaLectura';
 import { RespuestaEscrita } from './RespuestaEscrita';
 import { LectorEnVozAlta, TextoLectura } from './TextoLectura';
+import { IconoLectura } from './iconos';
 import { IlustracionParrafo, repartoDe } from './IlustracionLectura';
+import { Corazon, mensajeDe, textoDelMensaje } from './MensajeCuento';
+import { guardarSonido, sonar, sonidoActivo } from './sonidos';
 import { EntradaRespuesta, ResultadoRespuesta, Sesion } from './tipos';
+
+/** Lo que dice la mascota en su globo (decorativo: el aviso ya lo dice para los lectores de pantalla). */
+const FRASES = {
+  exito: ['¡Eres una estrella de la lectura!', '¡Leíste con mucha atención!', '¡Lo lograste!', '¡Qué buen ojo para leer!', '¡Tu mascota está feliz!'],
+  info: ['¡Tú puedes!', '¡Inténtalo otra vez!', '¡Ya casi lo tienes!', '¡Lee con calma, lo vas a encontrar!'],
+};
+
+/** Prender o apagar los sonidos de la lectura; la preferencia queda en este dispositivo. */
+function BotonSonido() {
+  const [activo, setActivo] = useState(true);
+  useEffect(() => setActivo(sonidoActivo()), []);
+  const cambiar = () => {
+    guardarSonido(!activo);
+    setActivo(!activo);
+    if (!activo) sonar('enviado');
+  };
+  return (
+    <button type="button" className="boton-sonido" aria-label="Sonidos" aria-pressed={activo} onClick={cambiar}>
+      <IconoLectura nombre={activo ? 'parlante' : 'silencio'} />
+      <span className="boton-sonido__texto" aria-hidden="true">
+        {activo ? 'Sonido' : 'Sin sonido'}
+      </span>
+    </button>
+  );
+}
 
 type Aviso = { tipo: 'exito' | 'info' | 'error'; texto: string } | null;
 
@@ -49,7 +78,8 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
     setError(null);
     api<Sesion>('/sesiones-lectura', { metodo: 'POST', cuerpo: { lecturaId, ...(asignacionId ? { asignacionId } : {}) } })
       .then(setSesion)
-      .catch((err) => setError(mensajeDeError(err)));
+      // Un cuento de otra edad (o que ya no está publicado) no se abre: se lo decimos con palabras de niño.
+      .catch((err) => setError(err instanceof ErrorApi && err.estado === 404 ? 'Este cuento no está en tu biblioteca. ¡Elige uno que sea para ti!' : mensajeDeError(err)));
   }, [lecturaId, asignacionId]);
 
   useEffect(() => {
@@ -101,41 +131,54 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
     accion(async () => {
       const v = await api<Sesion>(`${ruta}/prediccion`, { metodo: 'PUT', cuerpo });
       setSesion(v);
+      sonar('enviado');
       setAviso({ tipo: 'exito', texto: v.filtrado ? '¡Anotado! Cambiamos algunas palabras por ***. Ahora lee y descubre qué pasa.' : '¡Anotado! Ahora lee y descubre qué pasa.' });
     });
   const responder = (entrada: EntradaRespuesta) =>
     accion(async () => {
       const r = await api<ResultadoRespuesta>(`${ruta}/respuestas`, { metodo: 'POST', cuerpo: { itemId, idempotencyKey: nuevaClave(), ...entrada } });
       if (r.explicacion) {
+        sonar('casi');
         setAviso(null);
         setExplicacion({ texto: r.explicacion, siguiente: r.sesion });
         return;
       }
       setSesion(r.sesion);
-      if (r.resultado === 'CORRECTA') setAviso({ tipo: 'exito', texto: '¡Muy bien! Sigue así.' });
-      else if (r.resultado === 'ENVIADA') setAviso({ tipo: 'exito', texto: r.filtrado ? 'Guardamos tu respuesta. Cambiamos algunas palabras por ***.' : '¡Gracias! Guardamos tu respuesta.' });
-      else setAviso({ tipo: 'info', texto: 'Casi. Lee la pista y vuelve a intentarlo.' });
+      if (r.resultado === 'CORRECTA') {
+        sonar('acierto');
+        setAviso({ tipo: 'exito', texto: '¡Muy bien! Sigue así.' });
+      } else if (r.resultado === 'ENVIADA') {
+        sonar('enviado');
+        setAviso({ tipo: 'exito', texto: r.filtrado ? 'Guardamos tu respuesta. Cambiamos algunas palabras por ***.' : '¡Gracias! Guardamos tu respuesta.' });
+      } else {
+        sonar('casi');
+        setAviso({ tipo: 'info', texto: 'Casi. Lee la pista y vuelve a intentarlo.' });
+      }
     });
   const pedirPista = () =>
     accion(async () => {
       const r = await api<{ sesion: Sesion }>(`${ruta}/items/${itemId}/pistas`, { metodo: 'POST' });
       setSesion(r.sesion);
+      sonar('pista');
       setAviso({ tipo: 'info', texto: 'Aquí tienes una pista.' });
     });
   const decidir = (opcion: number) =>
     accion(async () => {
       setSesion(await api<Sesion>(`${ruta}/decisiones`, { metodo: 'POST', cuerpo: { nodoId: sesion.historia?.nodo.id, opcion } }));
+      sonar('enviado');
       setAviso(null);
     });
   const finalizar = (reflexion: string) =>
     accion(async () => {
       setSesion(await api<Sesion>(`${ruta}/finalizar`, { metodo: 'POST', cuerpo: { reflexion } }));
+      sonar('final');
       setAviso(null);
     });
 
   const { fase, pregunta, texto, historia } = sesion;
   const pistaConParrafo = [...(pregunta?.pistas ?? [])].reverse().find((p) => p.parrafo !== null);
   const visibles = texto.parrafos.flatMap((p) => p.oraciones);
+  const avance = (sesion.progreso.hechas / Math.max(1, sesion.progreso.total)) * 100;
 
   return (
     <div className="pila sesion-lectura">
@@ -144,17 +187,37 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
           <Icono nombre="flecha" tamano={20} className="volver__icono" />
           Salir (tu avance queda guardado)
         </Link>
+        <BotonSonido />
       </div>
 
       <header className="sesion-lectura__cabecera">
         <h1>{sesion.lectura.titulo}</h1>
-        {fase !== 'PREDICCION' && fase !== 'FINALIZADA' ? <BarraProgreso valor={(sesion.progreso.hechas / Math.max(1, sesion.progreso.total)) * 100} etiqueta="Avance de la lectura" /> : null}
+        {/* Para quién es el cuento: la API solo abre lecturas de la edad del niño (o las que le asignó su docente). */}
+        {EDADES[sesion.lectura.rangoEdad] ? (
+          <span className="fila fila--compacta">
+            <Chip tipo="info">Cuento para {EDADES[sesion.lectura.rangoEdad]}</Chip>
+          </span>
+        ) : null}
+        {fase !== 'PREDICCION' && fase !== 'FINALIZADA' ? (
+          // Una estrella avanza por la barra con cada actividad hecha.
+          <div className="avance-lectura" style={{ '--avance': `${avance}%` } as React.CSSProperties}>
+            <BarraProgreso valor={avance} etiqueta="Avance de la lectura" />
+            <span className="avance-lectura__estrella" aria-hidden="true">
+              <Icono nombre="estrella" tamano={26} />
+            </span>
+          </div>
+        ) : null}
       </header>
 
       {aviso ? (
         // La mascota celebra cuando acierta y lo anima cuando le falta poco.
         <div key={aviso.vez} className={`aviso-lectura aviso-lectura--${aviso.tipo}`}>
           {aviso.tipo !== 'error' ? <Mascota tamano={60} className={aviso.tipo === 'exito' ? 'mascota-festeja' : 'mascota-anima'} /> : null}
+          {aviso.tipo !== 'error' ? (
+            <span className="aviso-lectura__globo" aria-hidden="true">
+              {FRASES[aviso.tipo][aviso.vez % FRASES[aviso.tipo].length]}
+            </span>
+          ) : null}
           {aviso.tipo === 'exito' ? (
             <span className="aviso-lectura__chispas" aria-hidden="true">
               {Array.from({ length: 8 }, (_, i) => (
@@ -302,6 +365,12 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
 
       {fase === 'FINALIZADA' && sesion.resumen ? (
         <section className="est-preparando lectura-fin" aria-labelledby="fin-titulo">
+          <span className="lectura-fin__confeti" aria-hidden="true">
+            {/* Cada papelito con su propio ritmo (repartido sin azar, igual en cada visita). */}
+            {Array.from({ length: 18 }, (_, i) => (
+              <span key={i} style={{ '--i': i, '--retraso': `${((i * 7) % 11) * 0.13}s`, '--caida': `${1.7 + ((i * 5) % 7) * 0.15}s` } as React.CSSProperties} />
+            ))}
+          </span>
           <Mascota tamano={110} flota />
           <div className="pila-sm">
             <h2 id="fin-titulo">¡Lectura terminada!</h2>
@@ -311,6 +380,16 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
               {sesion.resumen.conPista > 0 ? <li>{sesion.resumen.conPista} con ayuda de una pista.</li> : null}
               {sesion.resumen.abiertas > 0 ? <li>Tu profe leerá lo que escribiste.</li> : null}
             </ul>
+            {/* Lo que se lleva: el mensaje del cuento, para recordarlo. */}
+            {mensajeDe(texto.parrafos) ? (
+              <div className="lectura-fin__mensaje">
+                <Corazon tamano={32} />
+                <div>
+                  <p className="lectura-fin__mensaje-titulo">Lo que aprendimos hoy</p>
+                  <p>{textoDelMensaje(mensajeDe(texto.parrafos) as string)}</p>
+                </div>
+              </div>
+            ) : null}
             <div className="fila">
               <Link href="/estudiante/mundos" className={clasesBoton('primario', { tamano: 'grande' })}>
                 <Icono nombre="globo" tamano={24} />

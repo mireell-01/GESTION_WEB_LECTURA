@@ -48,6 +48,8 @@ export interface GamificacionRepository {
   retoDe(estudianteId: string, fecha: string): Promise<RetoDiario | null>;
   /** RN-18: crea el reto del día (o devuelve el que ganó una carrera) y vence los anteriores sin completar. */
   proponerReto(reto: RetoDiario): Promise<RetoDiario>;
+  /** Guarda el cuento que recibió un reto que no lo tenía, sin tocar su avance; devuelve el reto guardado. */
+  sugerirLectura(reto: RetoDiario): Promise<RetoDiario>;
 
   recompensas(): Promise<RecompensaCatalogo[]>;
   /** RF-062: bajo el candado del estudiante, valida el saldo y registra el canje. Devuelve las monedas que quedan. */

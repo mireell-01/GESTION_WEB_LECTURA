@@ -24,9 +24,14 @@ export interface DatosReto {
   lectura: LecturaSugerida | null;
 }
 
-/** RF-060: el reto apunta a la habilidad más débil (menor maestría; empate: el orden del SRS). */
+/** RF-060: las habilidades de la más débil a la más fuerte (menor maestría; empate: el orden del SRS). */
+export function habilidadesPorDebilidad(maestrias: Maestrias | null): Habilidad[] {
+  return [...HABILIDADES].sort((a, b) => (maestrias?.[a] ?? 0) - (maestrias?.[b] ?? 0) || HABILIDADES.indexOf(a) - HABILIDADES.indexOf(b));
+}
+
+/** RF-060: el reto apunta a la habilidad más débil. */
 export function habilidadDelReto(maestrias: Maestrias | null): Habilidad {
-  return [...HABILIDADES].sort((a, b) => (maestrias?.[a] ?? 0) - (maestrias?.[b] ?? 0) || HABILIDADES.indexOf(a) - HABILIDADES.indexOf(b))[0]!;
+  return habilidadesPorDebilidad(maestrias)[0]!;
 }
 
 /**
@@ -51,6 +56,16 @@ export class RetoDiario {
 
   get datos(): Readonly<DatosReto> {
     return this.d;
+  }
+
+  /**
+   * Un reto que se propuso sin cuento (aún no había lecturas de su edad para esa habilidad) recibe el suyo
+   * cuando aparece. Solo mientras siga propuesto y no tenga uno: el cuento del día no cambia a mitad del día.
+   */
+  sugerir(lectura: LecturaSugerida): boolean {
+    if (this.d.estado !== 'PROPUESTO' || this.d.lectura) return false;
+    this.d = { ...this.d, lectura };
+    return true;
   }
 
   /** Una respuesta bien hecha. Solo cuenta la de la habilidad del reto, mientras siga propuesto. */

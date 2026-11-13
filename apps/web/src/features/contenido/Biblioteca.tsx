@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Alerta, Boton, Campo, Cargando, Chip, clasesBoton, Icono, Selector } from '@lectoaventura/ui';
 
+import { EscenaAnimada, IlustracionParrafo, repartoDe } from '@/features/lectura/IlustracionLectura';
+import { esMensaje, RecuadroMensaje } from '@/features/lectura/MensajeCuento';
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArchivoProtegido } from './ArchivoProtegido';
+import { DibujoTema, temaDe, TemasBiblioteca } from './TemasBiblioteca';
 import { DetalleBiblioteca, EDADES, FichaLectura, HABILIDADES, MOMENTOS, Momento, TIPOS_TEXTO } from './tipos';
 
 interface Pagina {
@@ -18,7 +21,8 @@ interface Pagina {
 
 /**
  * Biblioteca (RF-028) para niños y adultos. El niño ve solo lo de su edad y nivel (lo decide la
- * API); los adultos filtran por edad, nivel, temática, tipo de texto y habilidad.
+ * API) y elige el tema tocando su dibujo; los adultos filtran por edad, nivel, temática, tipo de texto
+ * y habilidad.
  */
 export function Biblioteca({ base, infantil = false }: { base: string; infantil?: boolean }) {
   const [filtros, setFiltros] = useState({ edad: '', nivel: '', tema: '', tipo: '', habilidad: '' });
@@ -31,28 +35,40 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
     return api<Pagina>(`/biblioteca${q.size ? `?${q}` : ''}`);
   }, []);
 
+  // Solo vale la última búsqueda: si la carga inicial (o una búsqueda anterior) responde después de que el
+  // niño eligió un tema, no debe pisar lo que pidió.
+  const ultima = useRef(0);
+  const cargar = useCallback(
+    async (f: typeof filtros) => {
+      const numero = ++ultima.current;
+      setError(null);
+      try {
+        const resultado = await consultar(f);
+        if (numero === ultima.current) setPagina(resultado);
+      } catch (err) {
+        if (numero === ultima.current) setError(mensajeDeError(err));
+      }
+    },
+    [consultar],
+  );
+
   useEffect(() => {
-    consultar({ edad: '', nivel: '', tema: '', tipo: '', habilidad: '' })
-      .then(setPagina)
-      .catch((err) => setError(mensajeDeError(err)));
-  }, [consultar]);
+    void cargar({ edad: '', nivel: '', tema: '', tipo: '', habilidad: '' });
+  }, [cargar]);
 
   const buscar = async (e?: FormEvent) => {
     e?.preventDefault();
-    setError(null);
-    try {
-      setPagina(await consultar(filtros));
-    } catch (err) {
-      setError(mensajeDeError(err));
-    }
+    await cargar(filtros);
   };
 
   const mas = async () => {
     if (!pagina?.siguiente) return;
     setCargandoMas(true);
+    const numero = ultima.current;
     try {
       const siguiente = await consultar(filtros, pagina.siguiente);
-      setPagina({ ...siguiente, lecturas: [...pagina.lecturas, ...siguiente.lecturas] });
+      // Si mientras tanto pidió otra búsqueda, esta página ya no corresponde.
+      if (numero === ultima.current) setPagina({ ...siguiente, lecturas: [...pagina.lecturas, ...siguiente.lecturas] });
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -62,6 +78,12 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
 
   const cambiar = (campo: keyof typeof filtros) => (e: { target: { value: string } }) => setFiltros({ ...filtros, [campo]: e.target.value });
 
+  const elegirTema = async (tema: string) => {
+    const f = { ...filtros, tema };
+    setFiltros(f);
+    await cargar(f);
+  };
+
   return (
     <div className={infantil ? 'pila biblioteca biblioteca--infantil' : 'pila biblioteca'}>
       <header className={infantil ? 'est-mundos__cabecera' : 'saludo-adulto'}>
@@ -69,6 +91,8 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
         <h1>{infantil ? 'Tu biblioteca' : 'Biblioteca'}</h1>
         {!infantil ? <p className="texto-suave">Lecturas publicadas, con sus actividades listas para leer y asignar.</p> : null}
       </header>
+
+      {infantil ? <TemasBiblioteca elegido={filtros.tema.trim().toLocaleLowerCase('es')} alElegir={elegirTema} /> : null}
 
       <form onSubmit={buscar} className={infantil ? 'filtros filtros--infantil' : 'la-tarjeta filtros'} aria-label="Filtrar lecturas">
         <div className="form-columnas">
@@ -100,15 +124,24 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
       {!pagina ? (
         error ? null : <Cargando />
       ) : pagina.lecturas.length === 0 ? (
-        <Alerta tipo="info">{infantil ? 'Pronto habrá lecturas para ti aquí.' : 'No hay lecturas publicadas con esos filtros.'}</Alerta>
+        <Alerta tipo="info">
+          {!infantil ? 'No hay lecturas publicadas con esos filtros.' : filtros.tema ? 'Aún no hay cuentos de ese tema para ti. ¡Prueba con otro!' : 'Pronto habrá lecturas para ti aquí.'}
+        </Alerta>
       ) : (
         <ul className="fichas" aria-label="Lecturas">
           {pagina.lecturas.map((l) => (
             <li key={l.lecturaId}>
               <Link href={`${base}/${l.lecturaId}`} className="ficha" aria-label={`Abrir ${l.titulo}`}>
-                <span className="ficha__icono" aria-hidden="true">
-                  <Icono nombre={l.esRamificada ? 'brujula' : 'libro'} tamano={30} />
+                {/* La escena del cuento, la misma que verá al leerlo (decorativa: el título ya dice de qué trata). */}
+                <span className="ficha__escena" aria-hidden="true">
+                  <EscenaAnimada texto={`${l.titulo}. ${l.resumen}`} reparto={repartoDe(l.titulo, l.resumen)} />
                 </span>
+                {infantil && temaDe(l.tematica) ? (
+                  <span className="ficha__tema">
+                    <DibujoTema tema={temaDe(l.tematica)!} />
+                    {temaDe(l.tematica)!.nombre}
+                  </span>
+                ) : null}
                 <span className="ficha__titulo">{l.titulo}</span>
                 <span className="ficha__resumen">{l.resumen}</span>
                 <span className="fila fila--compacta">
@@ -134,6 +167,8 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
 }
 
 /** Detalle de una lectura publicada (sin respuestas). El estudiante la lee con sus actividades en /estudiante/lecturas (Módulo 6). */
+const primerParrafo = (l: DetalleBiblioteca) => l.parrafos[0]?.oraciones.map((o) => o.texto).join(' ') ?? '';
+
 export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: { lecturaId: string; base: string; infantil?: boolean }) {
   const [lectura, setLectura] = useState<DetalleBiblioteca | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -166,11 +201,20 @@ export function DetalleLecturaBiblioteca({ lecturaId, base, infantil = false }: 
         </span>
         {lectura.imagenes[0] ? (
           <ArchivoProtegido url={lectura.imagenes[0].url} tipo="IMAGEN" alt={lectura.imagenes[0].textoAlternativo} className="lectura__imagen" />
-        ) : null}
+        ) : (
+          <IlustracionParrafo imagen={null} texto={lectura.titulo} reparto={repartoDe(lectura.titulo, primerParrafo(lectura))} />
+        )}
         <div className="lectura__texto">
-          {lectura.parrafos.map((p) => (
-            <p key={p.numero}>{p.oraciones.map((o) => o.texto).join(' ')}</p>
-          ))}
+          {lectura.parrafos.map((p) => {
+            const texto = p.oraciones.map((o) => o.texto).join(' ');
+            return p.oraciones.length === 1 && esMensaje(texto) ? (
+              <RecuadroMensaje key={p.numero}>
+                <p>{texto}</p>
+              </RecuadroMensaje>
+            ) : (
+              <p key={p.numero}>{texto}</p>
+            );
+          })}
         </div>
         {!infantil ? (
           <div className="pila-sm">

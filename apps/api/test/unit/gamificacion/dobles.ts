@@ -136,6 +136,12 @@ export class GamificacionEnMemoria implements GamificacionRepository {
     return this.retos.get(llave) as RetoDiario;
   }
 
+  async sugerirLectura(reto: RetoDiario) {
+    const guardado = this.retos.get(`${reto.datos.estudianteId}:${reto.datos.fecha}`);
+    if (guardado && reto.datos.lectura) guardado.sugerir(reto.datos.lectura);
+    return guardado ?? reto;
+  }
+
   async canjear(estudianteId: string, recompensa: RecompensaCatalogo, _canje: { id: string; ahora: Date }, validar: (s: SaldoMonedas & { yaEsTuya: boolean }) => void) {
     const propias = this.canjes.filter((c) => c.estudianteId === estudianteId);
     const saldo = { puntosTotales: this.total(estudianteId), gastadas: propias.reduce((s, c) => s + c.monedas, 0) };

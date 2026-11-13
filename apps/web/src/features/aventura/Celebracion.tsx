@@ -2,9 +2,10 @@
 
 import { CSSProperties, useEffect, useRef } from 'react';
 
-import { clasesBoton, EscenaMundo } from '@lectoaventura/ui';
+import { clasesBoton } from '@lectoaventura/ui';
 
-import { MundoMapa, TONO_MUNDO } from './tipos';
+import { ArteMundo } from './ArteMundo';
+import { MundoMapa } from './tipos';
 
 /**
  * RF-031: celebración visual al desbloquear un mundo. Se muestra una sola vez (la API la marca como
@@ -32,7 +33,7 @@ export function Celebracion({ mundo, alCerrar }: { mundo: MundoMapa; alCerrar: (
       </div>
       <div className="celebracion__tarjeta">
         <span className="celebracion__escena">
-          <EscenaMundo tono={TONO_MUNDO[mundo.numero] ?? 'bosque'} />
+          <ArteMundo numero={mundo.numero} />
         </span>
         <p className="celebracion__numero">Mundo {mundo.numero}</p>
         <h2 id="celebracion-titulo">¡Desbloqueaste el mundo {mundo.nombre}!</h2>

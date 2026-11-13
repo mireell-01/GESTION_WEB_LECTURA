@@ -14,9 +14,9 @@ import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
 
 /** El cielo y el lugar se eligen por separado: "subió al cerro… la luna" es un cerro de noche. */
 export type Cielo = 'dia' | 'amanecer' | 'noche' | 'lluvia';
-export type Lugar = 'campo' | 'agua' | 'montana' | 'bosque';
+export type Lugar = 'campo' | 'agua' | 'montana' | 'bosque' | 'castillo';
 /** Los personajes que caminan por la escena (los que vuelan o nadan van aparte). */
-export type Terrestre = 'llama' | 'zorro' | 'perro' | 'gato' | 'cuy' | 'conejo' | 'oveja' | 'rana';
+export type Terrestre = 'llama' | 'zorro' | 'perro' | 'gato' | 'cuy' | 'conejo' | 'oveja' | 'rana' | 'lobo' | 'cerdo' | 'oso' | 'raton' | 'tortuga' | 'leon' | 'burro';
 export type Animal = Terrestre | 'aves' | 'peces' | 'mariposa';
 
 const normal = (t: string) =>
@@ -33,8 +33,10 @@ const CIELOS: [Cielo, RegExp][] = [
 ];
 
 const LUGARES: [Lugar, RegExp][] = [
-  ['agua', /\b(rio|lago|laguna|mar|playa|agua|titicaca|puno|pez|peces|pesca\w*|bote|totora)\b/],
-  ['montana', /\b(cerros?|montan\w*|nevados?|volcan\w*|andes|puna|cumbre|condor)\b/],
+  // Los cuentos clásicos: el castillo se ve aunque esté junto al mar o al bosque.
+  ['castillo', /\b(castillos?|palacio\w*|reino|reyes|rey|reinas?|princes\w*|principes?|emperador\w*|torres?|sultan\w*)\b/],
+  ['agua', /\b(rio|lago|laguna|mar|playa|agua|titicaca|puno|pez|peces|pesca\w*|bote|totora|islas?|cascadas?)\b/],
+  ['montana', /\b(cerros?|montan\w*|nevados?|nieves?|hielo|volcan\w*|andes|puna|cumbre|condor|cuevas?)\b/],
   ['bosque', /\b(bosque|selva|arbol\w*|planta\w*|flor\w*|jardin|chacra|huerto|semilla\w*)\b/],
 ];
 
@@ -47,9 +49,16 @@ const ANIMALES: [Animal, RegExp][] = [
   ['conejo', /\b(conej\w*|liebres?)\b/],
   ['oveja', /\b(ovejas?|ovejit[ao]s?|corder\w*|carner\w*)\b/],
   ['rana', /\b(ranas?|ranit[ao]s?|sapos?|sapit[oa]s?)\b/],
-  ['aves', /\b(pajar\w*|aves?|condor\w*|palomas?|loros?|gallinas?|volar|vuela\w*)\b/],
+  ['lobo', /\b(lob[oa]s?|lobit[oa]s?)\b/],
+  ['cerdo', /\b(cerd\w*|chanch\w*|puerc\w*)\b/],
+  ['oso', /\b(os[oa]s?|osit[oa]s?)\b/],
+  ['raton', /\b(raton\w*|ratas?)\b/],
+  ['tortuga', /\b(tortugas?)\b/],
+  ['leon', /\b(leon|leones|leona|leoncit[oa]s?)\b/],
+  ['burro', /\b(burr[oa]s?|burrit[oa]s?|asnos?)\b/],
+  ['aves', /\b(pajar\w*|aves?|condor\w*|palomas?|loros?|gallin\w*|gallos?|patos?|patitos?|picaflor\w*|colibri\w*|buhos?|lechuzas?|golondrin\w*|ruisenor\w*|cisnes?|gansos?|volar|vuela\w*)\b/],
   ['peces', /\b(pez|peces|pescad\w*|truchas?)\b/],
-  ['mariposa', /\b(mariposas?|insectos?|abejas?|flor\w*)\b/],
+  ['mariposa', /\b(mariposas?|insectos?|abejas?|hormigas?|cigarras?|grillos?|flor\w*)\b/],
 ];
 
 /** Cuando el párrafo cuenta algo alegre, sale un arcoíris. */
@@ -104,6 +113,7 @@ const COLORES_DIA: Record<Lugar, [string, string]> = {
   agua: ['#bfe3ff', '#e9f6ff'],
   montana: ['#c9e6ff', '#f5f3ff'],
   bosque: ['#cdeccf', '#f5fff3'],
+  castillo: ['#d9ccff', '#fff0f7'],
 };
 
 function Nube({ x, y, escala = 1, clase = '' }: { x: number; y: number; escala?: number; clase?: string }) {
@@ -205,24 +215,130 @@ function Mariposa({ x, y }: { x: number; y: number }) {
  * desde donde nace (su transform-origin).
  */
 
-function Zorro() {
+/** El zorro, y con otros colores el lobo: pelo, patas y orejas, y el claro del pecho y la cola. */
+function Canido({ pelo, oscuro, claro }: { pelo: string; oscuro: string; claro: string }) {
   return (
     <>
       <g className="escena__cola" style={{ transformOrigin: '100% 100%' }}>
-        <ellipse cx="-27" cy="-22" rx="14" ry="6" fill="#e8743b" transform="rotate(30 -27 -22)" />
-        <ellipse cx="-37" cy="-27" rx="5" ry="4" fill="#fff6dc" transform="rotate(30 -37 -27)" />
+        <ellipse cx="-27" cy="-22" rx="14" ry="6" fill={pelo} transform="rotate(30 -27 -22)" />
+        <ellipse cx="-37" cy="-27" rx="5" ry="4" fill={claro} transform="rotate(30 -37 -27)" />
       </g>
       {[-11, -4, 7, 13].map((px) => (
-        <rect key={px} x={px - 2} y="-11" width="4" height="11" rx="2" fill="#8a3e1c" />
+        <rect key={px} x={px - 2} y="-11" width="4" height="11" rx="2" fill={oscuro} />
       ))}
-      <ellipse cx="0" cy="-15" rx="17" ry="8.5" fill="#e8743b" />
-      <ellipse cx="8" cy="-11" rx="8" ry="4.5" fill="#fff6dc" />
-      <path d="M12 -32 14 -45 20 -34z M19 -34 25 -45 27 -32z" fill="#e8743b" />
-      <path d="M14.5 -35 15.5 -41 18.5 -35z M21 -34 24.5 -41 25.5 -34z" fill="#8a3e1c" />
-      <circle cx="20" cy="-27" r="9" fill="#e8743b" />
-      <path d="M25 -30 37 -24 25 -20z" fill="#fff6dc" />
+      <ellipse cx="0" cy="-15" rx="17" ry="8.5" fill={pelo} />
+      <ellipse cx="8" cy="-11" rx="8" ry="4.5" fill={claro} />
+      <path d="M12 -32 14 -45 20 -34z M19 -34 25 -45 27 -32z" fill={pelo} />
+      <path d="M14.5 -35 15.5 -41 18.5 -35z M21 -34 24.5 -41 25.5 -34z" fill={oscuro} />
+      <circle cx="20" cy="-27" r="9" fill={pelo} />
+      <path d="M25 -30 37 -24 25 -20z" fill={claro} />
       <circle cx="37" cy="-24" r="2" fill="#1e1a4d" />
       <circle cx="22" cy="-29" r="1.7" fill="#1e1a4d" />
+    </>
+  );
+}
+
+const Zorro = () => <Canido pelo="#e8743b" oscuro="#8a3e1c" claro="#fff6dc" />;
+const Lobo = () => <Canido pelo="#8e8aa8" oscuro="#4a4566" claro="#e6e4f2" />;
+
+function Cerdo() {
+  return (
+    <>
+      <path className="escena__cola" style={{ transformOrigin: '100% 50%' }} d="M-17 -18 q-6 -2 -4 -7 q2 -4 -3 -5" fill="none" stroke="#e88aa0" strokeWidth="2" strokeLinecap="round" />
+      {[-10, -3, 7, 13].map((px) => (
+        <rect key={px} x={px - 2.5} y="-9" width="5" height="9" rx="2" fill="#e88aa0" />
+      ))}
+      <ellipse cx="0" cy="-15" rx="17" ry="11" fill="#ffb3c8" />
+      <circle cx="16" cy="-20" r="9" fill="#ffb3c8" />
+      <path d="M10 -27 12 -36 17 -29z M17 -28 23 -35 24 -27z" fill="#e88aa0" />
+      <ellipse cx="24" cy="-18" rx="4.5" ry="3.5" fill="#e88aa0" />
+      <circle cx="23" cy="-18" r=".9" fill="#1e1a4d" />
+      <circle cx="25.5" cy="-18" r=".9" fill="#1e1a4d" />
+      <circle cx="17" cy="-23" r="1.6" fill="#1e1a4d" />
+    </>
+  );
+}
+
+function Oso() {
+  return (
+    <>
+      {[-12, -4, 8, 15].map((px) => (
+        <rect key={px} x={px - 3} y="-12" width="6" height="12" rx="3" fill="#7a4a2a" />
+      ))}
+      <ellipse cx="0" cy="-18" rx="19" ry="13" fill="#9a6238" />
+      <circle cx="12" cy="-41" r="4" fill="#9a6238" />
+      <circle cx="24" cy="-41" r="4" fill="#9a6238" />
+      <circle cx="12" cy="-41" r="2" fill="#7a4a2a" />
+      <circle cx="24" cy="-41" r="2" fill="#7a4a2a" />
+      <circle cx="18" cy="-32" r="10" fill="#9a6238" />
+      <ellipse cx="25" cy="-29" rx="5.5" ry="4" fill="#d9a87a" />
+      <circle cx="29" cy="-30" r="1.8" fill="#1e1a4d" />
+      <circle cx="20" cy="-35" r="1.6" fill="#1e1a4d" />
+    </>
+  );
+}
+
+function Raton() {
+  return (
+    <>
+      <path className="escena__cola" style={{ transformOrigin: '100% 50%' }} d="M-10 -5 q-10 0 -12 -8" fill="none" stroke="#c9a6b8" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="-6" y="-2.5" width="4" height="2.5" rx="1.2" fill="#8e8aa8" />
+      <rect x="5" y="-2.5" width="4" height="2.5" rx="1.2" fill="#8e8aa8" />
+      <ellipse cx="0" cy="-7" rx="10" ry="7" fill="#b9b5cc" />
+      <ellipse cx="10" cy="-9" rx="6.5" ry="5" fill="#b9b5cc" />
+      <circle cx="8" cy="-15" r="4" fill="#b9b5cc" />
+      <circle cx="8" cy="-15" r="2.2" fill="#ffb3c8" />
+      <circle cx="16.5" cy="-9" r="1.4" fill="#ff8fb1" />
+      <circle cx="12.5" cy="-11" r="1.2" fill="#1e1a4d" />
+    </>
+  );
+}
+
+function Tortuga() {
+  return (
+    <>
+      <ellipse cx="-9" cy="-2" rx="4" ry="3" fill="#5fbf7a" />
+      <ellipse cx="9" cy="-2" rx="4" ry="3" fill="#5fbf7a" />
+      <circle cx="17" cy="-8" r="5" fill="#5fbf7a" />
+      <circle cx="19" cy="-9" r="1.2" fill="#1e1a4d" />
+      <path d="M-15 -4 a15 13 0 0 1 30 0z" fill="#2f8f5b" />
+      <path d="M-7 -4 l2 -7 h10 l2 7 M-5 -11 l-4 -3 M5 -11 l4 -3" fill="none" stroke="#8fd6a5" strokeWidth="1.4" />
+      <rect x="-16" y="-5" width="32" height="3" rx="1.5" fill="#c8f0d6" />
+    </>
+  );
+}
+
+function Leon() {
+  return (
+    <>
+      <path className="escena__cola" style={{ transformOrigin: '100% 100%' }} d="M-16 -16 q-12 -2 -12 -14" fill="none" stroke="#e0a43c" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="-28" cy="-31" r="3" fill="#a8641f" />
+      {[-11, -4, 7, 13].map((px) => (
+        <rect key={px} x={px - 2.5} y="-11" width="5" height="11" rx="2.5" fill="#d99a3e" />
+      ))}
+      <ellipse cx="0" cy="-16" rx="17" ry="9" fill="#f0b955" />
+      <circle cx="18" cy="-28" r="13" fill="#c9772a" />
+      <circle cx="19" cy="-28" r="8.5" fill="#f6c76b" />
+      <circle cx="21" cy="-30" r="1.5" fill="#1e1a4d" />
+      <path d="M24 -26 h4 l-2 2.5z" fill="#8a3e1c" />
+    </>
+  );
+}
+
+function Burro() {
+  return (
+    <>
+      <path className="escena__cola" style={{ transformOrigin: '100% 0%' }} d="M-16 -20 q-6 4 -5 12" fill="none" stroke="#7c7698" strokeWidth="2.5" strokeLinecap="round" />
+      {[-11, -4, 7, 13].map((px) => (
+        <rect key={px} x={px - 2} y="-13" width="4" height="13" rx="2" fill="#7c7698" />
+      ))}
+      <ellipse cx="0" cy="-18" rx="17" ry="10" fill="#9d98b8" />
+      <path d="M10 -22 18 -36 26 -32 20 -20z" fill="#9d98b8" />
+      <ellipse cx="18" cy="-48" rx="2.5" ry="8" fill="#9d98b8" transform="rotate(-10 18 -48)" />
+      <ellipse cx="23" cy="-48" rx="2.5" ry="8" fill="#9d98b8" transform="rotate(14 23 -48)" />
+      <ellipse cx="24" cy="-36" rx="6" ry="9" fill="#9d98b8" transform="rotate(-30 24 -36)" />
+      <ellipse cx="29" cy="-31" rx="4.5" ry="3.5" fill="#d8d4ea" />
+      <circle cx="22" cy="-38" r="1.4" fill="#1e1a4d" />
     </>
   );
 }
@@ -340,7 +456,39 @@ const DIBUJOS: Record<Exclude<Terrestre, 'llama'>, [() => ReactElement, number]>
   conejo: [Conejo, 1.1],
   oveja: [Oveja, 1.05],
   rana: [Rana, 1.15],
+  lobo: [Lobo, 1.05],
+  cerdo: [Cerdo, 1.05],
+  oso: [Oso, 1.1],
+  raton: [Raton, 1.3],
+  tortuga: [Tortuga, 1.2],
+  leon: [Leon, 1.1],
+  burro: [Burro, 1.05],
 };
+
+/** El castillo de los cuentos clásicos, al fondo (a la derecha: los personajes quedan adelante). */
+function Castillo({ noche }: { noche: boolean }) {
+  const ventana = noche ? '#ffd23f' : '#5b3fd9';
+  return (
+    <g opacity={noche ? 0.9 : 1}>
+      <rect x="196" y="70" width="70" height="66" fill="#efe9ff" />
+      {[196, 210, 224, 238, 252].map((x) => (
+        <rect key={x} x={x} y="62" width="8" height="10" fill="#efe9ff" />
+      ))}
+      <rect x="184" y="52" width="22" height="84" fill="#d9ccff" />
+      <rect x="256" y="52" width="22" height="84" fill="#d9ccff" />
+      <path d="M181 52 195 28 209 52zM253 52 267 28 281 52z" fill="#7c64ef" />
+      <line x1="195" y1="28" x2="195" y2="16" stroke="#8a5a3b" strokeWidth="1.6" />
+      <path className="escena__bandera" d="M195 16h12l-3 4 3 4h-12z" fill="#ff8fb1" />
+      <line x1="267" y1="28" x2="267" y2="16" stroke="#8a5a3b" strokeWidth="1.6" />
+      <path className="escena__bandera" d="M267 16h12l-3 4 3 4h-12z" fill="#ffc83d" />
+      <rect x="191" y="66" width="8" height="11" rx="4" fill={ventana} />
+      <rect x="263" y="66" width="8" height="11" rx="4" fill={ventana} />
+      <rect x="208" y="86" width="9" height="12" rx="4.5" fill={ventana} />
+      <rect x="245" y="86" width="9" height="12" rx="4.5" fill={ventana} />
+      <path d="M222 136v-20a9 9 0 0 1 18 0v20z" fill="#8d77f3" />
+    </g>
+  );
+}
 
 /** Un personaje parado en (x, y): la llama con su manta o uno de los demás animales. */
 function Personaje({ animal, x, y, retraso }: { animal: Terrestre; x: number; y: number; retraso: string }) {
@@ -486,6 +634,8 @@ export function EscenaAnimada({ texto, reparto = '', variante }: { texto: string
             <path d="M210 150 270 80 340 150z" fill="#8d7fd8" />
           </g>
         ) : null}
+
+        {lugar === 'castillo' ? <Castillo noche={noche} /> : null}
 
         {/* el suelo */}
         <path d="M0 140 Q80 118 160 136 T320 132 V180 H0z" fill={suelo} />

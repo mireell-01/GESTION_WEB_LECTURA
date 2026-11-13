@@ -83,7 +83,7 @@ export async function publicadores(request: APIRequestContext): Promise<Publicad
 /** "Killa y la llama" publicada por la API (editora escribe, revisor aprueba), con historia ramificada. */
 export async function lecturaKilla(
   request: APIRequestContext,
-  p: { rangoEdad?: 'R1' | 'R2'; tematica?: string } = {},
+  p: { rangoEdad?: 'R1' | 'R2' | 'R3'; tematica?: string } = {},
   quienes?: Publicadores,
 ): Promise<{ lecturaId: string; titulo: string; tematica: string; editora: CuentaBackoffice; editoraSesion: Record<string, string> }> {
   const { editoraCuenta, editora, revisor } = quienes ?? (await publicadores(request));

@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { Alerta, Cargando, Chip, clasesBoton, EscenaMundo, Icono } from '@lectoaventura/ui';
+import { Alerta, Cargando, Chip, clasesBoton, Icono } from '@lectoaventura/ui';
 
+import { EscenaAnimada } from '@/features/lectura/IlustracionLectura';
 import { api, mensajeDeError } from '@/shared/api/client';
 
-import { ESTADO_MISION, MisionesDeMundo, TONO_MUNDO } from './tipos';
+import { ArteMundo } from './ArteMundo';
+import { ESTADO_MISION, MisionesDeMundo } from './tipos';
 
 const AVANCE = { PENDIENTE: 'Por leer', EN_CURSO: 'Leyendo', FINALIZADA: '¡Leída!' } as const;
 /** Módulo 6: qué dice el enlace a la lectura según su avance. */
@@ -39,7 +41,7 @@ export function MisionesDelMundo({ mundoId }: { mundoId: string }) {
       {volver}
       <header className="mundo-detalle__cabecera">
         <span className="mundo-detalle__escena">
-          <EscenaMundo tono={TONO_MUNDO[mundo.numero] ?? 'bosque'} />
+          <ArteMundo numero={mundo.numero} />
         </span>
         <div>
           <p className="est-mundo__numero">Mundo {mundo.numero}</p>
@@ -73,7 +75,9 @@ export function MisionesDelMundo({ mundoId }: { mundoId: string }) {
                   <ul className="mision__lecturas">
                     {m.lecturas.map((l) => (
                       <li key={l.id}>
-                        <Icono nombre="libro" tamano={22} />
+                        <span className="mision__escena" aria-hidden="true">
+                          <EscenaAnimada texto={l.titulo} reparto={l.titulo} />
+                        </span>
                         <span>{l.titulo}</span>
                         <Chip tipo={l.avance === 'FINALIZADA' ? 'exito' : l.avance === 'EN_CURSO' ? 'aviso' : undefined}>{AVANCE[l.avance]}</Chip>
                         <Link href={`/estudiante/lecturas/${l.id}`} className={clasesBoton(l.avance === 'FINALIZADA' ? 'fantasma' : 'primario', { tamano: 'pequeno' })} aria-label={`${LEER[l.avance]}: ${l.titulo}`}>
