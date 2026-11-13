@@ -9,6 +9,7 @@ import { Alerta, Boton, Campo, Tarjeta } from '@lectoaventura/ui';
 import { api, ErrorApi, mensajeDeError, RespuestaSesion } from '@/shared/api/client';
 import { useSesion } from '@/shared/auth/sesion';
 
+import { AvisoGoogle, BotonGoogle } from './Google';
 import { ReenviarVerificacion } from './ReenviarVerificacion';
 
 /** RF-003 / RF-011: ingreso de adultos con correo y contraseña (+ código MFA si lo tienen activo). */
@@ -58,6 +59,7 @@ export function FormularioIngreso() {
           <Alerta tipo="info">Cerramos tu sesión por inactividad para proteger tus datos. Vuelve a ingresar.</Alerta>
         ) : null}
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
+        <AvisoGoogle codigo={parametros.get('google')} />
         {noVerificada ? (
           <div className="pila-sm" style={{ marginBottom: 'var(--la-espacio-3)' }}>
             <Alerta tipo="aviso">
@@ -103,6 +105,13 @@ export function FormularioIngreso() {
           Ingresar
         </Boton>
       </form>
+      {/* Docentes y familias también pueden ingresar con su cuenta de Google. */}
+      <div className="ingreso-google">
+        <p className="separador-o" aria-hidden="true">
+          o
+        </p>
+        <BotonGoogle intencion="ingresar" texto="Continuar con Google" />
+      </div>
       <div className="pila-sm" style={{ marginTop: 'var(--la-espacio-3)' }}>
         <Link href="/recuperar">¿Olvidaste tu contraseña?</Link>
         <span className="texto-suave">

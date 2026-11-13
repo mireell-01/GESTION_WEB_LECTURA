@@ -8,6 +8,7 @@ import { ConfigurarMfaUseCase } from './use-cases/configurar-mfa.use-case';
 import { ContextoIngresoUseCase } from './use-cases/contexto-ingreso.use-case';
 import { CrearPerfilEstudianteUseCase } from './use-cases/crear-perfil-estudiante.use-case';
 import { DescargarExportacionUseCase } from './use-cases/descargar-exportacion.use-case';
+import { IngresoGoogleUseCase } from './use-cases/ingreso-google.use-case';
 import { IniciarMfaUseCase } from './use-cases/iniciar-mfa.use-case';
 import { ListarPerfilesUseCase } from './use-cases/listar-perfiles.use-case';
 import { ObtenerUsuarioActualUseCase } from './use-cases/obtener-usuario-actual.use-case';
@@ -28,6 +29,11 @@ import { VincularFamiliarUseCase } from './use-cases/vincular-familiar.use-case'
 /** Correos retenidos en desarrollo cuando no hay SMTP configurado. */
 export interface BandejaDesarrollo {
   correos(): { para: string; asunto: string; texto: string; enlace?: string; enviadoEn: string }[];
+}
+
+/** "Google de prueba": solo fuera de producción y sin credenciales de Google (ver infrastructure/google). */
+export interface GoogleDeDesarrollo {
+  autorizar(p: { clientId?: string; redirectUri?: string; state?: string; nonce?: string; codeChallenge?: string; email?: string; nombre?: string }): string;
 }
 
 /** Casos de uso de IAM ya ensamblados (composition root en infrastructure/iam.providers.ts). */
@@ -59,6 +65,9 @@ export interface CasosUsoIam {
   autenticarEstudiante: AutenticarEstudianteUseCase;
   facade: IamFacade;
   bandejaDesarrollo: BandejaDesarrollo | null;
+  /** Ingreso con Google para docentes y familias (OpenID Connect con PKCE). */
+  ingresoGoogle: IngresoGoogleUseCase;
+  googleSimulado: GoogleDeDesarrollo | null;
 }
 
 export const CASOS_USO_IAM = Symbol('CASOS_USO_IAM');

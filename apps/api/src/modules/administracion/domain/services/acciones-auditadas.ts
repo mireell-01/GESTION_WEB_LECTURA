@@ -19,6 +19,8 @@ export const ACCIONES_AUDITADAS = {
   DOCENTE_DADO_DE_ALTA: 'Docente dado de alta',
   CUENTA_SUSPENDIDA: 'Cuenta suspendida',
   CUENTA_REACTIVADA: 'Cuenta reactivada',
+  CUENTA_GOOGLE_VINCULADA: 'Cuenta vinculada con Google',
+  CUENTA_GOOGLE_DESVINCULADA: 'Cuenta desvinculada de Google',
   INSTITUCION_CREADA: 'Institución registrada',
   INSTITUCION_SUSPENDIDA: 'Institución suspendida',
   INSTITUCION_REACTIVADA: 'Institución reactivada',

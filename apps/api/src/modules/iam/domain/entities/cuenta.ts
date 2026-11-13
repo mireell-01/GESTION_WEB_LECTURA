@@ -16,7 +16,12 @@ export interface CuentaProps {
   /** Secreto TOTP generado pero aún no confirmado con un código (RF-011). */
   mfaSecretPendiente: string | null;
   creadoEn: Date;
+  /** Ingreso con Google (solo docentes y familias): el identificador estable (sub) de su cuenta de Google. */
+  googleSub: string | null;
 }
+
+/** Los roles que pueden ingresar con Google: el equipo de contenidos y la administración usan contraseña y MFA. */
+const ROLES_CON_GOOGLE = new Set(['DOCENTE', 'FAMILIAR']);
 
 /**
  * Agregado: CuentaAdulta — docente, familiar, editor, revisor o administrador.
@@ -52,6 +57,46 @@ export class Cuenta {
       mfaSecret: null,
       mfaSecretPendiente: null,
       creadoEn: params.ahora,
+      googleSub: null,
+    });
+  }
+
+  /**
+   * Una docente o un familiar crea su cuenta con Google: Google ya confirmó el correo, así que la cuenta nace
+   * ACTIVA y vinculada. La contraseña es una clave al azar que nadie conoce; si algún día quiere ingresar
+   * con contraseña, la crea con "¿Olvidaste tu contraseña?" (RF-004).
+   */
+  static registrarConGoogle(params: {
+    id: string;
+    nombre: string;
+    email: Email;
+    rol: Rol;
+    hashContrasena: string;
+    googleSub: string;
+    ahora: Date;
+  }): Cuenta {
+    if (!ROLES_CON_GOOGLE.has(params.rol.value)) {
+      throw new DatoInvalidoError('Con Google solo pueden registrarse docentes y familias');
+    }
+    const nombre = params.nombre.trim();
+    if (nombre.length < 2) {
+      throw new DatoInvalidoError('Escribe tu nombre');
+    }
+    if (!params.googleSub.trim()) {
+      throw new DatoInvalidoError('Falta la cuenta de Google');
+    }
+    return new Cuenta({
+      id: params.id,
+      nombre,
+      email: params.email,
+      hashContrasena: params.hashContrasena,
+      rol: params.rol,
+      estado: EstadoCuenta.activa(),
+      mfaHabilitado: false,
+      mfaSecret: null,
+      mfaSecretPendiente: null,
+      creadoEn: params.ahora,
+      googleSub: params.googleSub,
     });
   }
 
@@ -93,6 +138,34 @@ export class Cuenta {
 
   get mfaSecretPendiente(): string | null {
     return this.props.mfaSecretPendiente;
+  }
+
+  get googleSub(): string | null {
+    return this.props.googleSub;
+  }
+
+  /**
+   * Ingresar o vincular con Google: solo docentes y familias, y sin verificación en dos pasos (quien la activó
+   * sigue entrando con contraseña y código, para no saltarse ese segundo factor).
+   */
+  puedeUsarGoogle(): boolean {
+    return ROLES_CON_GOOGLE.has(this.props.rol.value) && !this.props.mfaHabilitado;
+  }
+
+  /** Vincula su cuenta de Google. Si la cuenta esperaba verificar el correo, Google ya lo confirmó. */
+  vincularGoogle(googleSub: string): void {
+    if (!this.puedeUsarGoogle()) {
+      throw new DatoInvalidoError('Esta cuenta ingresa con contraseña y código de verificación');
+    }
+    if (!googleSub.trim()) {
+      throw new DatoInvalidoError('Falta la cuenta de Google');
+    }
+    this.props.googleSub = googleSub;
+    this.verificar();
+  }
+
+  desvincularGoogle(): void {
+    this.props.googleSub = null;
   }
 
   get propsSnapshot(): Readonly<CuentaProps> {

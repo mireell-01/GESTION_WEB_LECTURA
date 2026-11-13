@@ -22,6 +22,9 @@ export const EVENTOS_IAM = {
   DOCENTE_DADO_DE_ALTA: 'iam.DocenteDadoDeAlta',
   CUENTA_SUSPENDIDA: 'iam.CuentaSuspendida',
   CUENTA_REACTIVADA: 'iam.CuentaReactivada',
+  /** Ingreso con Google: una docente o un familiar vinculó (o desvinculó) su cuenta de Google. */
+  GOOGLE_VINCULADA: 'iam.CuentaGoogleVinculada',
+  GOOGLE_DESVINCULADA: 'iam.CuentaGoogleDesvinculada',
 } as const;
 
 /** Datos comunes para auditoría: quién hizo la acción (cuenta adulta o sistema). */

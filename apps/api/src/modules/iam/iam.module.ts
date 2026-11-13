@@ -9,6 +9,7 @@ import { AutenticacionGuard, RolesGuard } from './interface/http/guards';
 import { AccesoEstudianteController } from './interface/http/acceso-estudiante.controller';
 import { AuthController } from './interface/http/auth.controller';
 import { EstudiantesController } from './interface/http/estudiantes.controller';
+import { GoogleController, GoogleSimuladoController } from './interface/http/google.controller';
 import { DesarrolloController, ExportacionesController } from './interface/http/exportaciones.controller';
 
 /**
@@ -16,7 +17,15 @@ import { DesarrolloController, ExportacionesController } from './interface/http/
  * Registra los guards globales: límite de tasa (RNF-019), sesión obligatoria salvo @Publico() y roles.
  */
 @Module({
-  controllers: [AuthController, EstudiantesController, AccesoEstudianteController, ExportacionesController, DesarrolloController],
+  controllers: [
+    AuthController,
+    GoogleController,
+    EstudiantesController,
+    AccesoEstudianteController,
+    ExportacionesController,
+    DesarrolloController,
+    GoogleSimuladoController,
+  ],
   providers: [
     ...iamProviders,
     { provide: APP_GUARD, useClass: LimiteTasaGuard },

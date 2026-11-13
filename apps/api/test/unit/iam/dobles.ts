@@ -41,6 +41,7 @@ export class CuentasEnMemoria implements CuentaRepository {
   async guardar(c: Cuenta) { this.filas.set(c.id, c); }
   async buscarPorId(id: string) { return this.filas.get(id) ?? null; }
   async buscarPorEmail(email: string) { return [...this.filas.values()].find((c) => c.email.value === email) ?? null; }
+  async buscarPorGoogleSub(sub: string) { return [...this.filas.values()].find((c) => c.googleSub === sub) ?? null; }
   async existeEmail(email: string) { return !!(await this.buscarPorEmail(email)); }
   async listar() { return [...this.filas.values()]; }
 }
