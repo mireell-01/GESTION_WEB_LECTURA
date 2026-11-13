@@ -135,7 +135,7 @@ export class LogrosUseCase {
     return lectura && reto.sugerir(lectura) ? this.repo.sugerirLectura(reto) : reto;
   }
 
-  /** Las lecturas publicadas de su edad (RN-02) y su avance: para cada habilidad, su cuento del día. */
+  /** Las lecturas publicadas de su edad (RF-028) y su avance: para cada habilidad, su cuento del día. */
   private async cuentosDelDia(estudianteId: string, hoy: string): Promise<(habilidad: Habilidad) => LecturaSugerida | null> {
     const perfil = await this.identidad.perfil(estudianteId);
     const fichas = perfil ? await this.fichas.publicadas(perfil.rangoEdad) : [];

@@ -178,6 +178,8 @@ test.describe('[Lectura][Core][Slow] Lectura interactiva (RF-038 a RF-051)', () 
     await tabletDelAulaActivada(page, request, aula);
     await entrar(page, 'Lía');
     await abrirDesdeBiblioteca(page, lectura);
+    // RF-028: el cuento es de su edad, y se ve debajo del título.
+    await expect(page.getByText('Cuento para 6–7 años')).toBeVisible();
 
     // RF-049: lo dictado aparece para revisarlo antes de enviarlo; el audio no sale del dispositivo.
     await page.getByRole('button', { name: 'Decirlo con mi voz' }).click();
@@ -194,6 +196,19 @@ test.describe('[Lectura][Core][Slow] Lectura interactiva (RF-038 a RF-051)', () 
     await expect(texto(page).locator('.lectura-oracion--leyendo')).toHaveText('Cada mañana cuidaba a su llama Pancho.');
     expect(await page.evaluate(() => (window as unknown as { __frases: { velocidad: number }[] }).__frases[0]?.velocidad)).toBe(0.75);
     await expect(page.getByRole('button', { name: 'Escuchar la pregunta' })).toBeVisible();
+  });
+
+  test('RF-028: con 6 años, un cuento de 10–12 años no está en su biblioteca ni se abre con su enlace', async ({ page, request }) => {
+    const lectura = await lecturaKilla(request, { rangoEdad: 'R3' });
+    const aula = await docenteConAula(request, [{ alias: 'Lía', avatar: 'koala', anioNacimiento: new Date().getFullYear() - 6 }]);
+    await tabletDelAulaActivada(page, request, aula);
+    await entrar(page, 'Lía');
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Biblioteca' }).click();
+    await filtrarPorTema(page, lectura.tematica);
+    await expect(page.getByRole('link', { name: `Abrir ${lectura.titulo}` })).toHaveCount(0);
+    await page.goto(`/estudiante/lecturas/${lectura.lecturaId}`);
+    await expect(page.getByText('Este cuento no está en tu biblioteca. ¡Elige uno que sea para ti!')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: lectura.titulo })).toHaveCount(0);
   });
 
   test('RF-018, RF-051: llega a la lectura desde la misión de su docente, y la docente valora lo que escribió', async ({ page, request }) => {

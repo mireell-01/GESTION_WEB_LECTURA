@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
+import { Alerta, BarraProgreso, Boton, Cargando, Chip, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
 import { AsistenteLectura } from '@/features/asistente/AsistenteLectura';
 import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
+import { EDADES } from '@/features/contenido/tipos';
 import { LogrosDeLectura } from '@/features/gamificacion/LogrosDeLectura';
-import { api, mensajeDeError } from '@/shared/api/client';
+import { api, ErrorApi, mensajeDeError } from '@/shared/api/client';
 
 import { PreguntaLectura } from './PreguntaLectura';
 import { RespuestaEscrita } from './RespuestaEscrita';
@@ -77,7 +78,8 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
     setError(null);
     api<Sesion>('/sesiones-lectura', { metodo: 'POST', cuerpo: { lecturaId, ...(asignacionId ? { asignacionId } : {}) } })
       .then(setSesion)
-      .catch((err) => setError(mensajeDeError(err)));
+      // Un cuento de otra edad (o que ya no está publicado) no se abre: se lo decimos con palabras de niño.
+      .catch((err) => setError(err instanceof ErrorApi && err.estado === 404 ? 'Este cuento no está en tu biblioteca. ¡Elige uno que sea para ti!' : mensajeDeError(err)));
   }, [lecturaId, asignacionId]);
 
   useEffect(() => {
@@ -190,6 +192,12 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
 
       <header className="sesion-lectura__cabecera">
         <h1>{sesion.lectura.titulo}</h1>
+        {/* Para quién es el cuento: la API solo abre lecturas de la edad del niño (o las que le asignó su docente). */}
+        {EDADES[sesion.lectura.rangoEdad] ? (
+          <span className="fila fila--compacta">
+            <Chip tipo="info">Cuento para {EDADES[sesion.lectura.rangoEdad]}</Chip>
+          </span>
+        ) : null}
         {fase !== 'PREDICCION' && fase !== 'FINALIZADA' ? (
           // Una estrella avanza por la barra con cada actividad hecha.
           <div className="avance-lectura" style={{ '--avance': `${avance}%` } as React.CSSProperties}>
