@@ -71,7 +71,7 @@ export const TEXTO_E2E = [
 /** Lectura completa publicada por la API (editora escribe, revisor aprueba): para preparar escenarios. */
 export async function lecturaPublicada(
   request: APIRequestContext,
-  metadatos: Partial<{ titulo: string; rangoEdad: string; nivelDificultad: number; tematica: string }>,
+  metadatos: Partial<{ titulo: string; rangoEdad: string; nivelDificultad: number; tematica: string; tipoTexto: string }>,
 ): Promise<{ lecturaId: string; titulo: string }> {
   const editora = await sesionBackoffice(request, await cuentaBackoffice('EDITOR'));
   const revisor = await sesionBackoffice(request, await cuentaBackoffice('REVISOR'));
