@@ -190,6 +190,20 @@ export class PrismaLecturaRepository implements LecturaRepository {
     };
   }
 
+  async tiposEnBiblioteca(f: Pick<FiltroBiblioteca, 'rangos' | 'niveles'>): Promise<string[]> {
+    const filas = await this.prisma.versionLectura.findMany({
+      where: {
+        estado: 'PUBLICADO',
+        publicadaEnLectura: { is: { archivadaEn: null } },
+        ...(f.rangos ? { rangoEdad: { in: f.rangos } } : {}),
+        ...(f.niveles ? { nivelDificultad: { in: f.niveles } } : {}),
+      },
+      distinct: ['tipoTexto'],
+      select: { tipoTexto: true },
+    });
+    return filas.map((x) => x.tipoTexto);
+  }
+
   async buscarRecurso(id: string): Promise<{ recurso: Recurso; versionId: string; estado: EstadoVersion } | null> {
     if (!esUuid(id)) return null;
     const f = await this.prisma.recurso.findUnique({ where: { id }, include: { versionLectura: { select: { estado: true } } } });

@@ -214,8 +214,10 @@ describe('[Contenido][Core][Slow] Biblioteca y asignaciones (RF-028, RF-018)', (
     ninoR2 = await entrar(mayor);
     const ninoR1 = await entrar(menor);
 
-    expect((await t.http().get(`${API}/biblioteca`).set(bearer(ninoR2)).expect(200)).body).toMatchObject({ lecturas: [{ lecturaId }], alcance: { rangoEdad: 'R2', niveles: [1, 2, 3] } });
-    expect((await t.http().get(`${API}/biblioteca`).set(bearer(ninoR1)).expect(200)).body.lecturas).toEqual([]);
+    expect((await t.http().get(`${API}/biblioteca`).set(bearer(ninoR2)).expect(200)).body).toMatchObject({ lecturas: [{ lecturaId }], alcance: { rangoEdad: 'R2', niveles: [1, 2, 3] }, tipos: ['CUENTO'] });
+    // El filtro de tipo de texto solo ofrece los tipos que hay en su alcance, aunque haya elegido otro.
+    expect((await t.http().get(`${API}/biblioteca?tipo=POEMA`).set(bearer(ninoR2)).expect(200)).body).toMatchObject({ lecturas: [], tipos: ['CUENTO'] });
+    expect((await t.http().get(`${API}/biblioteca`).set(bearer(ninoR1)).expect(200)).body).toMatchObject({ lecturas: [], tipos: [] });
     await t.http().get(`${API}/biblioteca/${lecturaId}`).set(bearer(ninoR1)).expect(404);
     await t.http().get(`${API}/backoffice/lecturas`).set(bearer(ninoR2)).expect(403);
   });

@@ -38,5 +38,7 @@ export interface LecturaRepository {
   listarResumen(): Promise<ResumenLectura[]>;
   /** RF-028: versiones publicadas de lecturas vigentes, en orden estable para paginar. */
   biblioteca(filtro: FiltroBiblioteca): Promise<{ versiones: VersionLectura[]; siguiente: string | null }>;
+  /** Los tipos de texto que tienen alguna lectura publicada y vigente en ese alcance (edad y niveles). */
+  tiposEnBiblioteca(filtro: Pick<FiltroBiblioteca, 'rangos' | 'niveles'>): Promise<string[]>;
   buscarRecurso(id: string): Promise<{ recurso: Recurso; versionId: string; estado: EstadoVersion } | null>;
 }

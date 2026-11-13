@@ -235,6 +235,19 @@ describe('[Contenido][Core][Fast] Contenido: autoría, publicación, recursos y 
       expect((await biblioteca.explorar({ sub: 'desconocido', rol: 'ESTUDIANTE' }, {})).lecturas).toEqual([]);
     });
 
+    it('el filtro de tipo de texto ofrece solo los tipos que hay en su alcance, aunque ya haya elegido uno', async () => {
+      const adulto = { sub: 'docente', rol: 'DOCENTE' as const };
+      expect((await biblioteca.explorar(adulto, {})).tipos).toEqual(['CUENTO', 'POEMA', 'CIENTIFICO']);
+      expect((await biblioteca.explorar(adulto, { edad: 'R1' })).tipos).toEqual(['POEMA']);
+      // Elegir un tipo o un tema no borra los demás de la lista: puede cambiar de tipo.
+      expect((await biblioteca.explorar(adulto, { tipo: 'POEMA', tema: 'nada' })).tipos).toEqual(['CUENTO', 'POEMA', 'CIENTIFICO']);
+      e.lectores.rangos.set('nino-r1', 'R1');
+      e.lectores.rangos.set('nino-r2', 'R2');
+      expect((await biblioteca.explorar({ sub: 'nino-r1', rol: 'ESTUDIANTE' }, { tipo: 'CUENTO' })).tipos).toEqual(['POEMA']);
+      expect((await biblioteca.explorar({ sub: 'nino-r2', rol: 'ESTUDIANTE' }, {})).tipos).toEqual(['CUENTO']);
+      expect((await biblioteca.explorar({ sub: 'desconocido', rol: 'ESTUDIANTE' }, {})).tipos).toEqual([]);
+    });
+
     it('detalle sin respuestas; el estudiante no abre lo que está fuera de su alcance', async () => {
       const [zorro, volcanes] = (await biblioteca.explorar({ sub: 'docente', rol: 'DOCENTE' }, { tema: '' })).lecturas.filter((f) => ['El zorro y la luna', 'Volcanes del Perú'].includes(f.titulo));
       const d = await biblioteca.detalle({ sub: 'docente', rol: 'DOCENTE' }, zorro!.lecturaId);
