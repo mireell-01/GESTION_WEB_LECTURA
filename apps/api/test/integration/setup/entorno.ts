@@ -14,5 +14,8 @@ process.env['NODE_ENV'] = 'test';
 // Todas las pruebas salen de 127.0.0.1: se amplía el límite de tasa salvo en la prueba que lo verifica.
 process.env['LIMITE_TASA_FACTOR'] = '100';
 delete process.env['SMTP_HOST'];
+// Ingreso con Google: siempre el "Google de prueba", aunque el .env local tenga credenciales reales.
+delete process.env['GOOGLE_CLIENT_ID'];
+delete process.env['GOOGLE_CLIENT_SECRET'];
 // RF-023: los archivos subidos en las pruebas van a una carpeta temporal, no a la del proyecto.
 process.env['ALMACEN_DIR'] = join(tmpdir(), 'lectoaventura-almacen-pruebas');

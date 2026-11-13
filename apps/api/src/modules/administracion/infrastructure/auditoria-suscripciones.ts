@@ -72,6 +72,8 @@ const AUDITADOS: Record<string, Regla> = {
   [EVENTOS_IAM.DOCENTE_DADO_DE_ALTA]: { accion: 'DOCENTE_DADO_DE_ALTA', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('cuenta_adulta') },
   [EVENTOS_IAM.CUENTA_SUSPENDIDA]: { accion: 'CUENTA_SUSPENDIDA', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('cuenta_adulta') },
   [EVENTOS_IAM.CUENTA_REACTIVADA]: { accion: 'CUENTA_REACTIVADA', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('cuenta_adulta') },
+  [EVENTOS_IAM.GOOGLE_VINCULADA]: { accion: 'CUENTA_GOOGLE_VINCULADA', actorRol: null, recurso: agregado('cuenta_adulta') },
+  [EVENTOS_IAM.GOOGLE_DESVINCULADA]: { accion: 'CUENTA_GOOGLE_DESVINCULADA', actorRol: null, recurso: agregado('cuenta_adulta') },
   // RF-078
   [EVENTOS_GAMIFICACION.PARAMETROS_PUBLICADOS]: { accion: 'PARAMETROS_GAMIFICACION_PUBLICADOS', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('parametro_gamificacion') },
 };

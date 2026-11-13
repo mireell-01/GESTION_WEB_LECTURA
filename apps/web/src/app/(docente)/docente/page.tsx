@@ -5,6 +5,7 @@ import { Alerta, Icono, Tarjeta } from '@lectoaventura/ui';
 import { MisAulas } from '@/features/escuela/MisAulas';
 import { ActivarTabletAula } from '@/features/iam/ActivarTabletAula';
 import { ConfigurarMfa } from '@/features/iam/ConfigurarMfa';
+import { CuentaGoogle } from '@/features/iam/Google';
 import { useSesion } from '@/shared/auth/sesion';
 
 export default function DocenteHomePage() {
@@ -37,6 +38,7 @@ export default function DocenteHomePage() {
             <ConfigurarMfa />
           </>
         )}
+        <CuentaGoogle />
       </Tarjeta>
     </div>
   );

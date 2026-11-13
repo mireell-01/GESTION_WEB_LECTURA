@@ -30,6 +30,8 @@ model Cuenta {
   rol            String
   estado         String   @default("PENDIENTE_VERIFICACION")
   creadoEn       DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  /// Ingreso con Google (solo docentes y familias): el identificador estable (sub) de su cuenta de Google.
+  googleSub      String?  @unique @map("google_sub")
 
   factorMfa          FactorMfa?
   perfilesEstudiante PerfilEstudiante[]

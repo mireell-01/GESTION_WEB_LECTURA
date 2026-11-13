@@ -23,6 +23,7 @@ import { CrearPerfilEstudianteUseCase } from '../application/use-cases/crear-per
 import { ContextoIngresoUseCase } from '../application/use-cases/contexto-ingreso.use-case';
 import { DescargarExportacionUseCase } from '../application/use-cases/descargar-exportacion.use-case';
 import { SolicitarExportacionUseCase } from '../application/use-cases/solicitar-exportacion.use-case';
+import { IngresoGoogleUseCase } from '../application/use-cases/ingreso-google.use-case';
 import { IniciarMfaUseCase } from '../application/use-cases/iniciar-mfa.use-case';
 import { ListarPerfilesUseCase } from '../application/use-cases/listar-perfiles.use-case';
 import { ObtenerUsuarioActualUseCase } from '../application/use-cases/obtener-usuario-actual.use-case';
@@ -43,6 +44,8 @@ import { Argon2HashService } from './crypto/argon2-hash.service';
 import { HmacFirmador } from './crypto/hmac-firmador';
 import { JwtTokenService } from './crypto/jwt-token.service';
 import { OtplibTotpService } from './crypto/otplib-totp.service';
+import { EMISOR_SIMULADO, GoogleSimulado } from './google/google-simulado';
+import { EXTREMOS_GOOGLE, OidcGoogle } from './google/oidc-google';
 import { PdfLibGenerador } from './export/pdf-lib-generador';
 import { ListaContrasenasFiltradas } from './passwords/lista-contrasenas-filtradas';
 import { PrismaAlmacenExportaciones } from './persistence/prisma-almacen-exportaciones';
@@ -65,7 +68,55 @@ function configuracion() {
     smtpUsuario: process.env['SMTP_USER'],
     smtpContrasena: process.env['SMTP_PASS'],
     remitente: process.env['CORREO_REMITENTE'] ?? 'LectoAventura <no-responder@lectoaventura.pe>',
+    // Ingreso con Google: las credenciales OAuth del proyecto de Google Cloud (nunca en el repositorio).
+    googleClientId: process.env['GOOGLE_CLIENT_ID']?.trim() || undefined,
+    googleClientSecret: process.env['GOOGLE_CLIENT_SECRET']?.trim() || undefined,
   };
+}
+
+/**
+ * ¿La web corre en esta computadora? El "Google de prueba" deja entrar con cualquier correo, así que solo existe
+ * con una web local (localhost, 127.0.0.1, ::1, *.localhost o *.test): en un dominio real nunca se activa, aunque
+ * falte NODE_ENV=production.
+ */
+export function esOrigenLocal(urlWeb: string): boolean {
+  try {
+    const host = new URL(urlWeb).hostname;
+    return ['localhost', '127.0.0.1', '[::1]'].includes(host) || host.endsWith('.localhost') || host.endsWith('.test');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * El proveedor del ingreso con Google: Google de verdad si hay credenciales; sin ellas, con una web local y fuera de
+ * producción, el "Google de prueba"; si no, ninguno (la web no muestra el botón). La vuelta es por la web (que
+ * reenvía /api a la API), así la cookie de sesión queda en el mismo origen.
+ */
+export function proveedorGoogle(
+  config: { urlWeb: string; googleClientId?: string; googleClientSecret?: string },
+  entorno: string | undefined = process.env['NODE_ENV'],
+): { proveedor: OidcGoogle | null; simulado: GoogleSimulado | null } {
+  const redirectUri = `${config.urlWeb}/api/v1/auth/google/callback`;
+  if (config.googleClientId && config.googleClientSecret) {
+    return { proveedor: new OidcGoogle({ modo: 'GOOGLE', clientId: config.googleClientId, clientSecret: config.googleClientSecret, redirectUri, ...EXTREMOS_GOOGLE }), simulado: null };
+  }
+  if (config.googleClientId || entorno === 'production' || !esOrigenLocal(config.urlWeb)) return { proveedor: null, simulado: null };
+  const simulado = new GoogleSimulado(redirectUri);
+  const proveedor = new OidcGoogle(
+    {
+      modo: 'SIMULADO',
+      clientId: simulado.clientId,
+      clientSecret: simulado.clientSecret,
+      redirectUri,
+      urlAutorizacion: `${config.urlWeb}/api/v1/dev/google/autorizar`,
+      urlToken: `${EMISOR_SIMULADO}/token`,
+      urlJwks: `${EMISOR_SIMULADO}/jwks`,
+      emisores: [EMISOR_SIMULADO],
+    },
+    simulado.pedir,
+  );
+  return { proveedor, simulado };
 }
 
 /**
@@ -105,6 +156,7 @@ export function crearCasosUsoIam(
     : (bandejaDesarrollo as ConsolaCorreoService);
 
   const emisor = new EmisorSesiones(sesiones, tokens, generarId, ahora);
+  const google = proveedorGoogle(config);
 
   const registrarConsentimiento = new RegistrarConsentimientoUseCase(cuentas, consentimientos, bus, generarId, ahora);
   const crearPerfil = new CrearPerfilEstudianteUseCase(cuentas, perfiles, consentimientos, hash, bus, generarId, ahora);
@@ -149,6 +201,10 @@ export function crearCasosUsoIam(
       new AdministrarDocentesUseCase(cuentas, verificaciones, hash, tokens, sesiones, correo, bus, config.urlWeb, generarId, ahora),
     ),
     bandejaDesarrollo,
+    ingresoGoogle: new IngresoGoogleUseCase(
+      cuentas, hash, tokens, new HmacFirmador(config.jwtSecret, 'ingreso-google'), emisor, bus, google.proveedor, config.urlWeb, generarId, ahora,
+    ),
+    googleSimulado: google.simulado,
   };
 }
 

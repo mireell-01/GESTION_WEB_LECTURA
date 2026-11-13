@@ -1533,6 +1533,86 @@ p {
   gap: 8px;
 }
 
+/* Ingreso con Google: botón blanco con la "G" de colores, como piden las pautas de Google. */
+.ingreso-google {
+  display: grid;
+  gap: var(--la-espacio-2);
+  margin: var(--la-espacio-3) 0;
+}
+
+.separador-o {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--la-color-texto-suave);
+  font: 600 var(--la-texto-sm) var(--la-font-redondeada);
+}
+
+.separador-o::before,
+.separador-o::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--la-color-borde);
+}
+
+.boton-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--la-target-min);
+  padding: 0 18px;
+  border: 2px solid #dadce0;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f1f1f;
+  font: 700 1rem var(--la-font-redondeada);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton-google:hover {
+  border-color: #b8bcc2;
+  background: #f8f9fa;
+}
+
+.boton-google:focus-visible {
+  outline: none;
+  box-shadow: var(--la-foco);
+}
+
+.boton-google:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.boton-google__nota {
+  color: var(--la-color-texto-suave);
+  font-size: var(--la-texto-sm);
+  text-align: center;
+}
+
+.cuenta-google {
+  margin-top: var(--la-espacio-3);
+  padding-top: var(--la-espacio-3);
+  border-top: 2px solid var(--la-color-borde);
+}
+
+.cuenta-google__titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--la-texto-lg);
+}
+
+.cuenta-google .boton-google {
+  width: auto;
+}
+
 .filtros--infantil {
   padding: 14px;
   border-radius: 24px;

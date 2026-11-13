@@ -18,7 +18,7 @@ export class PrismaCuentaRepository implements CuentaRepository {
 
   async guardar(cuenta: Cuenta): Promise<void> {
     const p = cuenta.propsSnapshot;
-    const datos = { nombre: p.nombre, email: p.email.value, hashContrasena: p.hashContrasena, rol: p.rol.value, estado: p.estado.value };
+    const datos = { nombre: p.nombre, email: p.email.value, hashContrasena: p.hashContrasena, rol: p.rol.value, estado: p.estado.value, googleSub: p.googleSub };
     const tieneMfa = p.mfaHabilitado || p.mfaSecret !== null || p.mfaSecretPendiente !== null;
     const mfa = { habilitado: p.mfaHabilitado, secreto: p.mfaSecret, secretoPendiente: p.mfaSecretPendiente };
 
@@ -42,6 +42,11 @@ export class PrismaCuentaRepository implements CuentaRepository {
 
   async buscarPorEmail(email: string): Promise<Cuenta | null> {
     const fila = await this.prisma.cuenta.findUnique({ where: { email }, include: { factorMfa: true } });
+    return fila ? this.aDominio(fila) : null;
+  }
+
+  async buscarPorGoogleSub(googleSub: string): Promise<Cuenta | null> {
+    const fila = await this.prisma.cuenta.findUnique({ where: { googleSub }, include: { factorMfa: true } });
     return fila ? this.aDominio(fila) : null;
   }
 
@@ -78,6 +83,7 @@ export class PrismaCuentaRepository implements CuentaRepository {
       mfaHabilitado: fila.factorMfa?.habilitado ?? false,
       mfaSecret: fila.factorMfa?.secreto ?? null,
       mfaSecretPendiente: fila.factorMfa?.secretoPendiente ?? null,
+      googleSub: fila.googleSub,
       creadoEn: fila.creadoEn,
     });
   }

@@ -7,6 +7,7 @@ import { Alerta, Boton, Campo, Tarjeta } from '@lectoaventura/ui';
 
 import { api, mensajeDeError } from '@/shared/api/client';
 
+import { AvisoGoogle, BotonGoogle, useCodigoGoogle } from './Google';
 import { ReenviarVerificacion } from './ReenviarVerificacion';
 
 type RolAdulto = 'FAMILIAR' | 'DOCENTE';
@@ -21,6 +22,7 @@ export function FormularioRegistro() {
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [registrado, setRegistrado] = useState(false);
+  const codigoGoogle = useCodigoGoogle();
 
   const errorConfirmacion = confirmacion && confirmacion !== contrasena ? 'Las contraseñas no coinciden' : undefined;
 
@@ -61,6 +63,7 @@ export function FormularioRegistro() {
     <Tarjeta titulo="Crear una cuenta" nivel={1}>
       <form onSubmit={enviar} noValidate>
         {error ? <Alerta tipo="error">{error}</Alerta> : null}
+        <AvisoGoogle codigo={codigoGoogle} />
         <fieldset style={{ border: 'none', padding: 0, margin: '0 0 var(--la-espacio-3)' }}>
           <legend className="la-campo__etiqueta" style={{ marginBottom: 'var(--la-espacio-2)' }}>
             Soy…
@@ -83,6 +86,13 @@ export function FormularioRegistro() {
             ))}
           </div>
         </fieldset>
+        {/* Con Google la cuenta queda lista al instante (Google ya confirmó el correo), con el rol elegido arriba. */}
+        <div className="ingreso-google">
+          <BotonGoogle intencion="registrar" rol={rol} texto="Registrarme con Google" />
+          <p className="separador-o" aria-hidden="true">
+            o con tu correo
+          </p>
+        </div>
         <Campo etiqueta="Nombre y apellido" autoComplete="name" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
         <Campo
           etiqueta="Correo electrónico"

@@ -12,6 +12,7 @@ import { guardarTokenDispositivo, leerTokenDispositivo } from '@/shared/auth/dis
 import { useSesion } from '@/shared/auth/sesion';
 
 import { ConfigurarMfa } from './ConfigurarMfa';
+import { CuentaGoogle } from './Google';
 import { DatosPerfilNuevo, FormularioPerfil } from './FormularioPerfil';
 import { TarjetaPerfil } from './TarjetaPerfil';
 import { NOMBRE_RANGO, PerfilEstudiante } from './tipos';
@@ -311,6 +312,7 @@ export function PanelFamilia({ renderExtraPerfil }: { renderExtraPerfil?: (perfi
             <ConfigurarMfa />
           </>
         )}
+        <CuentaGoogle />
       </Tarjeta>
     </div>
   );
