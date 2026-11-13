@@ -1,5 +1,6 @@
 import { NoEncontradoError, ResolutorNivelLector, RolUsuario } from '../../../shared-kernel/public-api';
 import { VersionLectura } from '../../domain/entities/version-lectura';
+import { TIPOS_TEXTO, TipoTexto } from '../../domain/value-objects/metadatos-lectura';
 import { DetalleBiblioteca, FichaBiblioteca, fichaDe, URL_RECURSO_BIBLIOTECA } from '../dto/contenido.dto';
 import { IdentidadLectores } from '../ports/identidad-lectores';
 import { LecturaRepository } from '../ports/lectura.repository';
@@ -28,28 +29,48 @@ export class BibliotecaUseCase {
     private readonly nivelLector: ResolutorNivelLector,
   ) {}
 
-  async explorar(usuario: { sub: string; rol: RolUsuario }, f: FiltrosBiblioteca): Promise<{ lecturas: FichaBiblioteca[]; siguiente: string | null; alcance: { rangoEdad: string; niveles: number[] } | null }> {
+  /**
+   * RF-028. `tipos`: los tipos de texto que hay en su alcance (sin contar el tipo ni el tema elegidos), para que el
+   * filtro solo ofrezca los que tienen lecturas.
+   */
+  async explorar(
+    usuario: { sub: string; rol: RolUsuario },
+    f: FiltrosBiblioteca,
+  ): Promise<{ lecturas: FichaBiblioteca[]; siguiente: string | null; alcance: { rangoEdad: string; niveles: number[] } | null; tipos: string[] }> {
     let rangos = f.edad ? [f.edad] : undefined;
     let niveles = f.nivel ? [f.nivel] : undefined;
     let alcance: { rangoEdad: string; niveles: number[] } | null = null;
     if (usuario.rol === 'ESTUDIANTE') {
       const permitido = await this.alcanceDelEstudiante(usuario.sub);
-      if (!permitido) return { lecturas: [], siguiente: null, alcance: null };
+      if (!permitido) return { lecturas: [], siguiente: null, alcance: null, tipos: [] };
       alcance = permitido;
       rangos = f.edad && f.edad !== permitido.rangoEdad ? [] : [permitido.rangoEdad];
       niveles = f.nivel ? permitido.niveles.filter((n) => n === f.nivel) : permitido.niveles;
-      if (rangos.length === 0 || niveles.length === 0) return { lecturas: [], siguiente: null, alcance };
     }
-    const { versiones, siguiente } = await this.repo.biblioteca({
-      rangos,
-      niveles,
-      tema: f.tema?.trim() || undefined,
-      tipo: f.tipo,
-      habilidad: f.habilidad,
-      cursor: f.cursor ?? null,
-      limite: POR_PAGINA,
-    });
-    return { lecturas: versiones.map(fichaDe), siguiente, alcance };
+    // Los tipos se cuentan en todo su alcance: los del niño, su edad y sus niveles; los del adulto, la edad y el nivel que
+    // eligió. Se buscan a la vez que las lecturas, para que la biblioteca no tarde más.
+    const tiposEnAlcance = this.repo
+      .tiposEnBiblioteca(alcance ? { rangos: [alcance.rangoEdad], niveles: alcance.niveles } : { rangos, niveles })
+      .then((t) => this.ordenarTipos(t));
+    if (rangos?.length === 0 || niveles?.length === 0) return { lecturas: [], siguiente: null, alcance, tipos: await tiposEnAlcance };
+    const [{ versiones, siguiente }, tipos] = await Promise.all([
+      this.repo.biblioteca({
+        rangos,
+        niveles,
+        tema: f.tema?.trim() || undefined,
+        tipo: f.tipo,
+        habilidad: f.habilidad,
+        cursor: f.cursor ?? null,
+        limite: POR_PAGINA,
+      }),
+      tiposEnAlcance,
+    ]);
+    return { lecturas: versiones.map(fichaDe), siguiente, alcance, tipos };
+  }
+
+  /** En el orden del SRS (cuento, historieta, poema…), no en el de la base. */
+  private ordenarTipos(tipos: string[]): string[] {
+    return [...tipos].sort((a, b) => TIPOS_TEXTO.indexOf(a as TipoTexto) - TIPOS_TEXTO.indexOf(b as TipoTexto));
   }
 
   async detalle(usuario: { sub: string; rol: RolUsuario }, lecturaId: string): Promise<DetalleBiblioteca> {

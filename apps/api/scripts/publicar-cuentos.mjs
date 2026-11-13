@@ -1,6 +1,7 @@
-// Publica el contenido inicial (los cuentos de los 5 mundos, prisma/contenido-inicial) en la base LOCAL, por la
-// API real del backoffice: la editora escribe, el revisor aprueba (RN-15: revisor ≠ autor) y cada cuento queda en
-// su misión del mundo y la edad que le corresponden.
+// Publica el contenido inicial (los cuentos de los 5 mundos y las lecturas de la biblioteca,
+// prisma/contenido-inicial) en la base LOCAL, por la API real del backoffice: la editora escribe, el revisor aprueba
+// (RN-15: revisor ≠ autor) y cada cuento queda en su misión del mundo y la edad que le corresponden (las lecturas de
+// la biblioteca no van en misiones).
 //
 // Solo para desarrollo. Usa dos cuentas de contenido (EDITOR y REVISOR) del dominio contenido.lectoaventura.test,
 // que la limpieza de las pruebas E2E no borra; en cada ejecución reciben una contraseña y un secreto de MFA nuevos,
@@ -18,7 +19,7 @@ import argon2 from 'argon2';
 import { authenticator } from 'otplib';
 
 import { actividadesDe, metadatosDe, textoDe } from '../prisma/contenido-inicial/armar.mjs';
-import { CUENTOS } from '../prisma/contenido-inicial/index.mjs';
+import { CUENTOS, TODAS } from '../prisma/contenido-inicial/index.mjs';
 
 const RAIZ_API = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 try {
@@ -82,7 +83,8 @@ try {
   const mismoTexto = (a, b) => a.replace(/\s+/g, ' ').trim() === b.replace(/\s+/g, ' ').trim();
   let publicados = 0;
   let actualizados = 0;
-  for (const c of CUENTOS) {
+  const donde = (c) => (c.mundo ? `mundo ${c.mundo}` : 'biblioteca');
+  for (const c of TODAS) {
     const ya = await prisma.versionLectura.findFirst({ where: { titulo: c.titulo, estado: 'PUBLICADO' }, select: { lecturaId: true, texto: true } });
     if (ya) {
       lecturaDe.set(c.clave, ya.lecturaId);
@@ -97,7 +99,7 @@ try {
       }
       await llamar('POST', `/backoffice/lecturas/${ya.lecturaId}/aprobar`, undefined, revisor);
       actualizados += 1;
-      console.log(`↻ ${c.rango} · mundo ${c.mundo} · ${c.titulo} (versión nueva)`);
+      console.log(`↻ ${c.rango} · ${donde(c)} · ${c.titulo} (versión nueva)`);
       continue;
     }
     const { lecturaId, oraciones } = await llamar('POST', '/backoffice/lecturas', { metadatos: metadatosDe(c), texto: textoDe(c) }, editora);
@@ -106,7 +108,7 @@ try {
     await llamar('POST', `/backoffice/lecturas/${lecturaId}/aprobar`, undefined, revisor);
     lecturaDe.set(c.clave, lecturaId);
     publicados += 1;
-    console.log(`✓ ${c.rango} · mundo ${c.mundo} · ${c.titulo}`);
+    console.log(`✓ ${c.rango} · ${donde(c)} · ${c.titulo}`);
   }
 
   let misiones = 0;
@@ -119,7 +121,7 @@ try {
     await llamar('POST', `/backoffice/mundos/${mundoId}/misiones`, { rangoEdad: c.rango, titulo: c.mision.titulo, descripcion: c.mision.descripcion, lecturaIds: [lecturaDe.get(c.clave)] }, editora);
     misiones += 1;
   }
-  console.log(`\nCuentos nuevos: ${publicados}. Con versión nueva: ${actualizados}. Sin cambios: ${CUENTOS.length - publicados - actualizados}. Misiones nuevas: ${misiones}.`);
+  console.log(`\nLecturas nuevas: ${publicados}. Con versión nueva: ${actualizados}. Sin cambios: ${TODAS.length - publicados - actualizados}. Misiones nuevas: ${misiones}.`);
 } finally {
   await prisma.$disconnect();
 }

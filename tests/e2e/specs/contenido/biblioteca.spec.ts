@@ -133,6 +133,10 @@ test.describe('[Contenido][Core][Slow] Biblioteca y gestión de contenido (RF-02
     await filtrarPorTema(page, tematica);
     await expect(page.getByRole('link', { name: `Abrir ${paraEl.titulo}` })).toBeVisible();
     await expect(page.getByRole('link', { name: `Abrir ${otra.titulo}` })).toHaveCount(0);
+    // El filtro de tipo de texto solo ofrece los tipos que tienen lecturas para él: ninguno sale vacío (no hay historietas).
+    const tipoDeTexto = page.getByLabel('Tipo de texto');
+    await expect(tipoDeTexto.locator('option', { hasText: 'Cuento' })).toHaveCount(1);
+    await expect(tipoDeTexto.locator('option', { hasText: 'Historieta' })).toHaveCount(0);
     await page.getByRole('link', { name: `Abrir ${paraEl.titulo}` }).click();
     // El resumen de la ficha repite el comienzo del texto: se espera el detalle y se busca dentro de él.
     const lectura = page.getByRole('article');

@@ -26,6 +26,9 @@ export const DIFICULTAD = {
   R3: { 1: 3, 2: 3, 3: 4, 4: 4, 5: 5 },
 };
 
+/** La dificultad de un texto: la de su mundo, o la que trae (las lecturas de la biblioteca no tienen mundo). */
+export const dificultadDe = (cuento) => cuento.nivel ?? DIFICULTAD[cuento.rango][cuento.mundo];
+
 /*
  * Para escribir las preguntas. `extra.durante` es la oración exacta tras la que aparece la pregunta mientras
  * se lee (RF-039); sin ella, la pregunta va después de leer. Las pistas van de P1 a P3 (RN-06): P1 remite a
@@ -62,8 +65,8 @@ function mezclar(correctas, otras, clave) {
 
 const pistasDe = (pistas = []) => pistas.map((texto, i) => ({ nivel: `P${i + 1}`, texto }));
 
-/** Los textos que cuentan una historia cierran con «Moraleja»; los demás, con «Para reflexionar». */
-const NARRATIVOS = ['CUENTO', 'HISTORIETA', 'POEMA'];
+/** Los textos que cuentan una historia cierran con «Moraleja»; los demás (también los poemas), con «Para reflexionar». */
+const NARRATIVOS = ['CUENTO', 'HISTORIETA'];
 
 /** El último párrafo: el mensaje del cuento, en una sola oración (la web lo muestra como «El mensaje del cuento»). */
 export function moralejaDe(cuento) {
@@ -99,7 +102,7 @@ export function metadatosDe(cuento) {
   return {
     titulo: cuento.titulo,
     rangoEdad: cuento.rango,
-    nivelDificultad: DIFICULTAD[cuento.rango][cuento.mundo],
+    nivelDificultad: dificultadDe(cuento),
     tematica: cuento.tematica,
     tipoTexto: cuento.tipoTexto ?? 'CUENTO',
     habilidadesObjetivo: habilidades,
@@ -117,7 +120,7 @@ export function actividadesDe(cuento, oraciones) {
     if (!o) throw new Error(`«${texto}» no es una oración de «${cuento.titulo}»`);
     return o.id;
   };
-  const dificultad = DIFICULTAD[cuento.rango][cuento.mundo];
+  const dificultad = dificultadDe(cuento);
   const actividades = [
     {
       momento: 'ANTES',

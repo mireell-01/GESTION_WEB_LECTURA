@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { CUENTOS } from '../../../api/prisma/contenido-inicial/index.mjs';
+import { TODAS } from '../../../api/prisma/contenido-inicial/index.mjs';
 import { escenaDe, repartoDe } from '@/features/lectura/IlustracionLectura';
 
 /**
- * Los cuentos del contenido inicial se ilustran solos (sin imágenes subidas): la escena sale de sus palabras.
+ * Los cuentos y las lecturas de la biblioteca del contenido inicial se ilustran solos (sin imágenes subidas): la escena
+ * sale de sus palabras.
  * Esta prueba cuida que la imagen tenga relación con el cuento: la portada no es la escena genérica de un día
  * en el campo, y cada párrafo muestra al personaje, el lugar o el momento del día que cuenta.
  */
@@ -14,7 +15,7 @@ interface Cuento {
   texto: string[][];
 }
 
-const cuentos = CUENTOS as Cuento[];
+const cuentos = TODAS as Cuento[];
 const generica = (e: ReturnType<typeof escenaDe>) => e.cielo === 'dia' && e.lugar === 'campo' && e.animales.join() === 'mariposa';
 // Los insectos del cuento (hormigas, cigarras) se dibujan como la mariposa de la escena.
 const hablaDeMariposas = (t: string) => /mariposa|abeja|flor|hormiga|cigarra|grillo|insecto/i.test(t.normalize('NFD').replace(/\p{M}/gu, ''));

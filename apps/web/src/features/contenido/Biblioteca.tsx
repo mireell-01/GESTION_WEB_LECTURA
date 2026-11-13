@@ -17,6 +17,8 @@ interface Pagina {
   lecturas: FichaLectura[];
   siguiente: string | null;
   alcance: { rangoEdad: string; niveles: number[] } | null;
+  /** Los tipos de texto que tienen lecturas en su alcance: el filtro solo ofrece esos. */
+  tipos?: string[];
 }
 
 /**
@@ -103,7 +105,17 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
               <Selector etiqueta="Nivel" value={filtros.nivel} onChange={cambiar('nivel')} opciones={[{ valor: '', texto: 'Todos' }, ...[1, 2, 3, 4, 5].map((n) => ({ valor: String(n), texto: `Nivel ${n}` }))]} />
             </>
           ) : null}
-          <Selector etiqueta="Tipo de texto" value={filtros.tipo} onChange={cambiar('tipo')} opciones={[{ valor: '', texto: 'Todos' }, ...Object.entries(TIPOS_TEXTO).map(([v, t]) => ({ valor: v, texto: t }))]} />
+          <Selector
+            etiqueta="Tipo de texto"
+            value={filtros.tipo}
+            onChange={cambiar('tipo')}
+            opciones={[
+              { valor: '', texto: 'Todos' },
+              ...Object.entries(TIPOS_TEXTO)
+                .filter(([v]) => !pagina?.tipos || pagina.tipos.includes(v) || v === filtros.tipo)
+                .map(([v, t]) => ({ valor: v, texto: t })),
+            ]}
+          />
           {!infantil ? (
             <Selector
               etiqueta="Habilidad"
