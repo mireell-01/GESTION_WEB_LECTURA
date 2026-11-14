@@ -120,6 +120,7 @@ test.describe('[Contenido][Core][Slow] Biblioteca y gestión de contenido (RF-02
     const tematica = `Cuentos ${sufijo}`;
     const paraEl = await lecturaPublicada(request, { titulo: `Cuento para 8–9 años ${sufijo}`, rangoEdad: 'R2', nivelDificultad: 2, tematica });
     const otra = await lecturaPublicada(request, { titulo: `Cuento para 10–12 años ${sufijo}`, rangoEdad: 'R3', nivelDificultad: 4, tematica });
+    const poema = await lecturaPublicada(request, { titulo: `Poema para 8–9 años ${sufijo}`, rangoEdad: 'R2', nivelDificultad: 2, tematica, tipoTexto: 'POEMA' });
 
     const aula = await docenteConAula(request, [{ alias: 'Mateo', avatar: 'leon' }]); // nacido en 2017: 8–9 años
     await tabletDelAulaActivada(page, request, aula);
@@ -133,10 +134,15 @@ test.describe('[Contenido][Core][Slow] Biblioteca y gestión de contenido (RF-02
     await filtrarPorTema(page, tematica);
     await expect(page.getByRole('link', { name: `Abrir ${paraEl.titulo}` })).toBeVisible();
     await expect(page.getByRole('link', { name: `Abrir ${otra.titulo}` })).toHaveCount(0);
-    // El filtro de tipo de texto solo ofrece los tipos que tienen lecturas para él: ninguno sale vacío (no hay historietas).
+    // El filtro de tipo de texto solo ofrece los tipos que hay para él en ese tema (aquí, cuento y poema) y filtra
+    // apenas elige uno, sin tocar «Buscar».
     const tipoDeTexto = page.getByLabel('Tipo de texto');
-    await expect(tipoDeTexto.locator('option', { hasText: 'Cuento' })).toHaveCount(1);
-    await expect(tipoDeTexto.locator('option', { hasText: 'Historieta' })).toHaveCount(0);
+    await expect(tipoDeTexto.locator('option')).toHaveText(['Todos', 'Cuento', 'Poema']);
+    await tipoDeTexto.selectOption({ label: 'Poema' });
+    await expect(page.getByRole('link', { name: `Abrir ${poema.titulo}` })).toBeVisible();
+    await expect(page.getByRole('link', { name: `Abrir ${paraEl.titulo}` })).toHaveCount(0);
+    await tipoDeTexto.selectOption({ label: 'Todos' });
+    await expect(page.getByRole('link', { name: `Abrir ${paraEl.titulo}` })).toBeVisible();
     await page.getByRole('link', { name: `Abrir ${paraEl.titulo}` }).click();
     // El resumen de la ficha repite el comienzo del texto: se espera el detalle y se busca dentro de él.
     const lectura = page.getByRole('article');
