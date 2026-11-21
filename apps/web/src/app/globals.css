@@ -4342,30 +4342,8 @@ p {
     grid-column: 2;
   }
 
-  .sesion-lectura:has(> .lectura-texto) {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    grid-auto-flow: row dense;
-    align-items: start;
-    column-gap: 24px;
-  }
-
-  .sesion-lectura:has(> .lectura-texto) > * {
-    grid-column: 1 / -1;
-  }
-
-  .sesion-lectura:has(> .lectura-texto) > .lectura-texto,
-  .sesion-lectura:has(> .lectura-texto) > .historia {
-    grid-column: 1;
-  }
-
-  /* La pregunta acompaña al texto mientras se desplaza. */
-  .sesion-lectura:has(> .lectura-texto) > .pregunta-lectura,
-  .sesion-lectura:has(> .lectura-texto) > .explicacion,
-  .sesion-lectura:has(> .lectura-texto) > .cierre-lectura {
-    position: sticky;
-    top: 16px;
-    grid-column: 2;
-  }
+  /* La lectura de un cuento va en una sola columna en todas las pantallas: el texto con sus dibujos
+     grandes ocupa todo el ancho y la pregunta va debajo (así lo prefiere la autora del proyecto). */
 }
 
 /* ── Revisión de diseño en laptops (todas las pantallas) ─────────────────────────────────── */
@@ -4418,13 +4396,6 @@ p {
   .reto:has(> .reto__pregunta) .reto__opciones {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  /* Lectura en dos columnas: la pregunta acompaña al texto y a la historia, sin huecos entre ellos. */
-  .sesion-lectura:has(> .lectura-texto) > .pregunta-lectura,
-  .sesion-lectura:has(> .lectura-texto) > .explicacion,
-  .sesion-lectura:has(> .lectura-texto) > .cierre-lectura {
-    grid-row: span 2;
-  }
 }
 
 /* Área de adultos: un botón suelto en una pila tiene su ancho natural, como «Usar el código»
@@ -4438,19 +4409,6 @@ p {
 /* Filtros de la biblioteca: los cinco caben en una fila desde las laptops pequeñas (antes 4 + 1). */
 .filtros .form-columnas {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
-}
-
-@container est (min-width: 1000px) {
-  /* Cierre de la lectura: el texto (y la historia, si la hay) llegan hasta el alto de la actividad,
-     sin un hueco entre las tarjetas de la izquierda. */
-  .sesion-lectura:has(> .cierre-lectura) > .lectura-texto,
-  .sesion-lectura:has(> .cierre-lectura) > .historia {
-    align-self: stretch;
-  }
-
-  .sesion-lectura:has(> .lectura-texto):not(:has(> .historia)) > .cierre-lectura {
-    grid-row: auto;
-  }
 }
 
 /* ── Módulo 10 · Acompañamiento familiar: el panel de cada hijo (RF-068 a RF-070) ──────────── */
