@@ -23,10 +23,14 @@ import type {
   RecompensaCatalogo,
   ResumenCuenta,
 } from '../../../src/modules/gamificacion/application/ports/gamificacion.ports';
+import type { AulaDelEstudiante } from '../../../src/modules/gamificacion/application/ports/gamificacion.ports';
+import { AparienciaUseCase } from '../../../src/modules/gamificacion/application/use-cases/apariencia.use-case';
+import { CopaLectoraUseCase } from '../../../src/modules/gamificacion/application/use-cases/copa-lectora.use-case';
 import { LogrosUseCase } from '../../../src/modules/gamificacion/application/use-cases/logros.use-case';
 import { PasaporteUseCase } from '../../../src/modules/gamificacion/application/use-cases/pasaporte.use-case';
 import { CuentaGamificacion, EstadoCuenta } from '../../../src/modules/gamificacion/domain/entities/cuenta-gamificacion';
 import { RetoDiario } from '../../../src/modules/gamificacion/domain/entities/reto-diario';
+import { Apariencia, SIN_APARIENCIA } from '../../../src/modules/gamificacion/domain/services/apariencia';
 import { SaldoMonedas } from '../../../src/modules/gamificacion/domain/services/monedas';
 import { PARAMETROS_POR_DEFECTO, ParametrosGamificacion } from '../../../src/modules/gamificacion/domain/services/parametros';
 import { MotivoPuntos } from '../../../src/modules/gamificacion/domain/services/politica-puntos';
@@ -65,6 +69,7 @@ export class GamificacionEnMemoria implements GamificacionRepository {
   readonly rachas = new Map<string, EstadoRacha>();
   readonly retos = new Map<string, RetoDiario>();
   readonly canjes: { estudianteId: string; recompensaId: string; monedas: number }[] = [];
+  readonly puestas = new Map<string, Apariencia>();
   p: ParametrosGamificacion = PARAMETROS_POR_DEFECTO;
   catalogo: InsigniaCatalogo[] = CATALOGO;
 
@@ -122,6 +127,7 @@ export class GamificacionEnMemoria implements GamificacionRepository {
       racha: { ...(this.rachas.get(estudianteId) ?? RACHA_VACIA) },
       monedasGastadas: canjes.reduce((s, c) => s + c.monedas, 0),
       canjeadas: new Set(canjes.map((c) => c.recompensaId)),
+      apariencia: await this.apariencia(estudianteId),
       ultimos: this.asientos.filter((a) => a.estudianteId === estudianteId).slice(-5).reverse(),
     };
   }
@@ -150,6 +156,29 @@ export class GamificacionEnMemoria implements GamificacionRepository {
     return Math.floor(saldo.puntosTotales / 10) - saldo.gastadas - recompensa.costo;
   }
 
+  async apariencia(estudianteId: string): Promise<Apariencia> {
+    return { ...(this.puestas.get(estudianteId) ?? SIN_APARIENCIA) };
+  }
+
+  async apariencias(ids: string[]) {
+    return new Map([...this.puestas].filter(([id]) => ids.includes(id)));
+  }
+
+  async cambiarApariencia(estudianteId: string, operar: (actual: Apariencia, canjeadas: Set<string>) => Apariencia) {
+    const canjeadas = new Set(this.canjes.filter((c) => c.estudianteId === estudianteId).map((c) => c.recompensaId));
+    const nueva = operar(await this.apariencia(estudianteId), canjeadas);
+    this.puestas.set(estudianteId, nueva);
+    return nueva;
+  }
+
+  async puntosEntre(ids: string[], desde: string, hasta: string) {
+    const puntos = new Map<string, number>();
+    for (const a of this.asientos) {
+      if (ids.includes(a.estudianteId) && a.fechaLima >= desde && a.fechaLima <= hasta) puntos.set(a.estudianteId, (puntos.get(a.estudianteId) ?? 0) + a.puntos);
+    }
+    return puntos;
+  }
+
   total(estudianteId: string, fecha?: string) {
     return this.asientos.filter((a) => a.estudianteId === estudianteId && (!fecha || a.fechaLima === fecha)).reduce((s, a) => s + a.puntos, 0);
   }
@@ -163,6 +192,10 @@ export class IdentidadFalsa implements IdentidadEstudiantes {
   readonly perfiles = new Map<string, { alias: string; avatar: string; rangoEdad: RangoEdad }>();
   async perfil(id: string) {
     return this.perfiles.get(id) ?? null;
+  }
+
+  async perfilesDe(ids: string[]) {
+    return new Map(ids.flatMap((id) => (this.perfiles.has(id) ? [[id, this.perfiles.get(id) as { alias: string; avatar: string }] as const] : [])));
   }
 }
 
@@ -204,6 +237,14 @@ export class MundosFalsos implements ResolutorMundosCompletados {
   }
 }
 
+/** El aula activa de cada niño, como la daría Escuela. */
+export class AulasFalsas implements AulaDelEstudiante {
+  readonly aulas: { nombre: string; estudianteIds: string[] }[] = [];
+  async aulaDe(estudianteId: string) {
+    return this.aulas.find((a) => a.estudianteIds.includes(estudianteId)) ?? null;
+  }
+}
+
 /** Ensambla los casos de uso con sus dobles; cada prueba crea su propio entorno limpio. */
 export function crearEntornoGamificacion() {
   let secuencia = 0;
@@ -219,7 +260,10 @@ export function crearEntornoGamificacion() {
   const bus = new BusEspia();
   const logros = new LogrosUseCase(repo, identidad, maestria, fichas, avance, bus, generarId, reloj.ahora);
   const pasaporte = new PasaporteUseCase(repo, identidad, lecturas, mundos, fichas, logros, bus, generarId, reloj.ahora);
-  return { reloj, repo, identidad, maestria, fichas, avance, lecturas, mundos, bus, logros, pasaporte };
+  const aulas = new AulasFalsas();
+  const apariencia = new AparienciaUseCase(repo, identidad);
+  const copa = new CopaLectoraUseCase(repo, identidad, aulas, reloj.ahora);
+  return { reloj, repo, identidad, maestria, fichas, avance, lecturas, mundos, bus, logros, pasaporte, aulas, apariencia, copa };
 }
 
 export type EntornoGamificacion = ReturnType<typeof crearEntornoGamificacion>;

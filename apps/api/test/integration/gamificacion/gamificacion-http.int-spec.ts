@@ -376,6 +376,47 @@ describe('[Gamificacion][Menor][Slow] Recompensas (RF-062)', () => {
     await canjear('no-es-un-id').expect(404);
     await canjear(uuidV7()).expect(404);
   });
+
+  it('lo canjeado se usa: se pone el personaje y el accesorio; lo que no canjeó, no', async () => {
+    const usar = (id: string) => t.http().put(`${API}/yo/recompensas/${id}/uso`).set(bearer(lia.token));
+    const quitar = (id: string) => t.http().delete(`${API}/yo/recompensas/${id}/uso`).set(bearer(lia.token));
+    const monedas = (await pasaporte(lia.token)).body.monedas;
+    const accesorio = (await t.prisma.canjeRecompensa.findFirstOrThrow({ where: { estudianteId: lia.id, recompensa: { tipo: 'ACCESORIO' } }, include: { recompensa: true } })).recompensa;
+
+    expect((await usar(await recompensa('LLAMA')).expect(200)).body).toEqual({ avatar: 'zorro', accesorio: null, personaje: 'LLAMA' });
+    expect((await usar(accesorio.id).expect(200)).body).toEqual({ avatar: 'zorro', accesorio: accesorio.codigo, personaje: 'LLAMA' });
+    expect((await usar(await recompensa('DRAGON')).expect(409)).body.detail).toBe('Primero canjea esta recompensa en la tienda');
+    await usar(uuidV7()).expect(404);
+
+    const v = (await pasaporte(lia.token)).body;
+    expect(v.puestas).toEqual({ accesorio: accesorio.codigo, personaje: 'LLAMA' });
+    expect(v.recompensas.filter((r: { puesta: boolean }) => r.puesta).map((r: { codigo: string }) => r.codigo).sort()).toEqual([accesorio.codigo, 'LLAMA'].sort());
+    expect(v.monedas).toBe(monedas); // ponerse algo no cuesta monedas
+    expect((await t.http().get(`${API}/yo/apariencia`).set(bearer(lia.token)).expect(200)).body).toEqual({ avatar: 'zorro', accesorio: accesorio.codigo, personaje: 'LLAMA' });
+
+    expect((await quitar(await recompensa('LLAMA')).expect(200)).body).toEqual({ avatar: 'zorro', accesorio: accesorio.codigo, personaje: null });
+    expect(await t.prisma.apariencia.findUnique({ where: { estudianteId: lia.id } })).toMatchObject({ accesorioId: accesorio.id, personajeId: null });
+  });
+});
+
+describe('[Gamificacion][Menor][Slow] Copa Lectora del aula', () => {
+  it('ordena a los compañeros del aula por los puntos de esta semana; solo alias, avatar y puntos', async () => {
+    const lunes = new Date(`${lunesDeLaSemana(hoy())}T00:00:00Z`);
+    const deLaSemana = async (estudianteId: string) =>
+      (await t.prisma.asientoPuntos.aggregate({ where: { estudianteId, fechaLima: { gte: lunes } }, _sum: { puntos: true } }))._sum.puntos ?? 0;
+    const puntos = { Mateo: await deLaSemana(mateo.id), Lía: await deLaSemana(lia.id) };
+
+    const copa = (await t.http().get(`${API}/yo/copa-lectora`).set(bearer(mateo.token)).expect(200)).body;
+    expect(copa).toMatchObject({ enAula: true, aula: '4.° A', semana: { desde: lunesDeLaSemana(hoy()) }, totalAula: puntos.Mateo + puntos['Lía'] });
+    const esperado = Object.entries(puntos).sort(([a, x], [b, y]) => y - x || a.localeCompare(b, 'es'));
+    expect(copa.participantes.map((p: { alias: string; puntos: number; soyYo: boolean }) => [p.alias, p.puntos, p.soyYo])).toEqual(
+      esperado.map(([alias, n]) => [alias, n, alias === 'Mateo']),
+    );
+    for (const p of copa.participantes) expect(Object.keys(p).sort()).toEqual(['accesorio', 'alias', 'avatar', 'posicion', 'puntos', 'soyYo']);
+    // Lía luce en la copa el accesorio que se puso.
+    const deLia = copa.participantes.find((p: { alias: string }) => p.alias === 'Lía');
+    expect(deLia.accesorio).toBe((await pasaporte(lia.token)).body.puestas.accesorio);
+  });
 });
 
 describe('[Gamificacion][Menor][Slow] Acceso (RNF-012)', () => {
@@ -384,5 +425,8 @@ describe('[Gamificacion][Menor][Slow] Acceso (RNF-012)', () => {
     await t.http().get(`${API}/yo/pasaporte`).set(bearer(tokenDocente)).expect(403);
     await t.http().get(`${API}/yo/reto-del-dia`).set(bearer(editora)).expect(403);
     await t.http().post(`${API}/yo/recompensas/${uuidV7()}/canje`).set(bearer(tokenDocente)).expect(403);
+    await t.http().put(`${API}/yo/recompensas/${uuidV7()}/uso`).set(bearer(tokenDocente)).expect(403);
+    await t.http().get(`${API}/yo/copa-lectora`).set(bearer(tokenDocente)).expect(403);
+    await t.http().get(`${API}/yo/copa-lectora`).expect(401);
   });
 });

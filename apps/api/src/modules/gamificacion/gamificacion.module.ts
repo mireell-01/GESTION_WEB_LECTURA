@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { EscuelaModule } from '../escuela/public-api';
 import { IamModule } from '../iam/public-api';
 import { GamificacionFacade } from './application/gamificacion.facade';
 import { gamificacionProviders } from './infrastructure/gamificacion.providers';
@@ -10,7 +11,7 @@ import { PasaporteController } from './interface/http/pasaporte.controller';
  * recompensas (RF-056 a RF-062). Depende de IAM; escucha a Lectura, Progreso y Aventura por eventos (SAD §6).
  */
 @Module({
-  imports: [IamModule],
+  imports: [IamModule, EscuelaModule],
   controllers: [PasaporteController],
   providers: [...gamificacionProviders],
   exports: [GamificacionFacade],

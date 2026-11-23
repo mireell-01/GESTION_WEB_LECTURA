@@ -32,6 +32,7 @@ import {
 } from '../application/use-cases/invitaciones-familiar.use-case';
 import { InstitucionesUseCase } from '../application/use-cases/instituciones.use-case';
 import { MatricularEstudiantesUseCase } from '../application/use-cases/matricular-estudiantes.use-case';
+import { MensajesDocenteUseCase } from '../application/use-cases/mensajes-docente.use-case';
 import { ServicioIdentidadIam } from './identidad/servicio-identidad-iam';
 import { PdfLibTarjetas } from './pdf/pdf-lib-tarjetas';
 import { PrismaAsignacionRepository } from './persistence/prisma-asignacion-repository';
@@ -39,6 +40,7 @@ import { PrismaAulaRepository } from './persistence/prisma-aula-repository';
 import { PrismaInstitucionRepository } from './persistence/prisma-institucion-repository';
 import { PrismaInvitacionRepository } from './persistence/prisma-invitacion-repository';
 import { PrismaMatriculaRepository } from './persistence/prisma-matricula-repository';
+import { PrismaMensajeRepository } from './persistence/prisma-mensaje-repository';
 import { PrismaResumenAulas } from './persistence/prisma-resumen-aulas';
 
 /** Composition root de Escuela. */
@@ -57,6 +59,7 @@ export function crearCasosUsoEscuela(
   const matriculas = new PrismaMatriculaRepository(prisma);
   const asignaciones = new PrismaAsignacionRepository(prisma);
   const invitaciones = new PrismaInvitacionRepository(prisma);
+  const mensajes = new PrismaMensajeRepository(prisma);
   const identidad = new ServicioIdentidadIam(iam);
   const misionesDelDocente = new MisionesDelDocenteUseCase(aulas, matriculas, asignaciones, ahora);
   const instituciones = new InstitucionesUseCase(new PrismaInstitucionRepository(prisma), bus, generarId, ahora);
@@ -78,6 +81,8 @@ export function crearCasosUsoEscuela(
       aulas, matriculas, invitaciones, identidad, bus, huella, aleatorio, generarId, ahora,
     ),
     canjearInvitacion: new CanjearInvitacionFamiliarUseCase(aulas, matriculas, invitaciones, identidad, bus, huella, ahora),
+    mensajesDocente: new MensajesDocenteUseCase(aulas, matriculas, mensajes, identidad, bus, generarId, ahora),
+    mensajes,
     instituciones,
     aulas,
     matriculas,
@@ -100,7 +105,7 @@ export class EscuelaSuscripciones implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    const { aulas, matriculas } = this.casos;
+    const { aulas, matriculas, mensajes } = this.casos;
 
     // RF-007 / RN-04 / CR-01: IAM valida la tablet del aula (aula activa, su docente y matrículas).
     this.contextoAula.registrar({
@@ -118,6 +123,8 @@ export class EscuelaSuscripciones implements OnModuleInit {
         m.retirar(evento.ocurreEn);
         await matriculas.guardar(m);
       }
+      // Y sus mensajitos de la docente se borran.
+      await mensajes.eliminarDeEstudiante(evento.agregadoId);
     });
 
     this.recolector.registrar('aulas', async (estudianteId) =>
@@ -125,6 +132,13 @@ export class EscuelaSuscripciones implements OnModuleInit {
         aula: a.nombre,
         grado: a.grado,
         anioLectivo: a.anioLectivo,
+      })),
+    );
+    this.recolector.registrar('mensajesDeLaDocente', async (estudianteId) =>
+      (await mensajes.deEstudiante(estudianteId)).map((m) => ({
+        texto: m.datos.texto,
+        enviadoEn: m.datos.creadoEn.toISOString(),
+        leidoEn: m.datos.leidoEn?.toISOString() ?? null,
       })),
     );
   }

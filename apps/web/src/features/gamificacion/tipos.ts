@@ -20,6 +20,38 @@ export interface Recompensa {
   tipo: 'PERSONAJE' | 'ACCESORIO';
   costo: number;
   tuya: boolean;
+  /** La tiene puesta ahora (un accesorio y un personaje a la vez). */
+  puesta: boolean;
+}
+
+/** Lo que tiene puesto: códigos de recompensa (LUPA, LLAMA…) o null. */
+export interface Puestas {
+  accesorio: string | null;
+  personaje: string | null;
+}
+
+/** Su avatar con lo que tiene puesto. */
+export interface Apariencia extends Puestas {
+  avatar: string;
+}
+
+/** Un puesto de la Copa Lectora: solo alias, avatar y puntos de la semana. */
+export interface PuestoCopa {
+  posicion: number;
+  alias: string;
+  avatar: string;
+  accesorio: string | null;
+  puntos: number;
+  soyYo: boolean;
+}
+
+/** La Copa Lectora del aula de esta semana. */
+export interface CopaLectora {
+  enAula: boolean;
+  aula: string | null;
+  semana: { desde: string; hasta: string; diasQuedan: number };
+  totalAula: number;
+  participantes: PuestoCopa[];
 }
 
 export interface Pasaporte {
@@ -34,6 +66,7 @@ export interface Pasaporte {
   lecturas: { total: number; recientes: { id: string; titulo: string; finalizadaEn: string }[] };
   ultimosPuntos: { motivo: string; puntos: number; creadoEn: string }[];
   recompensas: Recompensa[];
+  puestas: Puestas;
 }
 
 export interface RetoDelDia {
@@ -60,6 +93,28 @@ export const EMOJI_INSIGNIA: Record<string, string> = {
   RANGO_INVESTIGADOR: '🔬',
   RANGO_CRITICO: '⚖️',
   MAESTRO_LECTURA: '🏆',
+};
+
+/** Cómo se gana cada insignia, en palabras de niño (se muestra al tocarla). */
+export const PISTA_INSIGNIA: Record<string, string> = {
+  PRIMERA_LECTURA: 'Termina cualquier lectura de tu biblioteca o de tus mundos.',
+  DETECTIVE_EVIDENCIAS: 'En las preguntas «Encuentra la evidencia», toca la oración del cuento que prueba tu respuesta.',
+  MAESTRO_INFERENCIAS: 'Responde bien las preguntas que te piden descubrir lo que el cuento no dice.',
+  LECTOR_PERSEVERANTE: 'Lee un poquito cada día, sin saltarte ninguno. ¡Tienes un comodín por semana!',
+  RANGO_EXPLORADOR: 'Completa las 5 misiones del mundo Explorador.',
+  RANGO_DETECTIVE: 'Completa las 5 misiones del mundo Detective.',
+  RANGO_INVESTIGADOR: 'Completa las 5 misiones del mundo Investigador.',
+  RANGO_CRITICO: 'Completa las 5 misiones del mundo Crítico.',
+  MAESTRO_LECTURA: 'Completa las 5 misiones del mundo Maestro de la Lectura.',
+};
+
+/** Dónde luce cada accesorio sobre el avatar: en la cabeza, en la mano o en la espalda. */
+export const LUGAR_ACCESORIO: Record<string, 'cabeza' | 'mano' | 'espalda'> = {
+  LUPA: 'mano',
+  GORRA: 'cabeza',
+  CHULLO: 'cabeza',
+  CAPA: 'espalda',
+  CORONA: 'cabeza',
 };
 
 /** RF-062: los personajes y accesorios del avatar. */

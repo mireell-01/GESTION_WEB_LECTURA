@@ -123,3 +123,47 @@ export function guardarArchivo(archivo: Blob, nombre: string): void {
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** Los stickers de los mensajitos de la docente (la API acepta solo estos códigos). */
+export const EMOJI_STICKER: Record<string, string> = {
+  ESTRELLA: '⭐',
+  FIESTA: '🎉',
+  FUERZA: '💪',
+  LIBRO: '📚',
+  CORAZON: '❤️',
+  TROFEO: '🏆',
+  COHETE: '🚀',
+  SOL: '🌞',
+};
+
+export const NOMBRE_STICKER: Record<string, string> = {
+  ESTRELLA: 'Estrella',
+  FIESTA: 'Fiesta',
+  FUERZA: 'Fuerza',
+  LIBRO: 'Libro',
+  CORAZON: 'Corazón',
+  TROFEO: 'Trofeo',
+  COHETE: 'Cohete',
+  SOL: 'Sol',
+};
+
+/** Un mensajito tal como lo ve el niño. */
+export interface MensajeParaNino {
+  id: string;
+  sticker: string;
+  texto: string;
+  creadoEn: string;
+  aula: string;
+}
+
+/** Un envío de la docente, con cuántos niños ya lo leyeron. */
+export interface EnvioMensaje {
+  id: string;
+  sticker: string;
+  texto: string;
+  creadoEn: string;
+  paraTodaElAula: boolean;
+  para: string;
+  total: number;
+  leidos: number;
+}

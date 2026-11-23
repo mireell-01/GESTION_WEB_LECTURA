@@ -163,6 +163,19 @@ describe('[Contenido][Menor][Fast] Contenido inicial: los cuentos de los 5 mundo
     }
   });
 
+  it('hay al menos 5 poemas, 5 anuncios y 5 textos instructivos para cualquier nivel de lector de cada edad', () => {
+    const NIVEL_INICIAL = { R1: 1, R2: 2, R3: 3 } as const;
+    for (const rango of ['R1', 'R2', 'R3'] as const) {
+      const niveles = new Set([-1, 0, 1, 2].map((d) => Math.min(5, Math.max(1, NIVEL_INICIAL[rango] + d))));
+      for (const lector of niveles) {
+        const alcance = todas.filter((c) => c.rango === rango && Math.abs(dificultadDe(c) - lector) <= 1);
+        for (const tipo of ['POEMA', 'ANUNCIO', 'INSTRUCTIVO']) {
+          expect(alcance.filter((c) => c.tipoTexto === tipo).length, `${rango}, lector de nivel ${lector}, ${tipo}`).toBeGreaterThanOrEqual(5);
+        }
+      }
+    }
+  });
+
   it.each(todas.map((c) => [c.clave, c] as const))('%s: los metadatos son válidos (RF-021) y la licencia dice de dónde viene', (_clave, c) => {
     const m = metadatosDe(c);
     expect(() => MetadatosLectura.de(m)).not.toThrow();

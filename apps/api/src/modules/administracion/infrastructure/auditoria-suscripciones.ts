@@ -44,6 +44,8 @@ const AUDITADOS: Record<string, Regla> = {
   [EVENTOS_ESCUELA.TARJETAS_GENERADAS]: { accion: 'TARJETAS_ACCESO_GENERADAS', actorRol: 'DOCENTE', recurso: agregado('aula') },
   [EVENTOS_ESCUELA.ESTUDIANTE_RETIRADO]: { accion: 'ESTUDIANTE_RETIRADO', actorRol: 'DOCENTE', recurso: estudiante },
   [EVENTOS_ESCUELA.AULA_ARCHIVADA]: { accion: 'AULA_ARCHIVADA', actorRol: 'DOCENTE', recurso: agregado('aula') },
+  // Comunicación de una persona adulta con niños: queda registrado quién escribió, a qué aula y cuándo (sin el texto).
+  [EVENTOS_ESCUELA.MENSAJE_DOCENTE_ENVIADO]: { accion: 'MENSAJE_DOCENTE_ENVIADO', actorRol: 'DOCENTE', recurso: agregado('aula') },
   // RF-076: instituciones.
   [EVENTOS_ESCUELA.INSTITUCION_CREADA]: { accion: 'INSTITUCION_CREADA', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('institucion') },
   [EVENTOS_ESCUELA.INSTITUCION_SUSPENDIDA]: { accion: 'INSTITUCION_SUSPENDIDA', actorRol: 'ADMIN_PLATAFORMA', recurso: agregado('institucion') },

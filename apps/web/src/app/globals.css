@@ -655,17 +655,10 @@ p {
   text-align: center;
 }
 
+/* El avatar del saludo (AvatarLector): su tamaño lo da --tam; el círculo, el borde y el accesorio, .avatar-lector. */
 .est-heroe__avatar {
   z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 104px;
-  height: 104px;
-  border: 6px solid #fff;
-  border-radius: 50%;
-  font-size: 58px;
-  line-height: 1;
-  box-shadow: 0 6px 0 rgba(30, 26, 77, 0.2);
+  --tam: 104px;
 }
 
 .est-heroe h1 {
@@ -837,9 +830,7 @@ p {
 
   .est-heroe__avatar {
     grid-row: 1 / span 2;
-    width: 136px;
-    height: 136px;
-    font-size: 78px;
+    --tam: 136px;
   }
 
   .est-heroe h1 {
@@ -3789,15 +3780,7 @@ p {
 }
 
 .pasaporte__avatar {
-  display: grid;
-  place-items: center;
-  width: 104px;
-  height: 104px;
-  border: 6px solid #fff;
-  border-radius: 50%;
-  font-size: 58px;
-  line-height: 1;
-  box-shadow: 0 6px 0 rgba(30, 26, 77, 0.2);
+  --tam: 104px;
 }
 
 .pasaporte__portada-texto {
@@ -3899,11 +3882,12 @@ p {
   font-weight: 800;
 }
 
-/* RF-058: insignias ganadas a color y por ganar en gris con candado (nunca en rojo). */
+/* RF-058: insignias ganadas a color y por ganar en gris con candado (nunca en rojo). Al tocarlas dicen cómo se ganan. */
 .insignias {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  align-items: start;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -3911,36 +3895,55 @@ p {
 
 .insignia {
   display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 4px;
-  padding: 14px 10px;
   border: 3px dashed var(--la-color-borde);
-  border-radius: 20px;
+  border-radius: 22px;
   background: var(--la-color-fondo-alterno);
   text-align: center;
 }
 
 .insignia--ganada {
   border: 3px solid var(--la-color-secundario);
-  background: var(--la-color-secundario-suave);
+  background: linear-gradient(180deg, var(--la-color-secundario-suave) 0%, #fff 100%);
+  box-shadow: 0 5px 0 var(--la-color-secundario);
+}
+
+.insignia__boton {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 10px 12px;
+  border: 0;
+  border-radius: 19px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.insignia__boton:focus-visible {
+  outline: 3px solid var(--la-color-primario);
+  outline-offset: -3px;
 }
 
 .insignia__sello {
   position: relative;
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: #fff;
-  font-size: 34px;
+  font-size: 36px;
   line-height: 1;
   filter: grayscale(1);
   opacity: 0.55;
 }
 
 .insignia--ganada .insignia__sello {
+  overflow: hidden;
   filter: none;
   opacity: 1;
   box-shadow: 0 4px 0 rgba(30, 26, 77, 0.15);
@@ -3977,11 +3980,134 @@ p {
   font: 700 0.875rem var(--la-font-redondeada);
 }
 
-/* RF-062: tienda de recompensas. */
+.insignia__estado--avance {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 14px;
+}
+
+.insignia__barra {
+  display: block;
+  overflow: hidden;
+  width: 100px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--la-color-primario-suave);
+}
+
+.insignia__barra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--la-color-primario);
+}
+
+.insignia__como {
+  margin-top: 2px;
+  color: var(--la-color-primario-fuerte);
+  font: 700 0.875rem var(--la-font-redondeada);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.insignia__pista {
+  margin: 0 10px 12px;
+  padding: 10px 12px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 14px;
+  background: #fff;
+  font: 600 0.9375rem / 1.4 var(--la-font-titulo);
+  text-align: left;
+}
+
+/* ── RF-062: Tienda de recompensas. Lo canjeado se usa: el accesorio en el avatar, el personaje al leer. ── */
+.tienda-recompensas {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 3px solid var(--la-color-primario-borde);
+  border-radius: var(--la-radio-lg);
+  background: linear-gradient(165deg, #fff 0%, var(--la-color-primario-suave) 100%);
+}
+
+.tienda-recompensas__cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 14px;
+}
+
+.tienda-recompensas__cabecera h2,
+.tienda-recompensas__cabecera p {
+  margin: 0;
+}
+
+.tienda-recompensas__trofeo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 20px;
+  background: var(--la-color-secundario-suave);
+  font-size: 38px;
+  line-height: 1;
+}
+
+.tienda-recompensas__monedas {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 0 var(--la-color-secundario-fuerte);
+  font: 700 1.125rem var(--la-font-titulo);
+}
+
+.tienda-recompensas__monedas b {
+  color: var(--la-color-primario-fuerte);
+  font-size: 1.5rem;
+}
+
+.tienda-recompensas__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Chips que filtran al tocarlos (sin botón «Buscar»). */
+.filtro-chip {
+  min-height: var(--la-target-min);
+  padding: 0 18px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--la-color-primario-fuerte);
+  font: 700 1rem var(--la-font-titulo);
+  cursor: pointer;
+}
+
+.filtro-chip[aria-pressed='true'] {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario);
+  color: #fff;
+}
+
+.filtro-chip:focus-visible {
+  outline: 3px solid var(--la-color-secundario-fuerte);
+  outline-offset: 2px;
+}
+
 .tienda {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -3992,39 +4118,905 @@ p {
   justify-items: center;
   align-content: start;
   gap: 6px;
-  padding: 14px 10px;
+  padding: 14px 10px 16px;
   border: 3px solid var(--la-color-primario-borde);
-  border-radius: 20px;
+  border-radius: 24px;
   background: #fff;
+  box-shadow: 0 5px 0 var(--la-color-primario-borde);
   text-align: center;
+}
+
+.tienda__item--alcanza {
+  border-color: var(--la-color-secundario);
+  box-shadow: 0 5px 0 var(--la-color-secundario-fuerte);
 }
 
 .tienda__item--tuya {
   border-color: var(--la-color-exito);
-  background: var(--la-color-exito-suave);
+  background: linear-gradient(180deg, var(--la-color-exito-suave) 0%, #fff 75%);
+  box-shadow: 0 5px 0 var(--la-color-exito);
 }
 
-.tienda__emoji {
-  font-size: 44px;
+/* La vitrina: el dibujo en un círculo con destellos. */
+.tienda__vitrina {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, #fff 0 44%, var(--la-color-primario-suave) 45% 100%);
+}
+
+.tienda__item--tuya .tienda__vitrina {
+  background: radial-gradient(circle at 50% 42%, #fff 0 44%, #c8f0dc 45% 100%);
+}
+
+.tienda__vitrina::before,
+.tienda__vitrina::after {
+  position: absolute;
+  content: '✦';
   line-height: 1;
 }
 
-.tienda__nombre {
-  font: 700 1rem / 1.25 var(--la-font-titulo);
+.tienda__vitrina::before {
+  top: 4px;
+  right: 4px;
+  color: var(--la-color-secundario-fuerte);
+  font-size: 18px;
 }
 
-.tienda__tipo,
+.tienda__vitrina::after {
+  bottom: 10px;
+  left: 4px;
+  color: var(--la-color-primario);
+  font-size: 12px;
+}
+
+.tienda__vitrina svg {
+  width: 68px;
+  height: 68px;
+}
+
+.arte-recompensa__emoji {
+  line-height: 1;
+}
+
+.tienda__vitrina .arte-recompensa__emoji {
+  font-size: 54px;
+}
+
+.tienda__nombre {
+  font: 700 1.0625rem / 1.2 var(--la-font-titulo);
+}
+
+.tienda__tipo {
+  padding: 2px 12px;
+  border-radius: 999px;
+  font: 700 0.8125rem var(--la-font-redondeada);
+}
+
+.tienda__tipo--accesorio {
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+}
+
+.tienda__tipo--personaje {
+  background: var(--la-color-secundario-suave);
+  color: #6b4b00;
+}
+
+.tienda__precio {
+  min-width: 96px;
+  font-size: 1.125rem;
+}
+
+/* El precio que aún no alcanza se lee bien (no parece roto): amarillo suave, sin sombra. */
+.tienda__precio:disabled {
+  border-color: var(--la-color-secundario);
+  background: var(--la-color-secundario-suave);
+  box-shadow: none;
+  color: #6b4b00;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
 .tienda__faltan {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
   color: var(--la-color-texto-suave);
-  font: 600 0.8125rem var(--la-font-redondeada);
+  font: 700 0.875rem var(--la-font-redondeada);
+}
+
+.tienda__mini-barra {
+  display: block;
+  overflow: hidden;
+  width: 96px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.tienda__mini-barra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--la-color-secundario);
+}
+
+.tienda__alcanza {
+  color: var(--la-color-primario-fuerte);
+  font: 800 0.9375rem var(--la-font-titulo);
 }
 
 .tienda__tuya {
   display: inline-flex;
   align-items: center;
-  min-height: var(--la-target-min);
+  gap: 4px;
   color: var(--la-color-exito-texto);
   font: 800 1rem var(--la-font-titulo);
+}
+
+.tienda__uso {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.tienda__en-uso {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--la-color-exito-texto);
+  color: #fff;
+  font: 700 0.875rem var(--la-font-titulo);
+}
+
+/* ── El avatar del niño con lo que tiene puesto (AvatarLector). Su tamaño es --tam. ── */
+.avatar-lector {
+  --t: var(--tam, 104px);
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--t);
+  height: var(--t);
+}
+
+.avatar-lector__circulo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: max(3px, calc(var(--t) * 0.06)) solid #fff;
+  border-radius: 50%;
+  background: var(--fondo, #ede8ff);
+  box-shadow: 0 max(2px, calc(var(--t) * 0.055)) 0 rgba(30, 26, 77, 0.2);
+}
+
+.avatar-lector__cara {
+  font-size: calc(var(--t) * 0.55);
+  line-height: 1;
+}
+
+.avatar-lector__accesorio {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 0 rgba(30, 26, 77, 0.18));
+}
+
+.avatar-lector__accesorio svg {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-lector__accesorio--cabeza {
+  top: calc(var(--t) * -0.3);
+  left: 50%;
+  width: calc(var(--t) * 0.6);
+  height: calc(var(--t) * 0.6);
+  font-size: calc(var(--t) * 0.46);
+  transform: translateX(-50%) rotate(-8deg);
+}
+
+.avatar-lector__accesorio--mano {
+  right: calc(var(--t) * -0.16);
+  bottom: calc(var(--t) * -0.04);
+  width: calc(var(--t) * 0.5);
+  height: calc(var(--t) * 0.5);
+  font-size: calc(var(--t) * 0.4);
+  transform: rotate(12deg);
+}
+
+/* La capa va detrás del círculo y se asoma por abajo y por los lados. */
+.avatar-lector__accesorio--espalda {
+  z-index: 0;
+  bottom: calc(var(--t) * -0.2);
+  left: 50%;
+  width: calc(var(--t) * 1.34);
+  height: calc(var(--t) * 1.1);
+  transform: translateX(-50%);
+}
+
+.avatar-lector__companero {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(var(--t) * -0.06);
+  left: calc(var(--t) * -0.2);
+  display: grid;
+  place-items: center;
+  width: calc(var(--t) * 0.46);
+  height: calc(var(--t) * 0.46);
+  border: max(2px, calc(var(--t) * 0.03)) solid #fff;
+  border-radius: 50%;
+  background: var(--la-color-secundario-suave);
+  box-shadow: 0 3px 0 rgba(30, 26, 77, 0.15);
+  font-size: calc(var(--t) * 0.28);
+}
+
+.avatar-lector__companero svg {
+  width: 80%;
+  height: 80%;
+}
+
+/* ── Copa Lectora del aula: los puntos de la semana, con podio. ── */
+.copa {
+  overflow: hidden;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: var(--la-radio-lg);
+  background: #fff;
+  box-shadow: var(--la-sombra);
+}
+
+.copa__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(115deg, #ffd75e 0%, var(--la-color-secundario) 55%, #ffb03b 100%);
+}
+
+.copa__trofeo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.copa__titulos {
+  min-width: 0;
+}
+
+.copa__titulos h2,
+.copa__titulos p {
+  margin: 0;
+}
+
+.copa__titulos h2 {
+  font-size: clamp(1.375rem, 1.2rem + 1vw, 1.875rem);
+}
+
+.copa__titulos p {
+  font: 700 0.9375rem var(--la-font-redondeada);
+}
+
+.copa__vacia {
+  margin: 0;
+  padding: 18px;
+  font: 600 1rem / 1.4 var(--la-font-titulo);
+}
+
+.copa__cuerpo {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.copa__animo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: 18px;
+  background: var(--la-color-primario-suave);
+  font: 700 1rem / 1.35 var(--la-font-titulo);
+}
+
+.copa__animo-emoji {
+  flex: none;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.copa__podio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  margin: 0;
+  padding: 18px 0 0;
+  list-style: none;
+}
+
+.copa__escalon {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.copa__escalon--1 {
+  order: 2;
+}
+
+.copa__escalon--2 {
+  order: 1;
+}
+
+.copa__escalon--3 {
+  order: 3;
+}
+
+.copa__alias {
+  overflow: hidden;
+  max-width: 100%;
+  font: 700 0.9375rem var(--la-font-titulo);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copa__bloque {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 100%;
+  border-radius: 14px 14px 6px 6px;
+}
+
+.copa__escalon--1 .copa__bloque {
+  height: 96px;
+  background: linear-gradient(180deg, #ffd75e 0%, var(--la-color-secundario) 100%);
+}
+
+.copa__escalon--2 .copa__bloque {
+  height: 74px;
+  background: linear-gradient(180deg, #eef0f7 0%, #c9d1e0 100%);
+}
+
+.copa__escalon--3 .copa__bloque {
+  height: 58px;
+  background: linear-gradient(180deg, #f9d2b3 0%, #f2a46f 100%);
+}
+
+.copa__medalla {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.copa__puntos {
+  font: 800 0.9375rem var(--la-font-titulo);
+  white-space: nowrap;
+}
+
+.copa__escalon--yo .avatar-lector__circulo,
+.copa__fila--yo .avatar-lector__circulo {
+  border-color: var(--la-color-primario);
+}
+
+.copa__escalon--yo .copa__alias,
+.copa__fila--yo .copa__alias {
+  color: var(--la-color-primario-fuerte);
+}
+
+.copa__tabla {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.copa__fila {
+  display: grid;
+  grid-template-columns: 28px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.copa__fila--yo {
+  outline: 2px solid var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+}
+
+.copa__posicion {
+  color: var(--la-color-texto-suave);
+  font: 800 1.0625rem var(--la-font-titulo);
+  text-align: center;
+}
+
+.copa__juntos {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--la-color-exito-suave);
+  color: var(--la-color-exito-texto);
+  font: 700 0.9375rem / 1.35 var(--la-font-titulo);
+}
+
+/* ── Mensajitos de la docente: lo que ve el niño en su inicio. ── */
+.mensajes-profe {
+  display: grid;
+  gap: 10px;
+}
+
+.mensaje-profe {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 14px;
+  padding: 14px 16px;
+  border: 3px solid #ffb3d4;
+  border-radius: 24px;
+  background: linear-gradient(115deg, #ffe3f1 0%, #fff4e0 100%);
+  box-shadow: 0 5px 0 #ffb3d4;
+}
+
+.mensaje-profe__sticker {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 36px;
+  line-height: 1;
+}
+
+.mensaje-profe__texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mensaje-profe__texto p {
+  margin: 0;
+}
+
+.mensaje-profe__de {
+  color: var(--la-color-rosa);
+  font: 800 0.875rem var(--la-font-redondeada);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mensaje-profe__mensaje {
+  font: 700 clamp(1.0625rem, 1rem + 0.4vw, 1.25rem) / 1.35 var(--la-font-titulo);
+  overflow-wrap: anywhere;
+}
+
+.mensaje-profe__gracias {
+  grid-column: 1 / -1;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--la-target-min);
+  padding: 0 20px;
+  border: 2px solid #ffb3d4;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--la-color-rosa);
+  font: 800 1rem var(--la-font-titulo);
+  cursor: pointer;
+}
+
+.mensaje-profe__gracias:focus-visible {
+  outline: 3px solid var(--la-color-rosa);
+  outline-offset: 2px;
+}
+
+.mensaje-profe--muestra {
+  box-shadow: none;
+}
+
+/* ── Mensajitos de la docente: lo que ve la docente en su aula. ── */
+.mensajes-aula__stickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mensajes-aula__stickers legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.mensajes-aula__sticker {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 3px solid var(--la-color-borde);
+  border-radius: 16px;
+  background: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mensajes-aula__sticker[aria-pressed='true'] {
+  border-color: var(--la-color-primario);
+  background: var(--la-color-primario-suave);
+  box-shadow: 0 3px 0 var(--la-color-primario);
+}
+
+.mensajes-aula__sticker:focus-visible {
+  outline: 3px solid var(--la-color-secundario-fuerte);
+  outline-offset: 2px;
+}
+
+.mensajes-aula__frases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mensajes-aula__frases .filtro-chip {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.mensajes-aula__texto {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.mensajes-aula__enviados {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 2px dashed var(--la-color-borde);
+}
+
+.mensajes-aula__subtitulo {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.mensajes-aula__lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mensajes-aula__envio {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--la-color-fondo-alterno);
+}
+
+.mensajes-aula__envio-sticker {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.mensajes-aula__envio-texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font: 600 1rem / 1.35 var(--la-font-titulo);
+  overflow-wrap: anywhere;
+}
+
+.mensajes-aula__leido {
+  grid-column: 2;
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--la-color-texto-suave);
+  font: 700 0.8125rem var(--la-font-redondeada);
+}
+
+.mensajes-aula__leido--todos {
+  background: var(--la-color-exito-suave);
+  color: var(--la-color-exito-texto);
+}
+
+@media (min-width: 640px) {
+  .mensajes-aula__envio {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .mensajes-aula__leido {
+    grid-column: auto;
+  }
+}
+
+/* ── El personaje elegido en la tienda acompaña la lectura. ── */
+.companero-lectura {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 16px 4px 4px;
+  border: 2px solid var(--la-color-secundario);
+  border-radius: 999px;
+  background: var(--la-color-secundario-suave);
+  font: 700 0.9375rem var(--la-font-titulo);
+}
+
+.companero-lectura__arte {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.companero-lectura__arte svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* La celebración al ganar una insignia o subir de nivel. */
+.logros-lectura {
+  position: relative;
+  overflow: hidden;
+}
+
+.logros-lectura__confeti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.logros-lectura__confeti span {
+  position: absolute;
+  top: -16px;
+  left: calc(var(--i) * 7% + 2%);
+  width: 8px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--la-color-primario);
+  opacity: 0;
+}
+
+.logros-lectura__confeti span:nth-child(3n + 1) {
+  background: var(--la-color-secundario);
+}
+
+.logros-lectura__confeti span:nth-child(3n + 2) {
+  background: var(--la-color-rosa);
+}
+
+.logros-lectura__sello {
+  display: inline-block;
+}
+
+@container est (min-width: 640px) {
+  .tienda-recompensas__cabecera {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .tienda-recompensas__monedas {
+    grid-column: auto;
+  }
+
+  .mensaje-profe {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .mensaje-profe__gracias {
+    grid-column: auto;
+  }
+}
+
+/* Movimientos suaves, solo si el niño no pidió reducir el movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  .copa__trofeo,
+  .tienda-recompensas__trofeo {
+    animation: trofeo-flota 2.6s ease-in-out infinite;
+  }
+
+  .avatar-lector__companero {
+    animation: companero-asoma 3s ease-in-out infinite;
+  }
+
+  .tienda__item {
+    transition: transform 0.15s ease;
+  }
+
+  .tienda__item:hover {
+    transform: translateY(-3px);
+  }
+
+  .tienda__item--alcanza .tienda__precio {
+    position: relative;
+  }
+
+  .tienda__item--alcanza .tienda__precio::after {
+    position: absolute;
+    inset: -4px;
+    content: '';
+    border: 3px solid var(--la-color-secundario);
+    border-radius: inherit;
+    pointer-events: none;
+    animation: precio-late 1.6s ease-out infinite;
+  }
+
+  .tienda__item--puesta .tienda__vitrina {
+    animation: vitrina-baila 2.4s ease-in-out infinite;
+  }
+
+  .insignia--ganada .insignia__sello::after {
+    position: absolute;
+    inset: -20%;
+    content: '';
+    background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.85) 50%, transparent 60%);
+    transform: translateX(-120%);
+    animation: sello-brilla 3.2s ease-in-out infinite;
+  }
+
+  .companero-lectura--festeja .companero-lectura__arte {
+    animation: companero-salta 0.7s ease;
+  }
+
+  .mensaje-profe {
+    animation: mensaje-llega 0.5s ease both;
+  }
+
+  .mensaje-profe__sticker {
+    animation: trofeo-flota 2.2s ease-in-out infinite;
+  }
+
+  .mensaje-profe--cerrando {
+    animation: mensaje-se-va 0.4s ease forwards;
+  }
+
+  .logros-lectura__confeti span {
+    animation: confeti-cae 1.8s ease-in forwards;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+
+  .logros-lectura--celebra .logros-lectura__sello {
+    animation: sello-aparece 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+}
+
+@keyframes trofeo-flota {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(4deg);
+  }
+}
+
+@keyframes companero-asoma {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-6deg);
+  }
+}
+
+/* Un aro que se expande alrededor del precio que ya alcanza (el botón no se mueve: se toca sin perseguirlo). */
+@keyframes precio-late {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes vitrina-baila {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes sello-brilla {
+  0%,
+  60% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes companero-salta {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-12px) scale(1.15) rotate(-8deg);
+  }
+  70% {
+    transform: translateY(0) scale(0.95);
+  }
+}
+
+@keyframes mensaje-llega {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mensaje-se-va {
+  to {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+}
+
+@keyframes confeti-cae {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(240px) rotate(540deg);
+  }
+}
+
+@keyframes sello-aparece {
+  0% {
+    transform: scale(0) rotate(-30deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
 }
 
 @container est (min-width: 640px) {

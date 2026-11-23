@@ -16,6 +16,7 @@ import '../unit/escuela/aplicacion/asignaciones.spec';
 import '../unit/escuela/aplicacion/aulas-y-matriculas.spec';
 import '../unit/escuela/aplicacion/instituciones.spec';
 import '../unit/escuela/aplicacion/invitaciones.spec';
+import '../unit/escuela/aplicacion/mensajes-docente.spec';
 import '../unit/escuela/dominio/dominio-escuela.spec';
 import '../unit/escuela/infraestructura/tarjetas-y-auditoria.spec';
 import '../unit/gamificacion/aplicacion/gamificacion-casos-de-uso.spec';

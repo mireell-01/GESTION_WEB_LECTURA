@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Param, Post, Put } from '@nestjs/common';
 
 import { Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
 import { CASOS_USO_GAMIFICACION, CasosUsoGamificacion } from '../../application/casos-uso-gamificacion';
@@ -28,5 +28,29 @@ export class PasaporteController {
   @Post('recompensas/:id/canje')
   canjear(@UsuarioActual() u: UsuarioAutenticado, @Param('id') id: string) {
     return this.gamificacion.pasaporte.canjear(u.sub, id);
+  }
+
+  /** RF-062: su avatar con el accesorio y el personaje que tiene puestos. */
+  @Get('apariencia')
+  apariencia(@UsuarioActual() u: UsuarioAutenticado) {
+    return this.gamificacion.apariencia.ver(u.sub);
+  }
+
+  /** RF-062: se pone un personaje o accesorio que ya canjeó. */
+  @Put('recompensas/:id/uso')
+  ponerse(@UsuarioActual() u: UsuarioAutenticado, @Param('id') id: string) {
+    return this.gamificacion.apariencia.ponerse(u.sub, id);
+  }
+
+  /** RF-062: se lo quita. */
+  @Delete('recompensas/:id/uso')
+  quitarse(@UsuarioActual() u: UsuarioAutenticado, @Param('id') id: string) {
+    return this.gamificacion.apariencia.quitarse(u.sub, id);
+  }
+
+  /** La Copa Lectora de su aula: los puntos de la semana de cada compañero (solo alias y avatar). */
+  @Get('copa-lectora')
+  copa(@UsuarioActual() u: UsuarioAutenticado) {
+    return this.gamificacion.copa.copa(u.sub);
   }
 }

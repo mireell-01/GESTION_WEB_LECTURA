@@ -94,3 +94,17 @@ export class InstitucionRepetidaError extends ErrorDeNegocio {
     super(`Ya hay una institución registrada con ese ${campo}`, 'CONFLICTO');
   }
 }
+
+/** Mensajito de la docente con un dato que no se puede enviar (texto, sticker o destinatario). */
+export class DatoMensajeInvalidoError extends ErrorDeNegocio {
+  constructor(mensaje: string) {
+    super(mensaje, 'VALIDACION');
+  }
+}
+
+/** Tope de mensajitos por aula y por día, para no llenar de avisos a los niños. */
+export class DemasiadosMensajesError extends ErrorDeNegocio {
+  constructor(maximo: number) {
+    super(`Hoy ya enviaste ${maximo} mensajitos a esta aula. Mañana puedes enviar más.`, 'CONFLICTO');
+  }
+}

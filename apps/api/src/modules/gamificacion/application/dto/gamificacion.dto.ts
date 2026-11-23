@@ -50,6 +50,39 @@ export interface RecompensaVista {
   tipo: 'PERSONAJE' | 'ACCESORIO';
   costo: number;
   tuya: boolean;
+  /** La tiene puesta ahora. */
+  puesta: boolean;
+}
+
+/** Lo que el niño tiene puesto: códigos de recompensa (LUPA, LLAMA…) o null. */
+export interface Puestas {
+  accesorio: string | null;
+  personaje: string | null;
+}
+
+/** RF-062: su avatar con lo que tiene puesto. */
+export interface AparienciaVista extends Puestas {
+  avatar: string;
+}
+
+/** Un puesto de la Copa Lectora: solo alias, avatar y puntos de la semana. */
+export interface PuestoCopaVista {
+  posicion: number;
+  alias: string;
+  avatar: string;
+  accesorio: string | null;
+  puntos: number;
+  soyYo: boolean;
+}
+
+/** La Copa Lectora del aula de esta semana. */
+export interface CopaVista {
+  enAula: boolean;
+  aula: string | null;
+  semana: { desde: string; hasta: string; diasQuedan: number };
+  /** Los puntos de toda el aula esta semana, para celebrar lo que logran juntos. */
+  totalAula: number;
+  participantes: PuestoCopaVista[];
 }
 
 /** RF-059: el Pasaporte del Lector. */
@@ -65,6 +98,7 @@ export interface PasaporteVista {
   lecturas: { total: number; recientes: { id: string; titulo: string; finalizadaEn: string }[] };
   ultimosPuntos: { motivo: MotivoPuntos; puntos: number; creadoEn: string }[];
   recompensas: RecompensaVista[];
+  puestas: Puestas;
 }
 
 export interface CanjeVista {

@@ -341,6 +341,62 @@ describe('[Escuela][Core][Slow] Invitación familiar (RF-019)', () => {
   });
 });
 
+describe('[Escuela][Core][Slow] Mensajitos de la docente', () => {
+  let tablet: string;
+  const entrar = async (perfilId: string) => {
+    await t.http().post(`${API}/estudiantes/${perfilId}/pin/restablecer`).set(bearer(docente.token)).send({ pinNuevo: '4826' }).expect(200);
+    return (await t.http().post(`${API}/acceso-estudiante/login`).send({ tokenDispositivo: tablet, perfilId, pin: '4826' }).expect(200)).body.accessToken as string;
+  };
+
+  it('a toda el aula: un mensaje por niño, cada uno lo ve y lo cierra; la docente ve quién lo leyó y queda auditado sin el texto', async () => {
+    tablet = (await t.http().post(`${API}/aulas/${aulaId}/dispositivos`).set(bearer(docente.token)).send({ nombre: 'Tablet 3' }).expect(201)).body.tokenDispositivo;
+    const activos = await t.prisma.matricula.count({ where: { aulaId, estado: 'ACTIVA' } });
+    const envio = (await t.http().post(`${API}/aulas/${aulaId}/mensajes`).set(bearer(docente.token)).send({ sticker: 'ESTRELLA', texto: '¡Qué bien leyeron hoy!' }).expect(201)).body;
+    expect(envio).toMatchObject({ sticker: 'ESTRELLA', texto: '¡Qué bien leyeron hoy!', paraTodaElAula: true, para: 'Toda el aula', total: activos, leidos: 0 });
+    expect(await t.prisma.mensajeDocente.count({ where: { envioId: envio.id } })).toBe(activos);
+
+    const mateo = await entrar(mateoId);
+    const [mensaje] = (await t.http().get(`${API}/yo/mensajes`).set(bearer(mateo)).expect(200)).body;
+    expect(mensaje).toMatchObject({ sticker: 'ESTRELLA', texto: '¡Qué bien leyeron hoy!', aula: '3.° B' });
+    expect((await t.http().post(`${API}/yo/mensajes/${mensaje.id}/leido`).set(bearer(mateo)).expect(200)).body).toEqual({ leido: true });
+    await t.http().post(`${API}/yo/mensajes/${mensaje.id}/leido`).set(bearer(mateo)).expect(200);
+    expect((await t.http().get(`${API}/yo/mensajes`).set(bearer(mateo)).expect(200)).body).toEqual([]);
+    expect((await t.http().get(`${API}/aulas/${aulaId}/mensajes`).set(bearer(docente.token)).expect(200)).body[0]).toMatchObject({ id: envio.id, leidos: 1, total: activos });
+
+    const auditoria = await t.prisma.auditoria.findFirst({ where: { accion: 'MENSAJE_DOCENTE_ENVIADO', recursoId: aulaId }, orderBy: { ocurridoEn: 'desc' } });
+    expect(auditoria).toMatchObject({ actorId: docente.id, actorRol: 'DOCENTE' });
+    expect(JSON.stringify(auditoria)).not.toContain('leyeron');
+  });
+
+  it('a un solo niño: nadie más lo ve ni lo puede marcar; un id inventado responde 404', async () => {
+    const envio = (await t.http().post(`${API}/aulas/${aulaId}/mensajes`).set(bearer(docente.token)).send({ estudianteId: anaId, sticker: 'COHETE', texto: '¡Vuelve a leer, Ana!' }).expect(201)).body;
+    expect(envio).toMatchObject({ paraTodaElAula: false, para: 'Ana', total: 1 });
+    const [ana, mateo] = [await entrar(anaId), await entrar(mateoId)];
+    const deAna = (await t.http().get(`${API}/yo/mensajes`).set(bearer(ana)).expect(200)).body;
+    expect(deAna[0]).toMatchObject({ sticker: 'COHETE', texto: '¡Vuelve a leer, Ana!' });
+    expect((await t.http().get(`${API}/yo/mensajes`).set(bearer(mateo)).expect(200)).body).toEqual([]);
+    await t.http().post(`${API}/yo/mensajes/${deAna[0].id}/leido`).set(bearer(mateo)).expect(404);
+    await t.http().post(`${API}/yo/mensajes/no-es-un-id/leido`).set(bearer(ana)).expect(404);
+  });
+
+  it('valida sticker, texto y destinatario; RN-17: otra docente (404), una familia o un niño no envían (403)', async () => {
+    const enviar = (cuerpo: Record<string, unknown>, token = docente.token) => t.http().post(`${API}/aulas/${aulaId}/mensajes`).set(bearer(token)).send(cuerpo);
+    await enviar({ sticker: 'CALAVERA', texto: 'Hola' }).expect(400);
+    await enviar({ sticker: 'SOL', texto: '   ' }).expect(400);
+    expect((await enviar({ sticker: 'SOL', texto: 'a'.repeat(141) }).expect(400)).body.detail).toContain('hasta 140');
+    await enviar({ sticker: 'SOL', texto: 'Hola', estudianteId: 'no-es-un-id' }).expect(400);
+    await enviar({ sticker: 'SOL', texto: 'Hola', estudianteId: crypto.randomUUID() }).expect(400);
+
+    const otra = await cuentaConSesion('otra.docente.mensajes@lectoaventura.test', 'DOCENTE');
+    await enviar({ sticker: 'SOL', texto: 'Hola' }, otra.token).expect(404);
+    await t.http().get(`${API}/aulas/${aulaId}/mensajes`).set(bearer(otra.token)).expect(404);
+    const familia = await cuentaConSesion('familia.mensajes@lectoaventura.test', 'FAMILIAR');
+    await enviar({ sticker: 'SOL', texto: 'Hola' }, familia.token).expect(403);
+    await enviar({ sticker: 'SOL', texto: 'Hola' }, await entrar(mateoId)).expect(403);
+    await t.http().get(`${API}/yo/mensajes`).set(bearer(docente.token)).expect(403);
+  });
+});
+
 describe('[Escuela][Core][Slow] Retirar y archivar (RF-020)', () => {
   it('archivar: solo lectura, conserva perfiles, cierra asignaciones y anula invitaciones pendientes', async () => {
     const { codigo } = (await t.http().post(`${API}/estudiantes/${anaId}/invitaciones-familiar`).set(bearer(docente.token)).expect(201)).body;

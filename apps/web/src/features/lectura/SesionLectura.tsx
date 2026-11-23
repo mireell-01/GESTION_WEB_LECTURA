@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Alerta, BarraProgreso, Boton, Cargando, Chip, clasesBoton, Icono, Mascota } from '@lectoaventura/ui';
 
+import { CompaneroLectura } from '@/features/gamificacion/CompaneroLectura';
+
 import { AsistenteLectura } from '@/features/asistente/AsistenteLectura';
 import { ArchivoProtegido } from '@/features/contenido/ArchivoProtegido';
 import { EDADES } from '@/features/contenido/tipos';
@@ -198,6 +200,8 @@ export function SesionLectura({ lecturaId, asignacionId = null }: { lecturaId: s
             <Chip tipo="info">Cuento para {EDADES[sesion.lectura.rangoEdad]}</Chip>
           </span>
         ) : null}
+        {/* El personaje que eligió en la tienda lo acompaña y festeja cada acierto. */}
+        <CompaneroLectura festejo={aviso?.tipo === 'exito' ? aviso.vez + 1 : 0} />
         {fase !== 'PREDICCION' && fase !== 'FINALIZADA' ? (
           // Una estrella avanza por la barra con cada actividad hecha.
           <div className="avance-lectura" style={{ '--avance': `${avance}%` } as React.CSSProperties}>

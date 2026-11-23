@@ -236,6 +236,7 @@ model Aula {
   matriculas   Matricula[]
   asignaciones Asignacion[]
   invitaciones InvitacionFamiliar[]
+  mensajes     MensajeDocente[]
 
   @@index([docenteId])
   @@index([institucionId])
@@ -256,6 +257,26 @@ model Matricula {
   @@unique([aulaId, estudianteId])
   @@index([estudianteId])
   @@map("matricula")
+  @@schema("escuela")
+}
+
+/// Mensajito de ánimo de la docente para un estudiante; un envío puede ir a toda el aula (una fila por niño).
+model MensajeDocente {
+  id             String    @id @db.Uuid
+  envioId        String    @map("envio_id") @db.Uuid
+  aulaId         String    @map("aula_id") @db.Uuid
+  aula           Aula      @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  docenteId      String    @map("docente_id") @db.Uuid
+  estudianteId   String    @map("estudiante_id") @db.Uuid
+  paraTodaElAula Boolean   @default(false) @map("para_toda_el_aula")
+  sticker        String
+  texto          String
+  creadoEn       DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  leidoEn        DateTime? @map("leido_en") @db.Timestamptz(3)
+
+  @@index([estudianteId, leidoEn])
+  @@index([aulaId, creadoEn])
+  @@map("mensaje_docente")
   @@schema("escuela")
 }
 
@@ -910,6 +931,19 @@ model AvanceInsignia {
   @@schema("gamificacion")
 }
 
+/// Lo que el niño tiene puesto: un accesorio en su avatar y un personaje que lo acompaña al leer (RF-062).
+model Apariencia {
+  estudianteId  String      @id @map("estudiante_id") @db.Uuid
+  accesorioId   String?     @map("accesorio_id") @db.Uuid
+  accesorio     Recompensa? @relation("AccesorioPuesto", fields: [accesorioId], references: [id], onDelete: SetNull)
+  personajeId   String?     @map("personaje_id") @db.Uuid
+  personaje     Recompensa? @relation("PersonajePuesto", fields: [personajeId], references: [id], onDelete: SetNull)
+  actualizadaEn DateTime    @default(now()) @map("actualizada_en") @db.Timestamptz(3)
+
+  @@map("apariencia")
+  @@schema("gamificacion")
+}
+
 /// Módulo 8: personajes y accesorios del avatar que se canjean con monedas (RF-062).
 model Recompensa {
   id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -920,7 +954,9 @@ model Recompensa {
   orden  Int     @db.SmallInt
   activa Boolean @default(true)
 
-  canjes CanjeRecompensa[]
+  canjes        CanjeRecompensa[]
+  comoAccesorio Apariencia[]      @relation("AccesorioPuesto")
+  comoPersonaje Apariencia[]      @relation("PersonajePuesto")
 
   @@map("recompensa")
   @@schema("gamificacion")

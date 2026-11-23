@@ -4,6 +4,7 @@ import { esHabilidad, PrismaService } from '../../../shared-kernel/public-api';
 import { ClaveEvento, GamificacionRepository, RecompensaCatalogo, ResumenCuenta } from '../../application/ports/gamificacion.ports';
 import { CuentaGamificacion, EstadoCuenta } from '../../domain/entities/cuenta-gamificacion';
 import { DatosReto, EstadoReto, LecturaSugerida, RetoDiario } from '../../domain/entities/reto-diario';
+import { Apariencia, SIN_APARIENCIA } from '../../domain/services/apariencia';
 import { monedasDisponibles, SaldoMonedas } from '../../domain/services/monedas';
 import { leerParametros, PARAMETROS_POR_DEFECTO, ParametrosGamificacion } from '../../domain/services/parametros';
 import { MotivoPuntos } from '../../domain/services/politica-puntos';
@@ -110,7 +111,7 @@ export class PrismaGamificacionRepository implements GamificacionRepository {
   }
 
   async resumen(estudianteId: string, hoy: string): Promise<ResumenCuenta> {
-    const [total, delDia, ganadas, avances, racha, canjes, ultimos] = await Promise.all([
+    const [total, delDia, ganadas, avances, racha, canjes, ultimos, apariencia] = await Promise.all([
       this.prisma.asientoPuntos.aggregate({ where: { estudianteId }, _sum: { puntos: true } }),
       this.prisma.asientoPuntos.aggregate({ where: { estudianteId, fechaLima: fechaDb(hoy) }, _sum: { puntos: true } }),
       this.prisma.insigniaOtorgada.findMany({ where: { estudianteId }, select: { insigniaId: true, otorgadaEn: true } }),
@@ -118,6 +119,7 @@ export class PrismaGamificacionRepository implements GamificacionRepository {
       this.prisma.racha.findUnique({ where: { estudianteId } }),
       this.prisma.canjeRecompensa.findMany({ where: { estudianteId }, select: { recompensaId: true, monedas: true } }),
       this.prisma.asientoPuntos.findMany({ where: { estudianteId }, orderBy: { id: 'desc' }, take: 5, select: { motivo: true, puntos: true, creadoEn: true } }),
+      this.apariencia(estudianteId),
     ]);
     return {
       puntosTotales: total._sum.puntos ?? 0,
@@ -127,6 +129,7 @@ export class PrismaGamificacionRepository implements GamificacionRepository {
       racha: rachaDesdeFila(racha),
       monedasGastadas: canjes.reduce((s, c) => s + c.monedas, 0),
       canjeadas: new Set(canjes.map((c) => c.recompensaId)),
+      apariencia,
       ultimos: ultimos.map((u) => ({ motivo: u.motivo as MotivoPuntos, puntos: u.puntos, creadoEn: u.creadoEn })),
     };
   }
@@ -181,6 +184,45 @@ export class PrismaGamificacionRepository implements GamificacionRepository {
       await tx.canjeRecompensa.create({ data: { id: canje.id, estudianteId, recompensaId: recompensa.id, monedas: recompensa.costo, canjeadoEn: canje.ahora } });
       return monedasDisponibles({ puntosTotales: saldo.puntosTotales, gastadas: saldo.gastadas + recompensa.costo });
     }, OPCIONES_TX);
+  }
+
+  async apariencia(estudianteId: string): Promise<Apariencia> {
+    const fila = await this.prisma.apariencia.findUnique({ where: { estudianteId } });
+    return fila ? { accesorioId: fila.accesorioId, personajeId: fila.personajeId } : { ...SIN_APARIENCIA };
+  }
+
+  async apariencias(estudianteIds: string[]): Promise<Map<string, Apariencia>> {
+    if (estudianteIds.length === 0) return new Map();
+    const filas = await this.prisma.apariencia.findMany({ where: { estudianteId: { in: estudianteIds } } });
+    return new Map(filas.map((f) => [f.estudianteId, { accesorioId: f.accesorioId, personajeId: f.personajeId }]));
+  }
+
+  cambiarApariencia(estudianteId: string, operar: (actual: Apariencia, canjeadas: Set<string>) => Apariencia): Promise<Apariencia> {
+    return this.prisma.$transaction(async (tx) => {
+      await this.bloquear(tx, estudianteId);
+      const [fila, canjes] = await Promise.all([
+        tx.apariencia.findUnique({ where: { estudianteId } }),
+        tx.canjeRecompensa.findMany({ where: { estudianteId }, select: { recompensaId: true } }),
+      ]);
+      const actual = fila ? { accesorioId: fila.accesorioId, personajeId: fila.personajeId } : { ...SIN_APARIENCIA };
+      const nueva = operar(actual, new Set(canjes.map((c) => c.recompensaId)));
+      await tx.apariencia.upsert({
+        where: { estudianteId },
+        create: { estudianteId, accesorioId: nueva.accesorioId, personajeId: nueva.personajeId },
+        update: { accesorioId: nueva.accesorioId, personajeId: nueva.personajeId, actualizadaEn: new Date() },
+      });
+      return nueva;
+    }, OPCIONES_TX);
+  }
+
+  async puntosEntre(estudianteIds: string[], desde: string, hasta: string): Promise<Map<string, number>> {
+    if (estudianteIds.length === 0) return new Map();
+    const filas = await this.prisma.asientoPuntos.groupBy({
+      by: ['estudianteId'],
+      where: { estudianteId: { in: estudianteIds }, fechaLima: { gte: fechaDb(desde), lte: fechaDb(hasta) } },
+      _sum: { puntos: true },
+    });
+    return new Map(filas.map((f) => [f.estudianteId, f._sum.puntos ?? 0]));
   }
 
   /** Un candado por estudiante hasta el fin de la transacción: sus logros se aplican de a uno (tope diario, racha). */
