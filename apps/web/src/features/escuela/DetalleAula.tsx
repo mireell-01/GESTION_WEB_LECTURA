@@ -13,6 +13,7 @@ import { api, mensajeDeError } from '@/shared/api/client';
 import { AsignacionesAula } from './AsignacionesAula';
 import { EstudiantesAula } from './EstudiantesAula';
 import { MatricularEstudiantes } from './MatricularEstudiantes';
+import { MensajesAula } from './MensajesAula';
 import { DetalleAula as Detalle, NOMBRE_GRADO } from './tipos';
 
 /** RF-020: archivar al cierre del año lectivo. Pide confirmación porque no se deshace. */
@@ -157,6 +158,8 @@ export function DetalleAula({ aulaId }: { aulaId: string }) {
       ) : null}
 
       <AsignacionesAula aulaId={aula.id} estudiantes={estudiantes} editable={editable} />
+
+      <MensajesAula aulaId={aula.id} estudiantes={estudiantes} editable={editable} />
 
       <ReevaluacionAula aulaId={aula.id} editable={editable} />
 

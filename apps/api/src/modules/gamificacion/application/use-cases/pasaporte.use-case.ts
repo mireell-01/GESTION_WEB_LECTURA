@@ -14,6 +14,7 @@ import { comodinDeEstaSemana, rachaVigente } from '../../domain/services/racha';
 import { aplicarUmbrales, metaDe } from '../../domain/services/reglas-insignia';
 import { CanjeVista, PasaporteVista, RetoVista, vistaReto } from '../dto/gamificacion.dto';
 import { GamificacionRepository, IdentidadEstudiantes } from '../ports/gamificacion.ports';
+import { puestasDe } from './apariencia.use-case';
 import { LogrosUseCase } from './logros.use-case';
 
 /** Lecturas recientes que muestra el pasaporte (el total las cuenta todas). */
@@ -90,7 +91,12 @@ export class PasaporteUseCase {
         }),
       },
       ultimosPuntos: cuenta.ultimos.map((a) => ({ motivo: a.motivo, puntos: a.puntos, creadoEn: a.creadoEn.toISOString() })),
-      recompensas: recompensas.map((r) => ({ ...r, tuya: cuenta.canjeadas.has(r.id) })),
+      recompensas: recompensas.map((r) => ({
+        ...r,
+        tuya: cuenta.canjeadas.has(r.id),
+        puesta: r.id === cuenta.apariencia.accesorioId || r.id === cuenta.apariencia.personajeId,
+      })),
+      puestas: puestasDe(cuenta.apariencia, recompensas),
     };
   }
 

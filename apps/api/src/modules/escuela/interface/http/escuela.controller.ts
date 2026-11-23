@@ -1,11 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Res, StreamableFile } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
+import { LimiteTasa, Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
 import { CASOS_USO_ESCUELA, CasosUsoEscuela } from '../../application/casos-uso-escuela';
 import {
   CrearAsignacionRequestDto,
   CrearAulaRequestDto,
+  EnviarMensajeRequestDto,
   MatricularCsvRequestDto,
   MatricularRequestDto,
   TarjetasRequestDto,
@@ -102,6 +103,19 @@ export class EscuelaController {
     @Param('asignacionId') asignacionId: string,
   ) {
     return this.escuela.cerrarAsignacion.ejecutar({ docenteId: u.sub, aulaId, asignacionId });
+  }
+
+  /** Mensajito de ánimo para un estudiante o para toda el aula (tope diario por aula; se audita). */
+  @Post(':id/mensajes')
+  @LimiteTasa({ nombre: 'mensajes-docente', maximoPorMinuto: 20, por: 'ip' })
+  enviarMensaje(@UsuarioActual() u: UsuarioAutenticado, @Param('id') aulaId: string, @Body() dto: EnviarMensajeRequestDto) {
+    return this.escuela.mensajesDocente.enviar({ docenteId: u.sub, aulaId, ...dto });
+  }
+
+  /** Los últimos mensajitos del aula, con cuántos niños ya los leyeron. */
+  @Get(':id/mensajes')
+  mensajes(@UsuarioActual() u: UsuarioAutenticado, @Param('id') aulaId: string) {
+    return this.escuela.mensajesDocente.enviados({ docenteId: u.sub, aulaId });
   }
 
   /** RF-020 */

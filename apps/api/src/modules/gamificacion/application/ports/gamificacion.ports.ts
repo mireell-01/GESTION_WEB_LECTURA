@@ -1,6 +1,7 @@
 import type { RangoEdad } from '../../../shared-kernel/public-api';
 import { CuentaGamificacion, EstadoCuenta } from '../../domain/entities/cuenta-gamificacion';
 import { RetoDiario } from '../../domain/entities/reto-diario';
+import { Apariencia } from '../../domain/services/apariencia';
 import { SaldoMonedas } from '../../domain/services/monedas';
 import { ParametrosGamificacion } from '../../domain/services/parametros';
 import { MotivoPuntos } from '../../domain/services/politica-puntos';
@@ -30,6 +31,8 @@ export interface ResumenCuenta {
   racha: EstadoRacha;
   monedasGastadas: number;
   canjeadas: Set<string>;
+  /** Lo que tiene puesto (ids de recompensas). */
+  apariencia: Apariencia;
   ultimos: { motivo: MotivoPuntos; puntos: number; creadoEn: Date }[];
 }
 
@@ -59,9 +62,28 @@ export interface GamificacionRepository {
     canje: { id: string; ahora: Date },
     validar: (saldo: SaldoMonedas & { yaEsTuya: boolean }) => void,
   ): Promise<number>;
+
+  /** RF-062: lo que el estudiante tiene puesto. */
+  apariencia(estudianteId: string): Promise<Apariencia>;
+  /** Lo que tienen puesto varios estudiantes (para la Copa Lectora); quien no tiene nada no aparece. */
+  apariencias(estudianteIds: string[]): Promise<Map<string, Apariencia>>;
+  /** Bajo el candado del estudiante, cambia lo que tiene puesto sabiendo qué recompensas canjeó. */
+  cambiarApariencia(estudianteId: string, operar: (actual: Apariencia, canjeadas: Set<string>) => Apariencia): Promise<Apariencia>;
+  /** Copa Lectora: los puntos de cada estudiante entre dos días de Lima (incluidos). */
+  puntosEntre(estudianteIds: string[], desde: string, hasta: string): Promise<Map<string, number>>;
 }
 
 /** Anticorrupción hacia IAM: lo que el pasaporte y los puntos necesitan del perfil del niño. */
 export interface IdentidadEstudiantes {
   perfil(estudianteId: string): Promise<{ alias: string; avatar: string; rangoEdad: RangoEdad } | null>;
+  /** Alias y avatar de varios estudiantes activos (los inactivos no aparecen). */
+  perfilesDe(estudianteIds: string[]): Promise<Map<string, { alias: string; avatar: string }>>;
+}
+
+/**
+ * Anticorrupción hacia Escuela: el aula activa del estudiante y sus compañeros con matrícula activa
+ * (él incluido), para la Copa Lectora. Null si no está en un aula activa.
+ */
+export interface AulaDelEstudiante {
+  aulaDe(estudianteId: string): Promise<{ nombre: string; estudianteIds: string[] } | null>;
 }

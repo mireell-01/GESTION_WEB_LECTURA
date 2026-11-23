@@ -35,16 +35,28 @@ export function LogrosDeLectura({ terminada }: { terminada: boolean }) {
   const yaGanadas = new Set(antes.insignias.filter((i) => i.ganada).map((i) => i.codigo));
   const nuevas = ahora.insignias.filter((i) => i.ganada && !yaGanadas.has(i.codigo));
   const subio = ahora.nivel.actual > antes.nivel.actual;
+  const celebra = subio || nuevas.length > 0;
 
   return (
-    <section className="logros-lectura" aria-labelledby="logros-titulo">
+    <section className={`logros-lectura${celebra ? ' logros-lectura--celebra' : ''}`} aria-labelledby="logros-titulo">
+      {celebra ? (
+        // Una lluvia de papelitos de colores cuando sube de nivel o gana una insignia (decorativa).
+        <span className="logros-lectura__confeti" aria-hidden="true">
+          {Array.from({ length: 14 }, (_, i) => (
+            <span key={i} style={{ '--i': i } as React.CSSProperties} />
+          ))}
+        </span>
+      ) : null}
       <h2 id="logros-titulo">{puntos > 0 ? `¡Ganaste ${puntos} puntos!` : 'Tus logros'}</h2>
       {subio ? <p className="logros-lectura__nivel">¡Subiste al nivel {ahora.nivel.actual} de lector!</p> : null}
       {nuevas.length > 0 ? (
         <ul className="logros-lectura__insignias" aria-label="Insignias nuevas">
           {nuevas.map((i) => (
             <li key={i.codigo}>
-              <span aria-hidden="true">{EMOJI_INSIGNIA[i.codigo] ?? '🏅'}</span> Nueva insignia: {i.nombre}
+              <span className="logros-lectura__sello" aria-hidden="true">
+                {EMOJI_INSIGNIA[i.codigo] ?? '🏅'}
+              </span>{' '}
+              Nueva insignia: {i.nombre}
             </li>
           ))}
         </ul>

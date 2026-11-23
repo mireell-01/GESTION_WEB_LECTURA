@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Ip, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Ip, Param, Post } from '@nestjs/common';
 
 import { LimiteTasa, Roles, UsuarioActual, UsuarioAutenticado } from '../../../shared-kernel/public-api';
 import { CASOS_USO_ESCUELA, CasosUsoEscuela } from '../../application/casos-uso-escuela';
@@ -32,5 +32,20 @@ export class FamiliaYEstudianteController {
   @Get('yo/asignaciones')
   misAsignaciones(@UsuarioActual() u: UsuarioAutenticado) {
     return this.escuela.misionesDelDocente.ejecutar(u.sub);
+  }
+
+  /** Los mensajitos de su docente que aún no leyó. */
+  @Roles('ESTUDIANTE')
+  @Get('yo/mensajes')
+  misMensajes(@UsuarioActual() u: UsuarioAutenticado) {
+    return this.escuela.mensajesDocente.paraEstudiante(u.sub);
+  }
+
+  /** El niño cierra su mensajito con «Gracias». */
+  @Roles('ESTUDIANTE')
+  @Post('yo/mensajes/:id/leido')
+  @HttpCode(200)
+  leido(@UsuarioActual() u: UsuarioAutenticado, @Param('id') mensajeId: string) {
+    return this.escuela.mensajesDocente.marcarLeido(u.sub, mensajeId);
   }
 }

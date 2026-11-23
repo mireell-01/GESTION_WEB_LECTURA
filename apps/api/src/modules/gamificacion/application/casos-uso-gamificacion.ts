@@ -1,4 +1,6 @@
 import { GamificacionFacade } from './gamificacion.facade';
+import { AparienciaUseCase } from './use-cases/apariencia.use-case';
+import { CopaLectoraUseCase } from './use-cases/copa-lectora.use-case';
 import { LogrosUseCase } from './use-cases/logros.use-case';
 import { PasaporteUseCase } from './use-cases/pasaporte.use-case';
 
@@ -6,6 +8,10 @@ import { PasaporteUseCase } from './use-cases/pasaporte.use-case';
 export interface CasosUsoGamificacion {
   logros: LogrosUseCase;
   pasaporte: PasaporteUseCase;
+  /** RF-062: lo que el niño tiene puesto. */
+  apariencia: AparienciaUseCase;
+  /** La Copa Lectora del aula. */
+  copa: CopaLectoraUseCase;
   /** RF-078 (Módulo 12). */
   facade: GamificacionFacade;
 }

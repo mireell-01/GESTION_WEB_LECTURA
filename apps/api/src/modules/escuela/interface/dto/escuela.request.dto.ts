@@ -8,10 +8,13 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+
+import { STICKERS } from '../../application/use-cases/mensajes-docente.use-case';
 
 const DIA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -101,4 +104,18 @@ export class CanjearInvitacionRequestDto {
   @IsString()
   @MaxLength(20)
   codigo!: string;
+}
+
+/** Mensajito de la docente: a un estudiante (o, sin él, a toda el aula), con sticker y texto corto. */
+export class EnviarMensajeRequestDto {
+  @IsOptional()
+  @IsUUID('all', { message: 'Elige un estudiante del aula' })
+  estudianteId?: string;
+
+  @IsIn([...STICKERS], { message: 'Elige uno de los stickers' })
+  sticker!: string;
+
+  @IsString()
+  @MaxLength(400)
+  texto!: string;
 }

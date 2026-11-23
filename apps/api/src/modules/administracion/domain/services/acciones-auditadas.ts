@@ -32,6 +32,7 @@ export const ACCIONES_AUDITADAS = {
   TARJETAS_ACCESO_GENERADAS: 'Tarjetas de acceso impresas (PIN nuevos)',
   ESTUDIANTE_RETIRADO: 'Estudiante retirado de un aula',
   AULA_ARCHIVADA: 'Aula archivada',
+  MENSAJE_DOCENTE_ENVIADO: 'Mensajito de la docente enviado',
   // Accesos a datos de estudiantes (Reporting)
   DETALLE_ESTUDIANTE_CONSULTADO: 'Detalle de un estudiante consultado',
   REPORTE_AULA_DESCARGADO: 'Reporte de un aula descargado',

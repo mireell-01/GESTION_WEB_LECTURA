@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { MonedasInsuficientesError, RecompensaYaCanjeadaError } from '../../../../src/modules/gamificacion/domain/errors/errores-gamificacion';
+import {
+  MonedasInsuficientesError,
+  RecompensaNoEsTuyaError,
+  RecompensaYaCanjeadaError,
+} from '../../../../src/modules/gamificacion/domain/errors/errores-gamificacion';
 import { idDeterminista } from '../../../../src/modules/gamificacion/domain/services/id-origen';
 import { DatosItemRespondido, NoEncontradoError } from '../../../../src/modules/shared-kernel/public-api';
 import { crearEntornoGamificacion, EntornoGamificacion } from '../dobles';
@@ -205,9 +209,10 @@ describe('[Gamificacion][Menor][Fast] Gamificación: logros, pasaporte, reto del
       ]);
       expect(v.ultimosPuntos.map((u) => u.motivo)).toEqual(['SUBIDA_NIVEL_CNEB', 'LECTURA_COMPLETADA', 'ITEM_CORRECTO']);
       expect(v.recompensas).toEqual([
-        { id: 'r-lupa', codigo: 'LUPA', nombre: 'Lupa de detective', tipo: 'ACCESORIO', costo: 5, tuya: false },
-        { id: 'r-llama', codigo: 'LLAMA', nombre: 'Llama', tipo: 'PERSONAJE', costo: 20, tuya: false },
+        { id: 'r-lupa', codigo: 'LUPA', nombre: 'Lupa de detective', tipo: 'ACCESORIO', costo: 5, tuya: false, puesta: false },
+        { id: 'r-llama', codigo: 'LLAMA', nombre: 'Llama', tipo: 'PERSONAJE', costo: 20, tuya: false, puesta: false },
       ]);
+      expect(v.puestas).toEqual({ accesorio: null, personaje: null });
     });
 
     it('sin perfil activo responde 404', async () => {
@@ -224,6 +229,75 @@ describe('[Gamificacion][Menor][Fast] Gamificación: logros, pasaporte, reto del
       await expect(e.pasaporte.canjear(NINO, 'r-lupa')).rejects.toThrow(RecompensaYaCanjeadaError);
       await expect(e.pasaporte.canjear(NINO, 'r-llama')).rejects.toThrow(MonedasInsuficientesError);
       await expect(e.pasaporte.canjear(NINO, 'no-existe')).rejects.toThrow(NoEncontradoError);
+    });
+
+    it('lo canjeado se usa: se pone el accesorio y el personaje, y se los quita', async () => {
+      for (let i = 0; i < 25; i++) await e.logros.alItem(item({ respuestaId: `r-${i}`, habilidad: 'LIT' })); // 250 puntos = 25 monedas
+      expect(await e.apariencia.ver(NINO)).toEqual({ avatar: 'zorro', accesorio: null, personaje: null });
+      // Lo que no canjeó no se lo puede poner.
+      await expect(e.apariencia.ponerse(NINO, 'r-lupa')).rejects.toThrow(RecompensaNoEsTuyaError);
+      await e.pasaporte.canjear(NINO, 'r-lupa');
+      await e.pasaporte.canjear(NINO, 'r-llama');
+
+      expect(await e.apariencia.ponerse(NINO, 'r-lupa')).toEqual({ avatar: 'zorro', accesorio: 'LUPA', personaje: null });
+      expect(await e.apariencia.ponerse(NINO, 'r-llama')).toEqual({ avatar: 'zorro', accesorio: 'LUPA', personaje: 'LLAMA' });
+      const v = await e.pasaporte.pasaporte(NINO);
+      expect(v.puestas).toEqual({ accesorio: 'LUPA', personaje: 'LLAMA' });
+      expect(v.recompensas.map((r) => [r.codigo, r.tuya, r.puesta])).toEqual([
+        ['LUPA', true, true],
+        ['LLAMA', true, true],
+      ]);
+
+      expect(await e.apariencia.quitarse(NINO, 'r-llama')).toEqual({ avatar: 'zorro', accesorio: 'LUPA', personaje: null });
+      // Quitarse lo que no tiene puesto no cambia nada; una recompensa que no existe es 404.
+      expect(await e.apariencia.quitarse(NINO, 'r-llama')).toEqual({ avatar: 'zorro', accesorio: 'LUPA', personaje: null });
+      await expect(e.apariencia.ponerse(NINO, 'no-existe')).rejects.toThrow(NoEncontradoError);
+      await expect(e.apariencia.ver('otro')).rejects.toThrow(NoEncontradoError);
+      // Ponerse algo nunca cuesta monedas ni puntos.
+      expect((await e.pasaporte.pasaporte(NINO)).monedas).toBe(0);
+      expect((await e.pasaporte.pasaporte(NINO)).puntos.total).toBe(250);
+    });
+  });
+
+  describe('Copa Lectora del aula', () => {
+    const asiento = (estudianteId: string, puntos: number, fechaLima: string) =>
+      e.repo.asientos.push({ estudianteId, motivo: 'ITEM_CORRECTO', puntos, origenId: `o-${e.repo.asientos.length}`, fechaLima, creadoEn: new Date() });
+
+    beforeEach(() => {
+      e.identidad.perfiles.set('ana', { alias: 'Ana', avatar: 'gato', rangoEdad: 'R2' });
+      e.identidad.perfiles.set('beto', { alias: 'Beto', avatar: 'panda', rangoEdad: 'R2' });
+      e.identidad.perfiles.set('ceci', { alias: 'Ceci', avatar: 'llama', rangoEdad: 'R2' });
+    });
+
+    it('ordena a los compañeros por los puntos de esta semana; los empates comparten puesto', async () => {
+      e.aulas.aulas.push({ nombre: '3.° A', estudianteIds: [NINO, 'ana', 'beto', 'ceci', 'inactivo'] });
+      asiento(NINO, 40, HOY); // miércoles
+      asiento('ana', 70, '2026-10-19'); // lunes: cuenta
+      asiento('ana', 500, '2026-10-18'); // domingo anterior: ya no cuenta
+      asiento('beto', 40, '2026-10-25'); // domingo de esta semana
+      e.repo.puestas.set('ana', { accesorioId: 'r-lupa', personajeId: null });
+
+      const copa = await e.copa.copa(NINO);
+      expect(copa).toMatchObject({ enAula: true, aula: '3.° A', semana: { desde: '2026-10-19', hasta: '2026-10-25', diasQuedan: 5 }, totalAula: 150 });
+      expect(copa.participantes).toEqual([
+        { posicion: 1, alias: 'Ana', avatar: 'gato', accesorio: 'LUPA', puntos: 70, soyYo: false },
+        { posicion: 2, alias: 'Beto', avatar: 'panda', accesorio: null, puntos: 40, soyYo: false },
+        { posicion: 2, alias: 'Mateo', avatar: 'zorro', accesorio: null, puntos: 40, soyYo: true },
+        { posicion: 4, alias: 'Ceci', avatar: 'llama', accesorio: null, puntos: 0, soyYo: false },
+      ]);
+      // Solo alias y avatar: ni ids ni datos personales de los compañeros.
+      for (const p of copa.participantes) expect(Object.keys(p).sort()).toEqual(['accesorio', 'alias', 'avatar', 'posicion', 'puntos', 'soyYo']);
+    });
+
+    it('sin aula activa, el niño no compite y ve cómo unirse', async () => {
+      expect(await e.copa.copa(NINO)).toEqual({
+        enAula: false,
+        aula: null,
+        semana: { desde: '2026-10-19', hasta: '2026-10-25', diasQuedan: 5 },
+        totalAula: 0,
+        participantes: [],
+      });
+      await expect(e.copa.copa('otro')).rejects.toThrow(NoEncontradoError);
     });
   });
 });

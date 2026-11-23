@@ -13,3 +13,10 @@ export class RecompensaYaCanjeadaError extends ErrorDeNegocio {
     super('Esta recompensa ya es tuya', 'CONFLICTO');
   }
 }
+
+/** RF-062: solo se puede poner un personaje o accesorio que ya se canjeó. */
+export class RecompensaNoEsTuyaError extends ErrorDeNegocio {
+  constructor() {
+    super('Primero canjea esta recompensa en la tienda', 'CONFLICTO');
+  }
+}

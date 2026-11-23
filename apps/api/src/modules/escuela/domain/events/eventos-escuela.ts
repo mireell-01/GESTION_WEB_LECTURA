@@ -9,6 +9,8 @@ export const EVENTOS_ESCUELA = {
   ASIGNACION_CERRADA: 'escuela.AsignacionCerrada',
   INVITACION_FAMILIAR_GENERADA: 'escuela.InvitacionFamiliarGenerada',
   FAMILIAR_VINCULADO: 'escuela.FamiliarVinculado',
+  /** La docente envió un mensajito a un niño o a toda el aula (se audita sin el texto). */
+  MENSAJE_DOCENTE_ENVIADO: 'escuela.MensajeDocenteEnviado',
   /** RF-076: la administración registró, suspendió o reactivó una institución. */
   INSTITUCION_CREADA: 'escuela.InstitucionCreada',
   INSTITUCION_SUSPENDIDA: 'escuela.InstitucionSuspendida',

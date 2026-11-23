@@ -18,6 +18,8 @@ import {
   GenerarInvitacionFamiliarUseCase,
 } from './use-cases/invitaciones-familiar.use-case';
 import { MatricularEstudiantesUseCase } from './use-cases/matricular-estudiantes.use-case';
+import { MensajesDocenteUseCase } from './use-cases/mensajes-docente.use-case';
+import { MensajeRepository } from './ports/mensaje.repository';
 
 /** Casos de uso de Escuela ensamblados en infrastructure/escuela.providers.ts. */
 export interface CasosUsoEscuela {
@@ -35,6 +37,9 @@ export interface CasosUsoEscuela {
   misionesDelDocente: MisionesDelDocenteUseCase;
   generarInvitacion: GenerarInvitacionFamiliarUseCase;
   canjearInvitacion: CanjearInvitacionFamiliarUseCase;
+  /** Mensajitos de ánimo de la docente para sus estudiantes. */
+  mensajesDocente: MensajesDocenteUseCase;
+  mensajes: MensajeRepository;
   /** RF-076 (Módulo 12). */
   instituciones: InstitucionesUseCase;
   aulas: AulaRepository;

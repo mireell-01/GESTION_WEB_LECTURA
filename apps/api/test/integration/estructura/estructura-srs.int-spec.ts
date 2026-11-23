@@ -37,16 +37,17 @@ describe('[Estructura][Menor][Slow] Organización de la base (SRS §7)', () => {
       WHERE table_type = 'BASE TABLE' AND table_schema = ANY(${SCHEMAS})`;
     const porSchema = (s: string) => filas.filter((f) => f.esquema === s).map((f) => f.tabla).sort();
 
-    // 52 del SRS + 4 del Módulo 8 (idempotencia, avance de insignias y recompensas) + 1 del Módulo 11 (activación del asistente).
-    expect(filas).toHaveLength(57);
+    // 52 del SRS + 4 del Módulo 8 (idempotencia, avance de insignias y recompensas) + 1 del Módulo 11 (activación del asistente)
+    // + 2 de lo que se usa en el aula (lo que el niño tiene puesto y los mensajitos de la docente).
+    expect(filas).toHaveLength(59);
     expect(porSchema('iam')).toEqual(expect.arrayContaining(['cuenta_adulta', 'perfil_estudiante', 'consentimiento', 'vinculo_responsable', 'factor_mfa', 'refresh_token']));
-    expect(porSchema('escuela')).toEqual(['asignacion', 'asignacion_destinatario', 'aula', 'institucion', 'invitacion_familiar', 'matricula']);
+    expect(porSchema('escuela')).toEqual(['asignacion', 'asignacion_destinatario', 'aula', 'institucion', 'invitacion_familiar', 'matricula', 'mensaje_docente']);
     expect(porSchema('contenido')).toEqual(['actividad', 'clave_evidencia', 'item', 'lectura', 'nodo_historia', 'oracion', 'pista', 'recurso', 'version_lectura']);
     expect(porSchema('aventura')).toEqual(['mision', 'mision_lectura', 'mundo', 'progreso_mision', 'progreso_mundo']);
     expect(porSchema('diagnostico')).toEqual(['banco_item_diagnostico', 'diagnostico', 'respuesta_diagnostico']);
     expect(porSchema('lectura')).toEqual(['decision_ruta', 'justificacion', 'respuesta', 'sesion_lectura', 'uso_pista', 'valoracion_rubrica']);
     expect(porSchema('progreso')).toEqual(['historial_maestria', 'maestria_habilidad', 'recomendacion']);
-    expect(porSchema('gamificacion')).toEqual(['asiento_puntos', 'avance_insignia', 'canje_recompensa', 'evento_aplicado', 'insignia', 'insignia_otorgada', 'parametro_gamificacion', 'racha', 'recompensa', 'reto_diario']);
+    expect(porSchema('gamificacion')).toEqual(['apariencia', 'asiento_puntos', 'avance_insignia', 'canje_recompensa', 'evento_aplicado', 'insignia', 'insignia_otorgada', 'parametro_gamificacion', 'racha', 'recompensa', 'reto_diario']);
     expect(porSchema('asistente')).toEqual(['activacion', 'conversacion', 'turno']);
     expect(porSchema('admin')).toEqual(['auditoria', 'outbox_evento']);
 
