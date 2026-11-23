@@ -30,8 +30,8 @@ export class BibliotecaUseCase {
   ) {}
 
   /**
-   * RF-028. `tipos`: los tipos de texto que hay en su alcance (sin contar el tipo ni el tema elegidos), para que el
-   * filtro solo ofrezca los que tienen lecturas.
+   * RF-028. `tipos`: los tipos de texto que hay en su alcance y en el tema elegido (sin contar el tipo elegido, para
+   * que pueda cambiarlo), así el filtro solo ofrece los que tienen lecturas.
    */
   async explorar(
     usuario: { sub: string; rol: RolUsuario },
@@ -48,16 +48,17 @@ export class BibliotecaUseCase {
       niveles = f.nivel ? permitido.niveles.filter((n) => n === f.nivel) : permitido.niveles;
     }
     // Los tipos se cuentan en todo su alcance: los del niño, su edad y sus niveles; los del adulto, la edad y el nivel que
-    // eligió. Se buscan a la vez que las lecturas, para que la biblioteca no tarde más.
+    // eligió; en los dos casos, dentro del tema elegido. Se buscan a la vez que las lecturas, para no tardar más.
+    const tema = f.tema?.trim() || undefined;
     const tiposEnAlcance = this.repo
-      .tiposEnBiblioteca(alcance ? { rangos: [alcance.rangoEdad], niveles: alcance.niveles } : { rangos, niveles })
+      .tiposEnBiblioteca(alcance ? { rangos: [alcance.rangoEdad], niveles: alcance.niveles, tema } : { rangos, niveles, tema })
       .then((t) => this.ordenarTipos(t));
     if (rangos?.length === 0 || niveles?.length === 0) return { lecturas: [], siguiente: null, alcance, tipos: await tiposEnAlcance };
     const [{ versiones, siguiente }, tipos] = await Promise.all([
       this.repo.biblioteca({
         rangos,
         niveles,
-        tema: f.tema?.trim() || undefined,
+        tema,
         tipo: f.tipo,
         habilidad: f.habilidad,
         cursor: f.cursor ?? null,

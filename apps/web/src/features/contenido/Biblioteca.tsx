@@ -80,6 +80,13 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
 
   const cambiar = (campo: keyof typeof filtros) => (e: { target: { value: string } }) => setFiltros({ ...filtros, [campo]: e.target.value });
 
+  /** Las listas (tipo de texto, edad, nivel, habilidad) filtran apenas se elige una opción, sin tocar «Buscar». */
+  const elegir = (campo: keyof typeof filtros) => (e: { target: { value: string } }) => {
+    const f = { ...filtros, [campo]: e.target.value };
+    setFiltros(f);
+    void cargar(f);
+  };
+
   const elegirTema = async (tema: string) => {
     const f = { ...filtros, tema };
     setFiltros(f);
@@ -101,18 +108,19 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
           <Campo etiqueta="Temática" value={filtros.tema} maxLength={60} onChange={cambiar('tema')} />
           {!infantil ? (
             <>
-              <Selector etiqueta="Edad" value={filtros.edad} onChange={cambiar('edad')} opciones={[{ valor: '', texto: 'Todas' }, ...Object.entries(EDADES).map(([v, t]) => ({ valor: v, texto: t }))]} />
-              <Selector etiqueta="Nivel" value={filtros.nivel} onChange={cambiar('nivel')} opciones={[{ valor: '', texto: 'Todos' }, ...[1, 2, 3, 4, 5].map((n) => ({ valor: String(n), texto: `Nivel ${n}` }))]} />
+              <Selector etiqueta="Edad" value={filtros.edad} onChange={elegir('edad')} opciones={[{ valor: '', texto: 'Todas' }, ...Object.entries(EDADES).map(([v, t]) => ({ valor: v, texto: t }))]} />
+              <Selector etiqueta="Nivel" value={filtros.nivel} onChange={elegir('nivel')} opciones={[{ valor: '', texto: 'Todos' }, ...[1, 2, 3, 4, 5].map((n) => ({ valor: String(n), texto: `Nivel ${n}` }))]} />
             </>
           ) : null}
           <Selector
             etiqueta="Tipo de texto"
             value={filtros.tipo}
-            onChange={cambiar('tipo')}
+            onChange={elegir('tipo')}
             opciones={[
               { valor: '', texto: 'Todos' },
+              // Mientras carga, solo «Todos» (y lo que ya eligió): nunca un tipo sin lecturas.
               ...Object.entries(TIPOS_TEXTO)
-                .filter(([v]) => !pagina?.tipos || pagina.tipos.includes(v) || v === filtros.tipo)
+                .filter(([v]) => v === filtros.tipo || (pagina?.tipos ?? []).includes(v))
                 .map(([v, t]) => ({ valor: v, texto: t })),
             ]}
           />
@@ -120,7 +128,7 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
             <Selector
               etiqueta="Habilidad"
               value={filtros.habilidad}
-              onChange={cambiar('habilidad')}
+              onChange={elegir('habilidad')}
               opciones={[{ valor: '', texto: 'Todas' }, ...Object.entries(HABILIDADES).map(([v, t]) => ({ valor: v, texto: t }))]}
             />
           ) : null}
@@ -137,7 +145,13 @@ export function Biblioteca({ base, infantil = false }: { base: string; infantil?
         error ? null : <Cargando />
       ) : pagina.lecturas.length === 0 ? (
         <Alerta tipo="info">
-          {!infantil ? 'No hay lecturas publicadas con esos filtros.' : filtros.tema ? 'Aún no hay cuentos de ese tema para ti. ¡Prueba con otro!' : 'Pronto habrá lecturas para ti aquí.'}
+          {!infantil
+            ? 'No hay lecturas publicadas con esos filtros.'
+            : filtros.tipo && filtros.tema
+              ? `Aún no hay lecturas de tipo «${TIPOS_TEXTO[filtros.tipo]}» con ese tema. ¡Elige otro tipo de texto o «Todos»!`
+              : filtros.tema
+                ? 'Aún no hay cuentos de ese tema para ti. ¡Prueba con otro!'
+                : 'Pronto habrá lecturas para ti aquí.'}
         </Alerta>
       ) : (
         <ul className="fichas" aria-label="Lecturas">
