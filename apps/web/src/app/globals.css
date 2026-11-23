@@ -3105,12 +3105,32 @@ p {
 
 /* La pregunta en pantalla. */
 .pregunta-lectura {
+  position: relative;
   display: grid;
   gap: 12px;
   padding: 18px;
   border: 3px solid var(--la-color-secundario);
   border-radius: 22px;
   background: #fff;
+}
+
+/* La estrellita con su lápiz se asoma por la esquina de arriba de cada pregunta. */
+.estrella-pregunta {
+  position: absolute;
+  top: -54px;
+  right: 22px;
+  width: 88px;
+  height: 80px;
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .estrella-pregunta {
+    top: -42px;
+    right: 12px;
+    width: 66px;
+    height: 60px;
+  }
 }
 
 .pregunta-lectura h2 {
@@ -3391,7 +3411,8 @@ p {
   font-weight: 700;
 }
 
-.texto-lectura__bloque--mensaje {
+/* El mensaje del cuento va a lo largo, de lado a lado del texto (no en la columna de los dibujos). */
+.texto-lectura__bloque.texto-lectura__bloque--mensaje {
   display: block;
 }
 
@@ -4979,10 +5000,36 @@ p {
   .reto__opcion { transition: transform 0.12s ease; }
   .reto__opcion:active { transform: scale(0.97); }
   .boton-sonido:active { transform: scale(0.95); }
+
+  /* La estrellita de la pregunta: salta, parpadea, escribe con su lápiz y le brilla una chispita. */
+  .estrella-pregunta { transform-origin: 50% 100%; animation: estrellita-salta 2.4s ease-in-out infinite alternate; }
+  .estrella-pregunta__ojos { transform-box: fill-box; transform-origin: center; animation: estrellita-parpadea 4s ease-in-out infinite; }
+  .estrella-pregunta__lapiz { transform-box: fill-box; transform-origin: 30% 10%; animation: estrellita-escribe 0.8s ease-in-out infinite alternate; }
+  .estrella-pregunta__brillo { transform-box: fill-box; transform-origin: center; animation: estrellita-brilla 1.4s ease-in-out infinite alternate; }
 }
 
 @keyframes estrella-late {
   to { transform: scale(1.18); }
+}
+
+@keyframes estrellita-salta {
+  from { transform: translateY(0) rotate(-5deg); }
+  to { transform: translateY(-6px) rotate(5deg); }
+}
+
+@keyframes estrellita-parpadea {
+  0%, 90%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.1); }
+}
+
+@keyframes estrellita-escribe {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(10deg); }
+}
+
+@keyframes estrellita-brilla {
+  from { transform: scale(0.6); opacity: 0.5; }
+  to { transform: scale(1.15); opacity: 1; }
 }
 
 @keyframes globo-aparece {
