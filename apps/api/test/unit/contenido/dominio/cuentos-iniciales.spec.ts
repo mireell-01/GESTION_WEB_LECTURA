@@ -141,7 +141,21 @@ describe('[Contenido][Menor][Fast] Contenido inicial: los cuentos de los 5 mundo
     }
     for (const c of biblioteca) {
       expect(c.tipoTexto, c.clave).toBeDefined();
-      expect(c.nivel, c.clave).toBe(NIVEL_INICIAL[c.rango]);
+      // En el nivel inicial de su edad o uno más: así acompañan al niño desde que empieza hasta que avanza.
+      expect([0, 1], c.clave).toContain(c.nivel - NIVEL_INICIAL[c.rango]);
+    }
+  });
+
+  it('cada temática de la biblioteca tiene al menos 5 lecturas para un niño nuevo de cada edad', () => {
+    // Las palabras que busca cada dibujo de temática en la biblioteca (web: TemasBiblioteca.tsx).
+    const TEMAS = ['animales', 'naturaleza', 'fábulas', 'clásicos', 'misterio', 'ciencia', 'amistad', 'aventura', 'viajes', 'tradiciones'];
+    const NIVEL_INICIAL = { R1: 1, R2: 2, R3: 3 } as const;
+    for (const rango of ['R1', 'R2', 'R3'] as const) {
+      const alcance = todas.filter((c) => c.rango === rango && Math.abs(dificultadDe(c) - NIVEL_INICIAL[rango]) <= 1);
+      for (const tema of TEMAS) {
+        const suyas = alcance.filter((c) => c.tematica.toLocaleLowerCase('es').includes(tema));
+        expect(suyas.length, `${rango}, ${tema}`).toBeGreaterThanOrEqual(5);
+      }
     }
   });
 

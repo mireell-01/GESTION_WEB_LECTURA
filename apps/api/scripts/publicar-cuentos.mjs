@@ -5,8 +5,9 @@
 //
 // Solo para desarrollo. Usa dos cuentas de contenido (EDITOR y REVISOR) del dominio contenido.lectoaventura.test,
 // que la limpieza de las pruebas E2E no borra; en cada ejecución reciben una contraseña y un secreto de MFA nuevos,
-// al azar, que no se muestran ni se guardan. Un cuento ya publicado con el mismo texto se salta; si su texto cambió
-// (por ejemplo, porque se le agregó su moraleja), recibe una versión nueva (RF-027) que también revisa el revisor.
+// al azar, que no se muestran ni se guardan. Un cuento ya publicado con el mismo texto y los mismos datos se salta; si
+// cambió su texto (por ejemplo, porque se le agregó su moraleja) o su temática, tipo o nivel, recibe una versión
+// nueva (RF-027) que también revisa el revisor.
 // Las misiones que ya existen se saltan.
 //
 // Uso, con la API en marcha:  npm run contenido:publicar --workspace @lectoaventura/api
@@ -85,10 +86,15 @@ try {
   let actualizados = 0;
   const donde = (c) => (c.mundo ? `mundo ${c.mundo}` : 'biblioteca');
   for (const c of TODAS) {
-    const ya = await prisma.versionLectura.findFirst({ where: { titulo: c.titulo, estado: 'PUBLICADO' }, select: { lecturaId: true, texto: true } });
+    const ya = await prisma.versionLectura.findFirst({
+      where: { titulo: c.titulo, estado: 'PUBLICADO' },
+      select: { lecturaId: true, texto: true, tematica: true, tipoTexto: true, nivelDificultad: true },
+    });
     if (ya) {
       lecturaDe.set(c.clave, ya.lecturaId);
-      if (mismoTexto(ya.texto, textoDe(c))) continue;
+      // Sin cambios en el texto ni en su temática, tipo o nivel: se salta.
+      const m = metadatosDe(c);
+      if (mismoTexto(ya.texto, textoDe(c)) && ya.tematica === m.tematica && ya.tipoTexto === m.tipoTexto && ya.nivelDificultad === m.nivelDificultad) continue;
       // Versión nueva con el texto y las actividades de ahora; si una ejecución anterior la dejó a medias, se retoma.
       const enCurso = await prisma.versionLectura.findFirst({ where: { lecturaId: ya.lecturaId, estado: { in: ['BORRADOR', 'EN_REVISION'] } }, select: { estado: true } });
       if (!enCurso) await llamar('POST', `/backoffice/lecturas/${ya.lecturaId}/nueva-version`, undefined, editora);
