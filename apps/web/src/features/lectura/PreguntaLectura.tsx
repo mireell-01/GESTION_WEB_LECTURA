@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 
 import { Boton, Icono } from '@lectoaventura/ui';
 
+import { EstrellaPregunta } from './EstrellaPregunta';
 import { IconoLectura } from './iconos';
 import { OrdenarElementos } from './OrdenarElementos';
 import { RespuestaEscrita } from './RespuestaEscrita';
@@ -64,6 +65,7 @@ export function PreguntaLectura({
   const cerrada = pregunta.modalidad === 'SELECCION' || pregunta.modalidad === 'ORDENAMIENTO' || pregunta.modalidad === 'EVIDENCIA';
   return (
     <section className="pregunta-lectura" aria-labelledby="pregunta-enunciado">
+      <EstrellaPregunta />
       <p className="pregunta-lectura__momento">
         {MOMENTO[pregunta.momento]} · Actividad {pregunta.numero} de {pregunta.total}
       </p>
