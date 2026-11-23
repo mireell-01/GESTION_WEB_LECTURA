@@ -13,7 +13,7 @@ export const CUENTOS_10_12 = [
     rango: 'R3',
     orden: 1,
     titulo: 'Rosa y las truchas del lago Titicaca',
-    tematica: 'Lugares del Perú',
+    tematica: 'Viajes por el Perú',
     mision: { titulo: 'La cooperativa del lago', descripcion: 'Acompaña a Rosa en su trabajo con las truchas del Titicaca.' },
     texto: [
       ['Rosa vive en una isla del lago Titicaca, a más de tres mil ochocientos metros sobre el nivel del mar.', 'Su familia forma parte de una cooperativa que cría truchas en jaulas flotantes.'],
@@ -239,7 +239,7 @@ export const CUENTOS_10_12 = [
     rango: 'R3',
     orden: 1,
     titulo: '¿Una carretera junto a la laguna?',
-    tematica: 'Opinión y debate',
+    tematica: 'Naturaleza: opinión y debate',
     tipoTexto: 'NOTICIA_INFANTIL',
     mision: { titulo: 'La asamblea de la laguna', descripcion: 'Escucha las razones de cada lado y decide qué votarías.' },
     texto: [
@@ -264,7 +264,7 @@ export const CUENTOS_10_12 = [
     rango: 'R3',
     orden: 2,
     titulo: 'Carta al alcalde para cuidar el río',
-    tematica: 'Opinión y debate',
+    tematica: 'Naturaleza: opinión y debate',
     tipoTexto: 'COTIDIANO',
     mision: { titulo: 'Una carta para el río', descripcion: 'Lee la carta de los estudiantes y opina si convence.' },
     texto: [
@@ -337,7 +337,7 @@ export const CUENTOS_10_12 = [
     rango: 'R3',
     orden: 2,
     titulo: 'El secreto de la isla flotante',
-    tematica: 'Lugares del Perú',
+    tematica: 'Misterios y viajes por el Perú',
     mision: { titulo: 'El secreto de los uros', descripcion: 'Visita con Lucas una isla de totora y descubre su secreto.' },
     texto: [
       ['Lucas viajó con su clase a las islas de los uros, en el lago Titicaca.', 'Al pisar la isla, sintió que el suelo era blando, como un colchón de paja.'],

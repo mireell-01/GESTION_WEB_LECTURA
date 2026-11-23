@@ -148,7 +148,7 @@ export const CUENTOS_8_9 = [
     rango: 'R2',
     orden: 1,
     titulo: 'Las islas flotantes del lago Titicaca',
-    tematica: 'Lugares del Perú',
+    tematica: 'Viajes por el Perú',
     tipoTexto: 'INFORMATIVO',
     mision: { titulo: 'Islas de totora', descripcion: 'Investiga cómo se construyen las islas que flotan en el lago.' },
     texto: [
@@ -240,7 +240,7 @@ export const CUENTOS_8_9 = [
     rango: 'R2',
     orden: 2,
     titulo: 'Noticia: un perro pastor encuentra a una oveja perdida',
-    tematica: 'Noticias',
+    tematica: 'Noticias de animales',
     tipoTexto: 'NOTICIA_INFANTIL',
     mision: { titulo: 'Héroe de la puna', descripcion: 'Lee la noticia y opina sobre lo que hizo el perro Tigre.' },
     texto: [
