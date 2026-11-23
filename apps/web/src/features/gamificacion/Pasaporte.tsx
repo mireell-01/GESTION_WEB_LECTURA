@@ -8,8 +8,9 @@ import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono } from '@lec
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArteRecompensa, AvatarLector } from './AvatarLector';
+import { EstanteLecturas, PuntosDeHoy, RutaDeMundos } from './RecuerdosPasaporte';
 import { RetoDelDia } from './RetoDelDia';
-import { EMOJI_INSIGNIA, Insignia, motivoInfantil, Pasaporte as DatosPasaporte, PISTA_INSIGNIA, Recompensa } from './tipos';
+import { EMOJI_INSIGNIA, Insignia, Pasaporte as DatosPasaporte, PISTA_INSIGNIA, Recompensa } from './tipos';
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', timeZone: 'America/Lima' });
 
@@ -272,49 +273,12 @@ export function Pasaporte() {
         </ul>
       </section>
 
-      <div className="pasaporte__columnas">
-        <section className="pila-sm" aria-labelledby="mundos-titulo">
-          <h2 id="mundos-titulo">Mundos completados</h2>
-          {p.mundos.length === 0 ? (
-            <p className="texto-suave">Aún no completas un mundo. ¡Sigue tus misiones!</p>
-          ) : (
-            <ul className="pasaporte__lista" aria-label="Mundos completados">
-              {p.mundos.map((m) => (
-                <li key={m.numero}>
-                  <Icono nombre="globo" tamano={22} /> {m.nombre}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-        <section className="pila-sm" aria-labelledby="lecturas-titulo">
-          <h2 id="lecturas-titulo">Lecturas que terminaste</h2>
-          {p.lecturas.recientes.length === 0 ? (
-            <p className="texto-suave">Cuando termines una lectura, aparecerá aquí.</p>
-          ) : (
-            <ul className="pasaporte__lista" aria-label="Lecturas terminadas">
-              {p.lecturas.recientes.map((l) => (
-                <li key={l.id}>
-                  <Icono nombre="libro" tamano={22} /> {l.titulo} <span className="texto-suave">· {fecha(l.finalizadaEn)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      {/* Sus recuerdos de lector: la ruta de mundos sellada, su estante de libros y sus puntos de hoy. */}
+      <RutaDeMundos completados={p.mundos} />
+      <div className="pasaporte__recuerdos">
+        <EstanteLecturas lecturas={p.lecturas} />
+        <PuntosDeHoy p={p} />
       </div>
-
-      {p.ultimosPuntos.length > 0 ? (
-        <section className="pila-sm" aria-labelledby="puntos-titulo">
-          <h2 id="puntos-titulo">Tus últimos puntos</h2>
-          <ul className="pasaporte__lista" aria-label="Últimos puntos">
-            {p.ultimosPuntos.map((u, n) => (
-              <li key={`${u.creadoEn}-${n}`}>
-                <span className="pasaporte__mas">+{u.puntos}</span> {motivoInfantil(u.motivo)}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {aviso ? <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta> : null}
       <Tienda p={p} alCanjear={canjear} alUsar={usar} />

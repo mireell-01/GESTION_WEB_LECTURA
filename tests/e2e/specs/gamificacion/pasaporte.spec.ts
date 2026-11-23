@@ -67,7 +67,8 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(insignias.filter({ hasText: 'Lector Perseverante' })).toContainText('1 de 7');
     await expect(insignias.filter({ hasText: 'Rango Explorador' })).toContainText('Por ganar');
     await expect(page.getByRole('list', { name: 'Lecturas terminadas' })).toContainText(killa.titulo);
-    await expect(page.getByRole('list', { name: 'Mundos completados' })).toContainText('Explorador'); // RF-033: el reto inicial lo ubicó en el Detective
+    // RF-033: el reto inicial lo ubicó en el Detective, así que el Explorador ya lleva su sello en la ruta.
+    await expect(page.getByRole('list', { name: 'Mi ruta de mundos' }).getByRole('listitem').filter({ hasText: 'Explorador' })).toContainText('¡Completado!');
     await expect(numeros(page)).toContainText(`${despues} puntos`);
     await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Lectura terminada');
   });
