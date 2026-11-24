@@ -1,153 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useId, useState } from 'react';
 
 import { Icono } from '@lectoaventura/ui';
 
-import { ArteMundo } from '@/features/aventura/ArteMundo';
-import { Mapa } from '@/features/aventura/tipos';
 import { EscenaAnimada } from '@/features/lectura/IlustracionLectura';
-import { api } from '@/shared/api/client';
 
 import { motivoInfantil, Pasaporte } from './tipos';
 
 const LIMA = 'America/Lima';
 const diaLima = (fecha: Date) => fecha.toLocaleDateString('en-CA', { timeZone: LIMA });
 const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', timeZone: LIMA }).replace('.', '');
-const mesCorto = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { month: 'short', timeZone: LIMA }).replace('.', '').toUpperCase();
-const diaDelMes = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', timeZone: LIMA });
-
-/** El sello de tinta que deja un mundo completado, con su fecha (decorativo: el estado ya se dice en texto). */
-function SelloCompletado({ fecha }: { fecha: string | null }) {
-  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
-  return (
-    <svg className="ruta-mundo__sello" viewBox="0 0 92 92" aria-hidden="true" focusable="false">
-      <defs>
-        <filter id={`tinta-${id}`} x="-10%" y="-10%" width="120%" height="120%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="ruido" />
-          <feColorMatrix in="ruido" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.35" result="huecos" />
-          <feComposite in="SourceGraphic" in2="huecos" operator="in" />
-        </filter>
-        <path id={`arco-${id}`} d="M 46 46 m -31 0 a 31 31 0 1 1 62 0 a 31 31 0 1 1 -62 0" />
-      </defs>
-      <g filter={`url(#tinta-${id})`}>
-        <circle cx="46" cy="46" r="43" fill="rgba(255,255,255,.6)" stroke="currentColor" strokeWidth="4" />
-        <circle cx="46" cy="46" r="24" fill="none" stroke="currentColor" strokeWidth="2" />
-        <text fill="currentColor" fontSize="11.5" fontWeight="700" letterSpacing="2.4">
-          <textPath href={`#arco-${id}`}>COMPLETADO ★ COMPLETADO ★</textPath>
-        </text>
-        {fecha ? (
-          <>
-            <text x="46" y="47" textAnchor="middle" fill="currentColor" fontSize="17" fontWeight="700">
-              {diaDelMes(fecha)}
-            </text>
-            <text x="46" y="59" textAnchor="middle" fill="currentColor" fontSize="9.5" fontWeight="700" letterSpacing="1">
-              {mesCorto(fecha)}
-            </text>
-          </>
-        ) : (
-          <text x="46" y="53" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="700">
-            ★
-          </text>
-        )}
-      </g>
-    </svg>
-  );
-}
-
-/**
- * RF-059, RF-030: la ruta de los 5 mundos como un pasaporte. Cada mundo completado lleva su sello con la
- * fecha; el mundo donde está el niño dice «Estás aquí»; los demás esperan con candado.
- */
-export function RutaDeMundos({ completados }: { completados: Pasaporte['mundos'] }) {
-  const [mapa, setMapa] = useState<Mapa | null>(null);
-
-  useEffect(() => {
-    api<Mapa>('/aventura/mapa')
-      .then(setMapa)
-      .catch(() => setMapa(null));
-  }, []);
-
-  const fechas = new Map(completados.map((m) => [m.numero, m.completadoEn]));
-  // Sin mapa (aún carga, o falta el reto inicial), se muestran los mundos que ya completó.
-  const mundos =
-    mapa && !mapa.diagnosticoPendiente
-      ? mapa.mundos.map((m) => ({ numero: m.numero, nombre: m.nombre, estado: m.estado, misiones: m.misiones }))
-      : completados.map((m) => ({ numero: m.numero, nombre: m.nombre, estado: 'COMPLETADO' as const, misiones: null }));
-  const sellos = mundos.filter((m) => m.estado === 'COMPLETADO').length;
-
-  return (
-    <section className="recuerdo ruta" aria-labelledby="ruta-titulo">
-      <header className="recuerdo__cabeza">
-        <span className="recuerdo__icono" aria-hidden="true">
-          <Icono nombre="brujula" tamano={26} />
-        </span>
-        <h2 id="ruta-titulo">Mi ruta de mundos</h2>
-        <span className="recuerdo__dato">
-          {sellos} de {mapa && !mapa.diagnosticoPendiente ? mundos.length : 5} sellos
-        </span>
-      </header>
-      <p className="recuerdo__bajada">Cada mundo que completas sella tu pasaporte.</p>
-
-      {mundos.length === 0 ? (
-        <p className="ruta__vacia">Completa las misiones de tu primer mundo y aquí aparecerá su sello. ¡Tú puedes!</p>
-      ) : (
-        <div className="ruta__paisaje">
-          {mundos.length > 1 ? (
-            // El camino entre los mundos: lleno hasta donde llegó; punteado lo que falta.
-            <svg className="ruta__camino" viewBox="0 0 1000 150" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-              {mundos.slice(0, -1).map((m, i) => {
-                const paso = 1000 / mundos.length;
-                const x1 = paso * (i + 0.5);
-                const x2 = paso * (i + 1.5);
-                const y1 = i % 2 === 0 ? 60 : 88;
-                const y2 = i % 2 === 0 ? 88 : 60;
-                const medio = (x1 + x2) / 2;
-                return (
-                  <path
-                    key={m.numero}
-                    d={`M ${x1} ${y1} C ${medio} ${y1}, ${medio} ${y2}, ${x2} ${y2}`}
-                    className={m.estado === 'COMPLETADO' ? 'ruta__tramo ruta__tramo--hecho' : 'ruta__tramo'}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                );
-              })}
-            </svg>
-          ) : null}
-          <ol className="ruta__mundos" aria-label="Mi ruta de mundos" style={{ '--mundos': mundos.length } as React.CSSProperties}>
-            {mundos.map((m) => {
-              const actual = m.estado === 'DISPONIBLE';
-              const estado =
-                m.estado === 'COMPLETADO'
-                  ? '¡Completado!'
-                  : actual
-                    ? `Estás aquí${m.misiones ? ` · ${Math.min(m.misiones.completadas, m.misiones.necesarias)} de ${m.misiones.necesarias}` : ''}`
-                    : 'Por descubrir';
-              return (
-                <li key={m.numero} className={`ruta-mundo ruta-mundo--${actual ? 'actual' : m.estado === 'COMPLETADO' ? 'hecho' : 'bloqueado'}`}>
-                  <span className="ruta-mundo__medalla">
-                    <span className="ruta-mundo__arte">
-                      <ArteMundo numero={m.numero} />
-                    </span>
-                    {m.estado === 'COMPLETADO' ? <SelloCompletado fecha={fechas.get(m.numero) ?? null} /> : null}
-                    {m.estado === 'BLOQUEADO' ? (
-                      <span className="ruta-mundo__candado" aria-hidden="true">
-                        <Icono nombre="candado" tamano={16} />
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="ruta-mundo__nombre">{m.nombre}</span>
-                  <span className="ruta-mundo__estado">{estado}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      )}
-    </section>
-  );
-}
 
 /** Los libros del estante: tonos suaves de la paleta (lila, menta, crema, rosado y celeste) con su lomo más intenso. */
 const TONOS_LIBRO = [

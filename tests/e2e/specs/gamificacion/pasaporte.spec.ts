@@ -67,8 +67,8 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(insignias.filter({ hasText: 'Lector Perseverante' })).toContainText('1 de 7');
     await expect(insignias.filter({ hasText: 'Rango Explorador' })).toContainText('Por ganar');
     await expect(page.getByRole('list', { name: 'Lecturas terminadas' })).toContainText(killa.titulo);
-    // RF-033: el reto inicial lo ubicó en el Detective, así que el Explorador ya lleva su sello en la ruta.
-    await expect(page.getByRole('list', { name: 'Mi ruta de mundos' }).getByRole('listitem').filter({ hasText: 'Explorador' })).toContainText('¡Completado!');
+    // El camino de los mundos no se repite aquí: vive en el Inicio.
+    await expect(page.getByRole('list', { name: 'Camino de mundos' })).toHaveCount(0);
     await expect(numeros(page)).toContainText(`${despues} puntos`);
     await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Lectura terminada');
   });
@@ -93,6 +93,12 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(marcador).toContainText('Nivel 0');
     await expect(marcador).toContainText('1 día seguido');
     await expect(marcador).toContainText(`${monedas} monedas`);
+    // RF-030, RF-033: arriba, el camino de los mundos; el reto inicial lo ubicó en el Detective.
+    const camino = page.getByRole('region', { name: 'Tus mundos' }).getByRole('list', { name: 'Camino de mundos' });
+    await expect(camino.getByRole('link', { name: 'Entrar al mundo 2: Detective' })).toContainText('¡Estás aquí!');
+    await expect(camino.getByRole('link', { name: 'Entrar al mundo 2: Detective' })).toContainText('Entrar · 0 de');
+    await expect(camino.getByRole('link', { name: 'Entrar al mundo 1: Explorador' })).toContainText('¡Completado!');
+    await expect(camino.getByText('Por descubrir')).toHaveCount(3);
     const retoDelDia = page.getByRole('region', { name: 'Reto del día' });
     await expect(retoDelDia).toContainText('Responde bien 3 preguntas para descubrir lo que no se dice');
     await expect(retoDelDia).toContainText('1 de 3'); // la pregunta de inferencia de la lectura
@@ -100,6 +106,8 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
 
     await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Pasaporte' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Pasaporte del Lector' })).toBeVisible();
+    // El reto del día se queda solo en el Inicio: el Pasaporte no lo repite.
+    await expect(page.getByRole('region', { name: 'Reto del día' })).toHaveCount(0);
     const tienda = page.getByRole('list', { name: 'Recompensas' });
     await expect(tienda.getByRole('listitem')).toHaveCount(10);
     await expect(tienda.getByRole('button', { name: 'Canjear Dragón lector por 60 monedas' })).toBeDisabled();

@@ -5007,7 +5007,406 @@ p {
 
 }
 
-/* ── Pasaporte: la ruta de mundos sellada, el estante de libros y los puntos de hoy ─────────────────────── */
+/* ── Inicio: el camino de los mundos, como un mapa (CaminoMundos) ───────────────────────────────────── */
+.mapa-camino {
+  display: grid;
+  gap: 4px;
+  padding: 20px 22px 18px;
+  border: 2px solid var(--la-color-primario-borde);
+  border-radius: var(--la-radio-lg);
+  background: #fff;
+  box-shadow: var(--la-sombra);
+}
+
+.mapa-camino .est-mundos__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.mapa-camino .est-mundos__cabecera h2 {
+  margin: 0;
+}
+
+.mapa-camino__dato {
+  margin-left: auto;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--la-color-primario-suave);
+  color: var(--la-color-primario-fuerte);
+  font: 700 0.9375rem var(--la-font-titulo);
+}
+
+.mapa-camino__bajada {
+  margin: 0 0 10px;
+  color: var(--la-color-texto-suave);
+  font: 700 0.9375rem / 1.35 var(--la-font-redondeada);
+}
+
+/* El paisaje: cielo lila, nubes, destellos y lomitas verdes. */
+.mapa-camino__paisaje {
+  position: relative;
+  overflow: hidden;
+  padding: 0 8px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #efeaff 0%, #f8f6ff 52%, #eaf8f0 100%);
+}
+
+.mapa-camino__paisaje::after {
+  position: absolute;
+  right: -14%;
+  bottom: -54px;
+  left: -14%;
+  height: 100px;
+  border-radius: 50%;
+  background: #d9f2e2;
+  content: '';
+}
+
+.mapa-camino__nube {
+  position: absolute;
+  width: 74px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.9;
+}
+
+.mapa-camino__nube::before {
+  position: absolute;
+  top: -14px;
+  left: 16px;
+  width: 34px;
+  height: 30px;
+  border-radius: 50%;
+  background: inherit;
+  content: '';
+}
+
+.mapa-camino__destello {
+  position: absolute;
+  color: var(--la-color-secundario);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.mapa-camino__nube--1 {
+  top: 22px;
+  left: 6%;
+}
+
+.mapa-camino__nube--2 {
+  top: 40px;
+  right: 9%;
+  transform: scale(0.8);
+}
+
+.mapa-camino__destello--1 {
+  top: 16px;
+  left: 38%;
+}
+
+.mapa-camino__destello--2 {
+  top: 52px;
+  left: 62%;
+  color: #c9b6ff;
+}
+
+/* El sendero que une los mundos: dorado lo recorrido, lila lo que falta. */
+.mapa-camino__sendero {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  width: calc(100% - 16px);
+  pointer-events: none;
+}
+
+.mapa-camino__sendero--vertical {
+  height: calc(76px + var(--mundos, 5) * 124px + 40px);
+}
+
+.mapa-camino__sendero--horizontal {
+  display: none;
+  height: 260px;
+}
+
+.sendero__suelo {
+  fill: none;
+  stroke: #e9e3fb;
+  stroke-width: 20;
+  stroke-linecap: round;
+}
+
+.sendero__suelo--hecho {
+  stroke: #ffd76a;
+}
+
+.sendero__rayas {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-dasharray: 3 11;
+  stroke-linecap: round;
+}
+
+/* Los mundos: en el celular, en zigzag de arriba abajo; en pantallas anchas, de izquierda a derecha. */
+.mapa-camino__mundos {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 124px;
+  margin: 0;
+  padding: 76px 0 96px;
+  list-style: none;
+}
+
+.paso {
+  grid-row: var(--fila, auto);
+  min-width: 0;
+}
+
+.paso:nth-child(odd) {
+  grid-column: 1;
+}
+
+.paso:nth-child(even) {
+  grid-column: 2;
+}
+
+.paso__enlace,
+.paso__cerrado {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+
+.paso__enlace {
+  border-radius: 20px;
+}
+
+.paso__enlace:focus-visible {
+  outline: 4px solid var(--la-color-primario);
+  outline-offset: 4px;
+}
+
+.paso__medalla {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  aspect-ratio: 1;
+}
+
+.paso__disco {
+  position: relative;
+  width: 86%;
+  aspect-ratio: 1;
+  padding: 6px;
+  border-radius: 50%;
+  background: var(--la-color-secundario);
+  box-shadow: 0 6px 0 rgba(61, 42, 158, 0.18);
+}
+
+.paso--actual .paso__disco {
+  width: 100%;
+}
+
+.paso--bloqueado .paso__disco {
+  background: #e7e3f5;
+  box-shadow: none;
+}
+
+.paso__arte {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.paso__arte > * {
+  width: 100%;
+  height: 100%;
+}
+
+.paso--bloqueado .paso__arte {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* El anillo que late alrededor del mundo donde está el niño. */
+.paso--actual .paso__disco::before {
+  position: absolute;
+  inset: -9px;
+  border: 5px solid rgba(91, 63, 217, 0.22);
+  border-radius: 50%;
+  content: '';
+}
+
+.paso__insignia {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--la-color-secundario);
+  color: #6b4b00;
+}
+
+.paso__candado {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--la-color-borde);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--la-color-texto-suave);
+  transform: translateX(-50%);
+}
+
+/* «¡Aquí estás!»: el avatar del niño sobre su mundo. */
+.paso__tu {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.paso__tu-texto {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--la-color-primario);
+  color: #fff;
+  font: 800 0.75rem var(--la-font-redondeada);
+}
+
+.paso__numero {
+  margin-top: 6px;
+  color: var(--la-color-texto-suave);
+  font: 800 0.6875rem var(--la-font-redondeada);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.paso__nombre {
+  font: 600 1.0625rem / 1.15 var(--la-font-titulo);
+}
+
+.paso__estado {
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--la-color-fondo-alterno);
+  color: var(--la-color-texto-suave);
+  font: 800 0.75rem var(--la-font-redondeada);
+}
+
+.paso--hecho .paso__estado {
+  background: var(--la-color-exito-suave);
+  color: var(--la-color-exito-texto);
+}
+
+.paso--actual .paso__estado {
+  padding: 5px 14px;
+  background: var(--la-color-primario);
+  box-shadow: 0 3px 0 var(--la-color-primario-fuerte);
+  color: #fff;
+  font-size: 0.8125rem;
+}
+
+.mapa-camino__pie {
+  margin: 10px 2px 0;
+  color: var(--la-color-texto-suave);
+  font: 700 0.9375rem / 1.35 var(--la-font-redondeada);
+}
+
+@container est (min-width: 640px) {
+  .mapa-camino__bajada {
+    margin-left: 52px;
+  }
+}
+
+@container est (min-width: 760px) {
+  .mapa-camino__sendero--vertical {
+    display: none;
+  }
+
+  .mapa-camino__sendero--horizontal {
+    display: block;
+  }
+
+  .mapa-camino__mundos {
+    grid-template-columns: repeat(var(--mundos, 5), minmax(0, 1fr));
+    grid-auto-rows: auto;
+    padding: 78px 0 30px;
+  }
+
+  .paso:nth-child(odd),
+  .paso:nth-child(even) {
+    grid-row: 1;
+    grid-column: auto;
+  }
+
+  .paso:nth-child(even) {
+    padding-top: 46px;
+  }
+
+  .paso__medalla {
+    width: 132px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .paso--actual .paso__disco::before {
+    animation: paso-late 2.4s ease-in-out infinite;
+  }
+
+  .paso__tu {
+    animation: paso-flota 3s ease-in-out infinite;
+  }
+}
+
+@keyframes paso-late {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes paso-flota {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+
+/* ── Pasaporte: el estante de libros y los puntos de hoy ─────────────────────── */
 .recuerdo {
   display: grid;
   align-content: start;
@@ -5064,168 +5463,6 @@ p {
 .pasaporte__recuerdos {
   display: grid;
   gap: 20px;
-}
-
-/* La ruta de mundos: un paisaje con los 5 mundos unidos por un camino. */
-.ruta__vacia {
-  margin: 0;
-  padding: 18px;
-  border-radius: 20px;
-  background: var(--la-color-fondo-alterno);
-  font: 600 1rem / 1.4 var(--la-font-titulo);
-}
-
-.ruta__paisaje {
-  position: relative;
-  overflow: hidden;
-  padding-bottom: 34px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #f4f1ff 0%, #fbfaff 62%, #eef9f1 100%);
-}
-
-/* Las lomitas del fondo. */
-.ruta__paisaje::after {
-  position: absolute;
-  right: -12%;
-  bottom: -46px;
-  left: -12%;
-  height: 84px;
-  border-radius: 50%;
-  background: #d9f2e2;
-  content: '';
-}
-
-.ruta__camino {
-  display: none;
-  position: absolute;
-  top: 14px;
-  left: 0;
-  width: 100%;
-  height: 150px;
-  pointer-events: none;
-}
-
-.ruta__tramo {
-  fill: none;
-  stroke: var(--la-color-primario-borde);
-  stroke-width: 6;
-  stroke-dasharray: 1 16;
-  stroke-linecap: round;
-}
-
-.ruta__tramo--hecho {
-  stroke: var(--la-color-primario);
-  stroke-width: 7;
-  stroke-dasharray: none;
-}
-
-.ruta__mundos {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px 8px;
-  margin: 0;
-  padding: 26px 8px 0;
-  list-style: none;
-}
-
-.ruta-mundo {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 6px;
-  min-width: 0;
-  text-align: center;
-}
-
-.ruta-mundo__medalla {
-  position: relative;
-  width: clamp(80px, 22vw, 104px);
-  aspect-ratio: 1;
-  padding: 6px;
-  border-radius: 50%;
-  background: var(--la-color-secundario);
-  box-shadow: 0 5px 0 rgba(61, 42, 158, 0.18);
-}
-
-.ruta-mundo__arte {
-  display: block;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  background: #fff;
-}
-
-.ruta-mundo__arte .la-ilustracion {
-  width: 100%;
-  height: 100%;
-}
-
-.ruta-mundo--bloqueado .ruta-mundo__medalla {
-  background: #e7e3f5;
-  box-shadow: none;
-}
-
-.ruta-mundo--bloqueado .ruta-mundo__arte {
-  filter: grayscale(1);
-  opacity: 0.55;
-}
-
-.ruta-mundo--actual .ruta-mundo__medalla {
-  outline: 5px solid rgba(91, 63, 217, 0.2);
-  outline-offset: 4px;
-}
-
-/* El sello de tinta del mundo completado, con su fecha. */
-.ruta-mundo__sello {
-  position: absolute;
-  top: -16%;
-  right: -24%;
-  width: 74%;
-  height: 74%;
-  color: var(--la-color-rosa);
-  font-family: var(--la-font-titulo);
-  transform: rotate(-16deg);
-}
-
-.ruta-mundo__candado {
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--la-color-borde);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--la-color-texto-suave);
-  transform: translateX(-50%);
-}
-
-.ruta-mundo__nombre {
-  font: 600 1.0625rem / 1.15 var(--la-font-titulo);
-}
-
-.ruta-mundo__estado {
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: var(--la-color-fondo-alterno);
-  color: var(--la-color-texto-suave);
-  font: 800 0.75rem var(--la-font-redondeada);
-}
-
-.ruta-mundo--hecho .ruta-mundo__estado {
-  background: var(--la-color-exito-suave);
-  color: var(--la-color-exito-texto);
-}
-
-.ruta-mundo--actual .ruta-mundo__estado {
-  background: var(--la-color-primario);
-  color: #fff;
 }
 
 /* El estante: libros de colores suaves sobre repisas de madera (una por fila). */
@@ -5522,26 +5759,6 @@ p {
   }
 }
 
-@container est (min-width: 760px) {
-  .ruta__camino {
-    display: block;
-  }
-
-  .ruta__mundos {
-    grid-template-columns: repeat(var(--mundos, 5), minmax(0, 1fr));
-    padding-top: 22px;
-  }
-
-  .ruta-mundo__medalla {
-    width: 104px;
-  }
-
-  /* En zigzag: el camino pasa por el centro de cada mundo. */
-  .ruta-mundo:nth-child(even) {
-    padding-top: 28px;
-  }
-}
-
 @container est (min-width: 880px) {
   .pasaporte__recuerdos {
     grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
@@ -5562,37 +5779,6 @@ p {
   .estante__hueco--inclinado .libro:hover,
   .estante__hueco--inclinado .libro:focus-visible {
     transform: rotate(5deg) translateY(-6px);
-  }
-
-  .ruta-mundo--actual .ruta-mundo__medalla {
-    animation: ruta-aqui 2.4s ease-in-out infinite;
-  }
-
-  .ruta-mundo__sello {
-    animation: sello-golpe 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
-  }
-}
-
-@keyframes ruta-aqui {
-  0%,
-  100% {
-    outline-color: rgba(91, 63, 217, 0.2);
-    outline-offset: 4px;
-  }
-  50% {
-    outline-color: rgba(91, 63, 217, 0.45);
-    outline-offset: 8px;
-  }
-}
-
-@keyframes sello-golpe {
-  0% {
-    opacity: 0;
-    transform: rotate(-16deg) scale(1.6);
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(-16deg) scale(1);
   }
 }
 

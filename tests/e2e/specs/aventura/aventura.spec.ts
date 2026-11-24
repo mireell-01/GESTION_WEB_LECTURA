@@ -58,7 +58,7 @@ test.describe('[Aventura][Menor][Slow] Aventura: mapa, mundos y misiones (RF-030
     const mundos = page.getByRole('region', { name: 'Tus mundos' });
     await expect(mundos.getByRole('link', { name: 'Entrar al mundo 1: Explorador' })).toContainText('¡Estás aquí!');
     await expect(mundos.getByRole('link', { name: /Entrar al mundo [2-5]/ })).toHaveCount(0);
-    await expect(mundos.getByText('Completa el mundo anterior')).toHaveCount(4);
+    await expect(mundos.getByText('Por descubrir')).toHaveCount(4); // en el camino del Inicio
 
     await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Mundos' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Tu mapa de aventuras' })).toBeVisible();
