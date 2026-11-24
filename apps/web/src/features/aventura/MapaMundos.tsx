@@ -8,15 +8,17 @@ import { Alerta, BarraProgreso, Cargando, clasesBoton, Icono, Mascota } from '@l
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArteMundo } from './ArteMundo';
+import { CaminoMundos, datoDelCamino, LectorEnCamino } from './CaminoMundos';
 import { Celebracion } from './Celebracion';
 import { Mapa, MundoMapa } from './tipos';
 
 /**
  * Mapa de aventuras del estudiante (RF-030): los 5 mundos con su estado. El mundo actual y los
  * completados se abren; los bloqueados muestran el candado. Si un mundo se desbloqueó desde la
- * última visita, primero se celebra (RF-031).
+ * última visita, primero se celebra (RF-031). En el Inicio se ve como un camino (CaminoMundos), con el
+ * avatar del niño sobre su mundo; en la pantalla Mundos, como tarjetas con el detalle de cada uno.
  */
-export function MapaMundos({ comoPagina = false }: { comoPagina?: boolean }) {
+export function MapaMundos({ comoPagina = false, lector }: { comoPagina?: boolean; lector?: LectorEnCamino }) {
   const [mapa, setMapa] = useState<Mapa | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,12 +37,15 @@ export function MapaMundos({ comoPagina = false }: { comoPagina?: boolean }) {
   }, [porCelebrar]);
 
   const Titulo = comoPagina ? 'h1' : 'h2';
+  const comoCamino = !comoPagina;
+  const listo = mapa && !mapa.diagnosticoPendiente ? mapa : null;
 
   return (
-    <section className="est-mundos" aria-labelledby="mundos-titulo">
+    <section className={comoCamino ? 'est-mundos mapa-camino' : 'est-mundos'} aria-labelledby="mundos-titulo">
       <div className="est-mundos__cabecera">
         <Icono nombre="globo" tamano={40} />
         <Titulo id="mundos-titulo">{comoPagina ? 'Tu mapa de aventuras' : 'Tus mundos'}</Titulo>
+        {comoCamino && listo ? <span className="mapa-camino__dato">{datoDelCamino(listo.mundos)}</span> : null}
       </div>
       {error ? <Alerta tipo="error">{error}</Alerta> : null}
       {!mapa ? (
@@ -58,6 +63,8 @@ export function MapaMundos({ comoPagina = false }: { comoPagina?: boolean }) {
             </div>
           </div>
         </div>
+      ) : comoCamino ? (
+        <CaminoMundos mundos={mapa.mundos} lector={lector} />
       ) : (
         <ul className="est-mundos__lista">
           {mapa.mundos.map((m) => (

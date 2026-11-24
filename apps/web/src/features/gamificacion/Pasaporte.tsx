@@ -8,8 +8,7 @@ import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono } from '@lec
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArteRecompensa, AvatarLector } from './AvatarLector';
-import { EstanteLecturas, PuntosDeHoy, RutaDeMundos } from './RecuerdosPasaporte';
-import { RetoDelDia } from './RetoDelDia';
+import { EstanteLecturas, PuntosDeHoy } from './RecuerdosPasaporte';
 import { EMOJI_INSIGNIA, Insignia, Pasaporte as DatosPasaporte, PISTA_INSIGNIA, Recompensa } from './tipos';
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', timeZone: 'America/Lima' });
@@ -175,8 +174,8 @@ function TarjetaInsignia({ i }: { i: Insignia }) {
 
 /**
  * RF-059: el Pasaporte del Lector — su nivel con los puntos que faltan para el siguiente (RF-057), su
- * racha (RF-061), sus monedas, el reto del día (RF-060), las insignias ganadas y por ganar (RF-058), los
- * mundos completados, las lecturas que terminó y la tienda de recompensas (RF-062).
+ * racha (RF-061), sus monedas, las insignias ganadas y por ganar (RF-058), las lecturas que terminó y la
+ * tienda de recompensas (RF-062). El reto del día (RF-060) y el camino de los mundos viven en el Inicio.
  */
 export function Pasaporte() {
   const [p, setP] = useState<DatosPasaporte | null>(null);
@@ -259,8 +258,6 @@ export function Pasaporte() {
       </ul>
       {!p.racha.leyoHoy ? <p className="texto-suave">Termina una lectura o tu reto del día para sumar un día más a tu racha.</p> : null}
 
-      <RetoDelDia />
-
       <section className="pila-sm" aria-labelledby="insignias-titulo">
         <h2 id="insignias-titulo">
           Tus insignias <span className="texto-suave">({ganadas} de {p.insignias.length})</span>
@@ -273,8 +270,7 @@ export function Pasaporte() {
         </ul>
       </section>
 
-      {/* Sus recuerdos de lector: la ruta de mundos sellada, su estante de libros y sus puntos de hoy. */}
-      <RutaDeMundos completados={p.mundos} />
+      {/* Sus recuerdos de lector: su estante de libros y sus puntos de hoy (el camino de los mundos está en el Inicio). */}
       <div className="pasaporte__recuerdos">
         <EstanteLecturas lecturas={p.lecturas} />
         <PuntosDeHoy p={p} />
