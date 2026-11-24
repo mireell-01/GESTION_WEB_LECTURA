@@ -103,6 +103,12 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(retoDelDia).toContainText('Responde bien 3 preguntas para descubrir lo que no se dice');
     await expect(retoDelDia).toContainText('1 de 3'); // la pregunta de inferencia de la lectura
     await expect(retoDelDia.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+    // El día empieza con el valor del día; debajo, el reto del día y recién luego los mundos.
+    const valorDelDia = page.getByRole('region', { name: 'Valor del día' });
+    await expect(valorDelDia).toContainText('Hoy intenta:');
+    const arriba = async (nombre: string) => (await page.getByRole('region', { name: nombre }).boundingBox())?.y ?? -1;
+    expect(await arriba('Valor del día')).toBeLessThan(await arriba('Reto del día'));
+    expect(await arriba('Reto del día')).toBeLessThan(await arriba('Tus mundos'));
 
     await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Pasaporte' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Pasaporte del Lector' })).toBeVisible();

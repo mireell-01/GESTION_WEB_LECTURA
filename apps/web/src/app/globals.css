@@ -5007,6 +5007,215 @@ p {
 
 }
 
+/* ── Inicio: el valor del día (ValorDelDia) ─────────────────────────────────────────────────────────── */
+/* Una franja bajita: el dibujito del valor, su nombre y frase, la acción de hoy y el parlante. En el
+   celular, la acción baja a una segunda fila; en pantallas anchas, todo va en una sola. */
+.valor-dia {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'medalla texto voz'
+    'practica practica practica';
+  align-items: center;
+  gap: 10px 14px;
+  overflow: hidden;
+  padding: 12px 14px 14px;
+  border: 3px solid #ffcadb;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 200, 61, 0.24) 0, transparent 34%),
+    linear-gradient(120deg, #fff0f6 0%, #fff8ea 100%);
+  box-shadow: 0 5px 0 rgba(196, 43, 103, 0.1);
+}
+
+/* Un corazón suave que se asoma por la esquina, solo de adorno. */
+.valor-dia::after {
+  position: absolute;
+  top: -26px;
+  right: -16px;
+  color: rgba(255, 140, 180, 0.14);
+  content: '❤';
+  font-size: 92px;
+  line-height: 1;
+  pointer-events: none;
+  rotate: 14deg;
+}
+
+.valor-dia > * {
+  position: relative;
+  z-index: 1;
+}
+
+.valor-dia__medalla {
+  grid-area: medalla;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  aspect-ratio: 1;
+  border: 3px solid var(--la-color-secundario);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(196, 43, 103, 0.14);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.valor-dia__medalla::after {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  color: var(--la-color-secundario);
+  content: '✦';
+  font-size: 16px;
+}
+
+.valor-dia__emoji {
+  display: inline-block;
+}
+
+.valor-dia__texto {
+  grid-area: texto;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.valor-dia .valor-dia__etiqueta {
+  margin: 0;
+  color: var(--la-color-rosa);
+  font: 800 0.75rem / 1.2 var(--la-font-redondeada);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.valor-dia__nombre {
+  margin: 0;
+  color: var(--la-color-primario-fuerte);
+  font: 700 1.3125rem / 1.15 var(--la-font-titulo);
+}
+
+.valor-dia__frase {
+  margin: 0;
+  color: var(--la-color-texto-suave);
+  font: 700 0.9375rem / 1.3 var(--la-font-redondeada);
+}
+
+.valor-dia__practica {
+  grid-area: practica;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 12px 8px 8px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px #ffe0ea;
+  color: var(--la-color-texto);
+  font: 700 0.9375rem / 1.3 var(--la-font-titulo);
+}
+
+.valor-dia__practica-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--la-color-secundario-suave);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.valor-dia__practica strong {
+  color: var(--la-color-rosa);
+  font-weight: 800;
+}
+
+/* El parlante: redondo, del tamaño de un dedo; mientras habla se pinta rosado y late un anillo. */
+.valor-dia__voz {
+  grid-area: voz;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid #ffcadb;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--la-color-rosa);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.valor-dia__voz:hover {
+  background: #fff0f6;
+}
+
+.valor-dia__voz:active {
+  transform: scale(0.94);
+}
+
+.valor-dia__voz:focus-visible {
+  outline: 3px solid var(--la-color-primario);
+  outline-offset: 3px;
+}
+
+.valor-dia__voz--hablando,
+.valor-dia__voz--hablando:hover {
+  border-color: var(--la-color-rosa);
+  background: var(--la-color-rosa);
+  color: #fff;
+}
+
+.valor-dia__voz--hablando::after {
+  position: absolute;
+  inset: -7px;
+  border: 3px solid rgba(196, 43, 103, 0.28);
+  border-radius: 50%;
+  content: '';
+}
+
+@container est (min-width: 760px) {
+  .valor-dia {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.15fr) auto;
+    grid-template-areas: 'medalla texto practica voz';
+    gap: 16px;
+    padding: 12px 16px;
+  }
+
+  .valor-dia__medalla {
+    width: 66px;
+    font-size: 34px;
+  }
+
+  .valor-dia__nombre {
+    font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .valor-dia__emoji {
+    animation: valor-flota 3s ease-in-out infinite;
+  }
+
+  .valor-dia__voz--hablando::after {
+    animation: paso-late 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes valor-flota {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+
 /* ── Inicio: el camino de los mundos, como un mapa (CaminoMundos) ───────────────────────────────────── */
 .mapa-camino {
   display: grid;
