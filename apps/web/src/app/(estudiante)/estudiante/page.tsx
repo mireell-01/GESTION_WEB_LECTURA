@@ -10,6 +10,7 @@ import { AvatarLector, useApariencia } from '@/features/gamificacion/AvatarLecto
 import { CopaLectora } from '@/features/gamificacion/CopaLectora';
 import { MarcadorLector } from '@/features/gamificacion/MarcadorLector';
 import { RetoDelDia } from '@/features/gamificacion/RetoDelDia';
+import { ValorDelDia } from '@/features/lectura/ValorDelDia';
 import { useSesion } from '@/shared/auth/sesion';
 
 /**
@@ -17,7 +18,8 @@ import { useSesion } from '@/shared/auth/sesion';
  * misiones que deja la docente ("Misión del docente", RF-018), su reto pendiente (RF-034, RF-037), su
  * mapa de aventuras (RF-030) y, desde el Módulo 8, su nivel, racha y monedas con el reto del día (RF-057,
  * RF-060 a RF-062), con el accesorio que lleva puesto, los mensajitos de su docente y la Copa Lectora del aula.
- * El camino de los mundos va arriba, como protagonista, con su avatar sobre el mundo donde está.
+ * El día empieza con el valor del día (una acción para practicarlo hoy); luego, el reto del día y el
+ * camino de los mundos, con su avatar sobre el mundo donde está.
  */
 export default function EstudianteHomePage() {
   const { usuario } = useSesion();
@@ -45,6 +47,10 @@ export default function EstudianteHomePage() {
 
       <MensajesDeMiProfe />
 
+      <ValorDelDia />
+
+      <RetoDelDia />
+
       <TarjetaReto />
 
       <MapaMundos
@@ -54,8 +60,6 @@ export default function EstudianteHomePage() {
           personaje: apariencia?.personaje,
         }}
       />
-
-      <RetoDelDia />
 
       <CopaLectora />
 
