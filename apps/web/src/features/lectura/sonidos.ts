@@ -2,10 +2,11 @@
  * Los sonidos de la lectura, creados con la Web Audio API del navegador: no hay archivos que descargar
  * (RNF-006). Cada nota suma unos pocos parciales que se apagan solos, como los instrumentos de verdad:
  * una campanita (celesta) para acertar y para la pista, una marimba para "¡listo!" y un soplo suave para
- * cuando le falta poco (sin sonar a error). Un eco corto y cálido los une. Solo suenan tras un toque del
+ * cuando le falta poco (sin sonar a error), y para los premios: una moneda al canjear, destellos mágicos
+ * al ponerse un accesorio y un arpegio de medalla al ganar una insignia. Un eco corto y cálido los une. Solo suenan tras un toque del
  * niño (los navegadores no dejan sonar antes) y se pueden apagar; la preferencia queda en este dispositivo.
  */
-export type Sonido = 'acierto' | 'enviado' | 'casi' | 'pista' | 'final';
+export type Sonido = 'acierto' | 'enviado' | 'casi' | 'pista' | 'final' | 'moneda' | 'vestir' | 'insignia';
 export type Timbre = 'campanita' | 'marimba' | 'soplo';
 
 /** [frecuencia en Hz, inicio en segundos, duración en segundos, volumen relativo (1 si se omite)] */
@@ -41,6 +42,25 @@ export const MELODIAS: Record<Sonido, { timbre: Timbre; notas: Nota[] }> = {
     notas: [
       [392, 0, 0.3], [DO, 0.12, 0.3], [MI, 0.24, 0.3], [SOL, 0.36, 0.4], [MI, 0.52, 0.25], [SOL, 0.62, 0.3],
       [DO_AGUDO, 0.74, 1.3], [SOL, 0.74, 1.3, 0.5], [MI, 0.74, 1.3, 0.5],
+    ],
+  },
+  // Al canjear en la tienda: el «¡clin-clin!» de una moneda (si y mi agudos, rapiditos).
+  moneda: { timbre: 'campanita', notas: [[987.77, 0, 0.14, 0.8], [1318.51, 0.08, 0.8]] },
+  // Al ponerse un accesorio o llamar a su compañero: destellos mágicos que suben y un acorde dulce.
+  vestir: {
+    timbre: 'campanita',
+    notas: [
+      [DO_AGUDO, 0, 0.25, 0.45], [1174.66, 0.05, 0.25, 0.45], [1318.51, 0.1, 0.25, 0.45], [1567.98, 0.15, 0.25, 0.45],
+      [1760, 0.2, 0.25, 0.45], [2093, 0.25, 0.4, 0.4],
+      [DO_AGUDO, 0.34, 1.1, 0.5], [1318.51, 0.34, 1.1, 0.4], [1567.98, 0.34, 1.1, 0.4],
+    ],
+  },
+  // Al ganar una insignia o subir de nivel: un arpegio de medalla que sube y un acorde brillante.
+  insignia: {
+    timbre: 'campanita',
+    notas: [
+      [SOL, 0, 0.25], [DO_AGUDO, 0.1, 0.25], [1318.51, 0.2, 0.25], [1567.98, 0.3, 0.35],
+      [2093, 0.42, 1.4], [1318.51, 0.42, 1.4, 0.5], [1567.98, 0.42, 1.4, 0.5],
     ],
   },
 };
