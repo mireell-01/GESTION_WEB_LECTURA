@@ -44,4 +44,5 @@ import '../unit/reporting/aplicacion/familia-casos-de-uso.spec';
 import '../unit/reporting/aplicacion/reporting-casos-de-uso.spec';
 import '../unit/reporting/dominio/dominio-familia.spec';
 import '../unit/reporting/dominio/dominio-reporting.spec';
+import '../unit/reporting/infraestructura/reporte-pdf.spec';
 import '../unit/suites/etiquetas.spec';

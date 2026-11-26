@@ -118,5 +118,10 @@ test.describe('[Reporting][Menor][Slow] Seguimiento docente (RF-063 a RF-067)', 
     const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar PDF' }).click()]);
     expect(pdf.suggestedFilename()).toMatch(/^reporte-3-b-.*\.pdf$/);
     expect(readFileSync((await pdf.path()) as string).subarray(0, 5).toString()).toBe('%PDF-');
+
+    // RF-069: los informes para las familias, una hoja por estudiante.
+    const [familias] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Informes para las familias' }).click()]);
+    expect(familias.suggestedFilename()).toMatch(/^informes-familias-3-b-.*\.pdf$/);
+    expect(readFileSync((await familias.path()) as string).subarray(0, 5).toString()).toBe('%PDF-');
   });
 });

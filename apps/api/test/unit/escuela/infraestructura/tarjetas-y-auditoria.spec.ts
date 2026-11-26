@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { RegistrarAuditoriaUseCase } from '../../../../src/modules/administracion/application/use-cases/registrar-auditoria.use-case';
 import { Auditoria } from '../../../../src/modules/administracion/domain/entities/auditoria';
 import { ajustarAlAncho, PdfLibTarjetas, TARJETAS_POR_HOJA } from '../../../../src/modules/escuela/infrastructure/pdf/pdf-lib-tarjetas';
+import { ARTE_AVATAR, AVATARES_PDF } from '../../../../src/modules/shared-kernel/public-api';
 import { pinesDelPdf, textosDelPdf } from '../../../support/pdf-texto';
 
 /** Nivel 1 — Adaptadores: PDF de tarjetas con pdf-lib (RF-017) y registro de auditoría (RF-077). */
@@ -61,6 +62,22 @@ describe('[Escuela][Menor][Slow] PdfLibTarjetas (RF-017, CR-01)', () => {
     expect(textos).toContain('Valentina Alejandra');
     expect(textos.find((t) => t.startsWith('Aula multigrado'))).toMatch(/\.\.\.$/);
     expect(pinesDelPdf(pdf)).toEqual(['4826']);
+  });
+
+  it('cada tarjeta dibuja el animalito de su avatar (no su inicial) y saluda; uno desconocido lleva su inicial', async () => {
+    expect(Object.keys(ARTE_AVATAR).sort()).toEqual(Object.keys(AVATARES_PDF).sort());
+    expect(Object.keys(AVATARES_PDF)).toHaveLength(12);
+    const pdf = await new PdfLibTarjetas().generar({
+      nombreAula: '3.° B',
+      tarjetas: [
+        { estudianteId: 'e1', alias: 'Lucía', avatar: 'leon', nombreAula: '3.° B', pin: '4826' },
+        { estudianteId: 'e2', alias: 'Teo', avatar: 'desconocido', nombreAula: '3.° B', pin: '5739' },
+      ],
+    });
+    const textos = textosDelPdf(pdf);
+    expect(textos).toEqual(expect.arrayContaining(['¡Hola! Soy', 'León', 'D']));
+    expect(textos).not.toContain('L');
+    expect(pinesDelPdf(pdf)).toEqual(['4826', '5739']);
   });
 
   it('los caracteres que la fuente del PDF no tiene no rompen la hoja', async () => {
