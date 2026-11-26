@@ -60,9 +60,9 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     // RF-059: el pasaporte refleja el estado real (insignias, avance, lecturas y puntos).
     await logros.getByRole('link', { name: 'Ver mi pasaporte' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Pasaporte del Lector' })).toBeVisible();
-    const insignias = page.getByRole('list', { name: 'Insignias' }).getByRole('listitem');
+    const insignias = page.getByRole('region', { name: 'Tus insignias' }).getByRole('listitem');
     await expect(insignias).toHaveCount(9);
-    await expect(insignias.filter({ hasText: 'Primera lectura' })).toContainText('Ganada el');
+    await expect(insignias.filter({ hasText: 'Primera lectura' })).toContainText('¡Ganada!');
     await expect(insignias.filter({ hasText: 'Detective de Evidencias' })).toContainText('1 de 5'); // UAT-03
     await expect(insignias.filter({ hasText: 'Lector Perseverante' })).toContainText('1 de 7');
     await expect(insignias.filter({ hasText: 'Rango Explorador' })).toContainText('Por ganar');
@@ -71,6 +71,10 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(page.getByRole('list', { name: 'Camino de mundos' })).toHaveCount(0);
     await expect(numeros(page)).toContainText(`${despues} puntos`);
     await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Lectura terminada');
+    // Cada logro dice cuándo fue, y la meta de la semana pinta un librito por lectura.
+    await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Hoy');
+    await expect(page.getByRole('region', { name: 'Mi estante' })).toContainText('1 lectura');
+    await expect(page.getByRole('progressbar', { name: 'Meta de la semana' })).toHaveAttribute('aria-valuenow', '1');
   });
 
   test('el inicio muestra su marcador y el reto del día; en la tienda canjea con monedas sin perder puntos (RF-060, RF-062)', async ({ page, request }) => {

@@ -3854,21 +3854,80 @@ p {
 
 
 /* RF-058: insignias ganadas a color y por ganar en gris con candado (nunca en rojo). Al tocarlas dicen cómo se ganan. */
+/* «Tus insignias» en una tarjeta: arriba cuántas lleva (con puntitos), y dos grupos ordenados. */
+.insignias-tarjeta .recuerdo__icono {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.insignias-tarjeta__dato {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.insignias-tarjeta__puntitos {
+  display: flex;
+  gap: 3px;
+}
+
+.insignias-tarjeta__puntitos i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--la-color-primario-borde);
+}
+
+.insignias-tarjeta__puntitos i.si {
+  background: var(--la-color-secundario);
+  box-shadow: none;
+}
+
+.insignias-tarjeta__grupo {
+  margin: 14px 0 8px;
+  color: var(--la-color-texto-suave);
+  font: 800 0.8125rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Logros: 4 en una fila; rangos: 5 en una fila (en el celular, 2 por fila y los rangos se deslizan). */
 .insignias {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.insignias--rangos {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 14px 28px 8px 2px;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent);
+  scroll-padding-inline: 2px 28px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.insignias--rangos .insignia {
+  flex: none;
+  width: 146px;
+  scroll-snap-align: start;
+}
+
+/* Cada insignia: todas del mismo alto en su fila; la medalla, el nombre, cómo va y «¿Cómo se gana?» abajo. */
 .insignia {
-  display: grid;
-  border: 3px dashed var(--la-color-borde);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  border: 2px dashed var(--la-color-borde);
   border-radius: 22px;
-  background: var(--la-color-fondo-alterno);
+  background: var(--la-color-fondo);
   text-align: center;
 }
 
@@ -3878,13 +3937,38 @@ p {
   box-shadow: 0 5px 0 var(--la-color-secundario);
 }
 
+.insignia--avance {
+  border: 2px solid var(--la-color-primario-borde);
+  background: #fff;
+}
+
+.insignia--siguiente {
+  border: 3px solid var(--la-color-primario);
+  background: #fff;
+}
+
+.insignia__siguiente {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  z-index: 1;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--la-color-primario);
+  color: #fff;
+  font: 800 0.6875rem var(--la-font-redondeada);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
 .insignia__boton {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 4px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   width: 100%;
-  padding: 14px 10px 12px;
+  padding: 16px 10px 12px;
   border: 0;
   border-radius: 19px;
   background: none;
@@ -3899,71 +3983,128 @@ p {
   outline-offset: -3px;
 }
 
+/* La medalla: con cinta de colores cuando se ganó; gris y con candado cuando no. */
 .insignia__sello {
   position: relative;
   display: grid;
   place-items: center;
-  width: 68px;
-  height: 68px;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 8px;
+  border: 4px solid #e7e3f5;
   border-radius: 50%;
   background: #fff;
-  font-size: 36px;
+  font-size: 34px;
   line-height: 1;
+}
+
+.insignia__emoji {
   filter: grayscale(1);
-  opacity: 0.55;
+  opacity: 0.5;
+}
+
+.insignia--avance .insignia__emoji,
+.insignia--siguiente .insignia__emoji {
+  opacity: 0.75;
 }
 
 .insignia--ganada .insignia__sello {
-  overflow: hidden;
+  border-color: var(--la-color-secundario);
+  box-shadow: 0 4px 0 rgba(221, 162, 0, 0.35);
+}
+
+.insignia--ganada .insignia__emoji {
   filter: none;
   opacity: 1;
-  box-shadow: 0 4px 0 rgba(30, 26, 77, 0.15);
+}
+
+.insignia--ganada .insignia__sello::before,
+.insignia--ganada .insignia__sello::after {
+  position: absolute;
+  bottom: -14px;
+  z-index: -1;
+  width: 16px;
+  height: 22px;
+  background: var(--la-color-primario);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+  content: '';
+}
+
+.insignia--ganada .insignia__sello::before {
+  left: 16px;
+  rotate: 18deg;
+}
+
+.insignia--ganada .insignia__sello::after {
+  right: 16px;
+  background: #e5486b;
+  rotate: -18deg;
 }
 
 .insignia__candado {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
+  right: -4px;
+  bottom: -4px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
   border-radius: 50%;
   background: var(--la-color-texto-suave);
   color: #fff;
 }
 
-.insignia__nombre {
-  font: 700 1rem / 1.25 var(--la-font-titulo);
+.insignia__mundo {
+  color: var(--la-color-texto-suave);
+  font: 800 0.6875rem var(--la-font-redondeada);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.insignia__descripcion {
-  color: var(--la-color-texto-suave);
-  font-size: 0.875rem;
-  line-height: 1.35;
+.insignia__nombre {
+  font: 700 1rem / 1.2 var(--la-font-titulo);
+}
+
+.insignia__logro {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
 }
 
 .insignia__estado {
-  margin-top: 4px;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: 999px;
   background: #fff;
-  font: 700 0.875rem var(--la-font-redondeada);
+  color: var(--la-color-texto-suave);
+  font: 800 0.8125rem var(--la-font-redondeada);
+  white-space: nowrap;
 }
 
-.insignia__estado--avance {
+.insignia--ganada .insignia__estado {
+  background: var(--la-color-exito-suave);
+  color: var(--la-color-exito-texto);
+}
+
+.insignia__fecha {
+  color: var(--la-color-texto-suave);
+  font: 700 0.75rem var(--la-font-redondeada);
+}
+
+.insignia__avance {
   display: grid;
   justify-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 14px;
+  gap: 3px;
+  width: 100%;
+  color: var(--la-color-primario-fuerte);
+  font: 800 0.8125rem var(--la-font-redondeada);
 }
 
 .insignia__barra {
   display: block;
   overflow: hidden;
-  width: 100px;
-  height: 8px;
+  width: min(120px, 90%);
+  height: 10px;
   border-radius: 999px;
   background: var(--la-color-primario-suave);
 }
@@ -3976,21 +4117,94 @@ p {
 }
 
 .insignia__como {
-  margin-top: 2px;
+  margin-top: auto;
+  padding-top: 4px;
   color: var(--la-color-primario-fuerte);
-  font: 700 0.875rem var(--la-font-redondeada);
+  font: 700 0.8125rem var(--la-font-redondeada);
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
 
+/* «¿Cómo se gana?»: un globito que se abre sobre la tarjeta de abajo, sin estirar la fila. */
+.insignia--abierta {
+  z-index: 3;
+}
+
 .insignia__pista {
-  margin: 0 10px 12px;
+  position: absolute;
+  top: calc(100% - 10px);
+  right: 4px;
+  left: 4px;
+  margin: 0;
   padding: 10px 12px;
-  border: 2px solid var(--la-color-primario-borde);
+  border: 2px solid var(--la-color-primario);
   border-radius: 14px;
   background: #fff;
+  box-shadow: 0 8px 18px rgba(30, 26, 77, 0.18);
   font: 600 0.9375rem / 1.4 var(--la-font-titulo);
   text-align: left;
+}
+
+/* La colita del globito, apuntando a su insignia. */
+.insignia__pista::before {
+  position: absolute;
+  top: -9px;
+  left: calc(50% - 8px);
+  width: 14px;
+  height: 14px;
+  border-top: 2px solid var(--la-color-primario);
+  border-left: 2px solid var(--la-color-primario);
+  background: #fff;
+  content: '';
+  rotate: 45deg;
+}
+
+.insignia__pista[hidden] {
+  display: none;
+}
+
+@container est (max-width: 559px) {
+  .insignias-tarjeta__puntitos {
+    display: none;
+  }
+}
+
+@container est (min-width: 640px) {
+  .insignias {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container est (min-width: 760px) {
+  .insignias--rangos {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    overflow: visible;
+    padding: 14px 0 6px;
+    mask-image: none;
+  }
+
+  .insignias--rangos .insignia {
+    width: auto;
+  }
+}
+
+/* En la fila de rangos que se desliza (celular y tablet angosta) el globito no cabría: va dentro de la tarjeta. */
+@container est (max-width: 759px) {
+  .insignias--rangos {
+    align-items: flex-start;
+  }
+
+  .insignias--rangos .insignia__pista {
+    position: static;
+    margin: 0 8px 10px;
+    box-shadow: none;
+  }
+
+  .insignias--rangos .insignia__pista::before {
+    display: none;
+  }
 }
 
 /* ── RF-062: Tienda de recompensas. Lo canjeado se usa: el accesorio en el avatar, el personaje al leer. ── */
@@ -4849,12 +5063,9 @@ p {
     animation: vitrina-baila 2.4s ease-in-out infinite;
   }
 
-  .insignia--ganada .insignia__sello::after {
-    position: absolute;
-    inset: -20%;
-    content: '';
-    background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.85) 50%, transparent 60%);
-    transform: translateX(-120%);
+  /* Un brillo dorado que cruza el fondo de la medalla ganada (las cintas usan ::before y ::after). */
+  .insignia--ganada .insignia__sello {
+    background: linear-gradient(105deg, #fff 38%, #fff1c2 50%, #fff 62%) 0 0 / 300% 100%;
     animation: sello-brilla 3.2s ease-in-out infinite;
   }
 
@@ -4932,10 +5143,10 @@ p {
 @keyframes sello-brilla {
   0%,
   60% {
-    transform: translateX(-120%);
+    background-position: 100% 0;
   }
   100% {
-    transform: translateX(120%);
+    background-position: 0 0;
   }
 }
 
@@ -5616,8 +5827,10 @@ p {
 }
 
 /* ── Pasaporte: el estante de libros y los puntos de hoy ─────────────────────── */
+/* Uno debajo del otro, a todo lo ancho: el estante en una sola repisa y los puntos en dos columnas. */
 .recuerdo {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 4px;
   padding: 20px 22px 22px;
@@ -5674,22 +5887,75 @@ p {
   gap: 20px;
 }
 
-/* El estante: libros de colores suaves sobre repisas de madera (una por fila). */
+/* El estante: libros de colores suaves en una sola repisa de madera; si no caben, se deslizan con el dedo. */
+.estante__repisa {
+  position: relative;
+  min-width: 0;
+  margin-top: 4px;
+}
+
 .estante__libros {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0 12px;
+  gap: 12px;
+  overflow-x: auto;
   margin: 0;
-  padding: 0 6px;
+  padding: 16px 12px 0;
   list-style: none;
-  background-image: linear-gradient(to bottom, transparent 212px, #f0c99d 212px, #d9a06b 228px, transparent 228px);
-  background-size: 100% 244px;
+  scroll-padding-inline: 12px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
 }
 
 .estante__hueco {
-  height: 244px;
-  padding-top: 12px;
+  flex: none;
+  scroll-snap-align: start;
+}
+
+/* La tabla de madera, con sus vetas y dos soportes. */
+.estante__tabla {
+  position: relative;
+  display: block;
+  height: 18px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 2px, transparent 2px 46px),
+    linear-gradient(180deg, #f3cf9f 0%, #e2ab72 55%, #cf935a 100%);
+  box-shadow: 0 6px 0 rgba(150, 95, 40, 0.18);
+}
+
+.estante__tabla::before,
+.estante__tabla::after {
+  position: absolute;
+  top: 100%;
+  width: 16px;
+  height: 16px;
+  background: #cf935a;
+  content: '';
+}
+
+.estante__tabla::before {
+  left: 34px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.estante__tabla::after {
+  right: 34px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+/* Los adornos: una plantita y un búho lector parados sobre la repisa, al principio y al final de la fila. */
+.estante__adorno {
+  flex: none;
+  font-size: 40px;
+  line-height: 1;
+  pointer-events: none;
+  scroll-snap-align: start; /* la repisa arranca en la plantita, no en el primer libro */
+}
+
+.estante__adorno--buho {
+  margin-left: auto;
+  font-size: 44px;
 }
 
 .estante__hueco--inclinado {
@@ -5700,8 +5966,8 @@ p {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 116px;
-  height: 200px;
+  width: 112px;
+  height: 204px;
   padding: 6px 6px 8px 14px;
   border: 3px solid var(--lomo, var(--la-color-primario-borde));
   border-radius: 8px 16px 16px 8px;
@@ -5714,6 +5980,15 @@ p {
 .libro:focus-visible {
   outline: 3px solid var(--la-color-primario);
   outline-offset: 3px;
+}
+
+/* Alturas un poquito distintas, como en un estante de verdad. */
+.estante__hueco:nth-child(3n + 2) .libro {
+  height: 196px;
+}
+
+.estante__hueco:nth-child(3n) .libro {
+  height: 212px;
 }
 
 .estante__hueco--inclinado .libro {
@@ -5791,12 +6066,14 @@ p {
   line-height: 1;
 }
 
+/* La meta de la semana: cinco libritos que se van pintando con cada lectura. */
 .estante__meta {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-  padding: 14px 16px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 14px;
+  margin-top: 26px;
+  padding: 10px 16px 10px 10px;
   border: 2px solid #ffe08a;
   border-radius: 18px;
   background: var(--la-color-secundario-suave);
@@ -5806,41 +6083,86 @@ p {
   margin: 0;
 }
 
+.estante__meta-icono {
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 24px;
+  line-height: 1;
+}
+
 .estante__meta-texto {
-  font: 600 1rem var(--la-font-titulo);
+  font: 600 1.0625rem / 1.2 var(--la-font-titulo);
 }
 
 .estante__meta-texto b {
   color: var(--la-color-primario-fuerte);
 }
 
-.estante__meta-barra {
-  display: block;
-  overflow: hidden;
-  height: 12px;
-  border-radius: 999px;
+.estante__meta-libros {
+  display: flex;
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.mini-libro {
+  width: 22px;
+  height: 30px;
+  border: 2px dashed #e7c25e;
+  border-radius: 3px 7px 7px 3px;
   background: #fff;
 }
 
-.estante__meta-barra span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--la-color-secundario);
+.mini-libro:nth-child(even) {
+  height: 26px;
+}
+
+.mini-libro--hecho {
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: var(--c, var(--la-color-secundario));
+  box-shadow: inset 5px 0 0 rgba(0, 0, 0, 0.12);
 }
 
 .estante__meta-falta {
+  grid-column: 2;
   color: #6b4b00;
   font: 700 0.875rem var(--la-font-redondeada);
 }
 
-/* Los puntos de hoy: un anillo hasta el tope del día y los logros agrupados. */
+/* Mis puntos: a la izquierda el anillo de hoy; a la derecha lo último que ganó, con su día. */
+.puntos-hoy__cuerpo {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.puntos-hoy__cuerpo > * {
+  min-width: 0;
+}
+
 .puntos-hoy__resumen {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
-  margin-top: 6px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--la-color-secundario-suave), #fff);
+  box-shadow: inset 0 0 0 2px #ffe8a8;
+}
+
+.puntos-hoy__ultimos h3 {
+  margin: 0 0 8px;
+  color: var(--la-color-texto-suave);
+  font: 800 0.8125rem var(--la-font-redondeada);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .puntos-hoy__anillo {
@@ -5902,8 +6224,9 @@ p {
 
 .puntos-hoy__logros {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 10px;
-  margin: 16px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -5938,6 +6261,10 @@ p {
   font: 700 0.78rem var(--la-font-redondeada);
 }
 
+.logro__texto small b {
+  color: var(--la-color-primario);
+}
+
 .logro__moneda {
   display: inline-flex;
   align-items: center;
@@ -5968,10 +6295,95 @@ p {
   }
 }
 
-@container est (min-width: 880px) {
-  .pasaporte__recuerdos {
-    grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
+@container est (min-width: 760px) {
+  .puntos-hoy__cuerpo {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
     align-items: start;
+    gap: 22px;
+  }
+}
+
+/* En tablet y celular el borde derecho de la repisa se desvanece: así se nota que hay más libros para deslizar. */
+@container est (max-width: 879px) {
+  .estante__libros {
+    padding-right: 28px;
+    scroll-padding-inline: 12px 28px;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent);
+  }
+}
+
+/* En el celular: libros más chicos (se ven tres a la vez), sin adornos, y los libritos de la meta debajo del texto. */
+@container est (max-width: 559px) {
+  .estante__libros {
+    gap: 10px;
+    padding-left: 8px;
+    scroll-padding-inline: 8px 28px;
+  }
+
+  .estante__adorno {
+    display: none;
+  }
+
+  .libro {
+    width: 94px;
+    height: 170px;
+    padding: 5px 5px 6px 11px;
+    box-shadow: inset 6px 0 0 var(--lomo, var(--la-color-primario-borde)), 0 5px 0 rgba(61, 42, 158, 0.1);
+  }
+
+  .estante__hueco:nth-child(3n + 2) .libro {
+    height: 162px;
+  }
+
+  .estante__hueco:nth-child(3n) .libro {
+    height: 176px;
+  }
+
+  .libro__arte {
+    height: 74px;
+  }
+
+  .libro__titulo {
+    margin-top: 6px;
+    font-size: 0.78rem;
+  }
+
+  .libro__cinta {
+    right: 10px;
+    width: 11px;
+    height: 24px;
+  }
+
+  .libro--proximo {
+    padding: 8px;
+    font-size: 0.78rem;
+  }
+
+  .libro__mas {
+    width: 32px;
+    height: 32px;
+    font-size: 1.375rem;
+  }
+
+  .estante__meta {
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: 22px;
+  }
+
+  .estante__meta-icono {
+    grid-row: auto;
+  }
+
+  .estante__meta-libros {
+    grid-row: auto;
+    grid-column: 1 / -1;
+    justify-content: center;
+    margin-top: 6px;
+  }
+
+  .estante__meta-falta {
+    grid-column: 1 / -1;
+    text-align: center;
   }
 }
 

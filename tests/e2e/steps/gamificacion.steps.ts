@@ -23,7 +23,7 @@ async function entrarComoMateo(page: Page) {
 }
 
 const mateo = (mundo: Mundo) => mundo.aula!.estudiantes['Mateo'] as string;
-const insignias = (page: Page) => page.getByRole('list', { name: 'Insignias' }).getByRole('listitem');
+const insignias = (page: Page) => page.getByRole('region', { name: 'Tus insignias' }).getByRole('listitem');
 const numeros = (page: Page) => page.getByRole('list', { name: 'Tus números' });
 const retoDelDia = (page: Page) => page.getByRole('region', { name: 'Reto del día' });
 
@@ -83,7 +83,7 @@ Entonces('ve cuántos puntos ganó y su nueva insignia {string}', async ({ page,
 Entonces('su Pasaporte del Lector muestra la insignia ganada y la lectura terminada', async ({ page, mundo }) => {
   await page.getByRole('link', { name: 'Ver mi pasaporte' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Pasaporte del Lector' })).toBeVisible();
-  await expect(insignias(page).filter({ hasText: 'Primera lectura' })).toContainText('Ganada el');
+  await expect(insignias(page).filter({ hasText: 'Primera lectura' })).toContainText('¡Ganada!');
   await expect(page.getByRole('list', { name: 'Lecturas terminadas' })).toContainText(mundo.killa!.titulo);
   await expect(numeros(page)).toContainText(`${await puntosGuardados(mateo(mundo))} puntos`);
 });
@@ -137,7 +137,7 @@ Entonces('gana {int} puntos de racha y la insignia {string}', async ({ page, req
   await tabletDelAulaActivada(page, request, mundo.aula!);
   await entrarComoMateo(page);
   await abrirPasaporte(page);
-  await expect(insignias(page).filter({ hasText: nombre })).toContainText('Ganada el');
+  await expect(insignias(page).filter({ hasText: nombre })).toContainText('¡Ganada!');
   await expect(numeros(page)).toContainText('🔥 7');
 });
 

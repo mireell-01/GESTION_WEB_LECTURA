@@ -30,9 +30,18 @@ function lunesLima(ahora: Date): string {
   return diaLima(new Date(hoy.getTime() - desdeLunes * 86_400_000 + 12 * 3_600_000));
 }
 
+/** «Hoy», «Ayer» o la fecha corta («13 nov»), en hora de Lima. */
+export function cuandoFue(iso: string, ahora: Date = new Date()): string {
+  const dia = diaLima(new Date(iso));
+  if (dia === diaLima(ahora)) return 'Hoy';
+  if (dia === diaLima(new Date(ahora.getTime() - 86_400_000))) return 'Ayer';
+  return fechaCorta(iso);
+}
+
 /**
- * RF-059: las lecturas que terminó, como libros en su estante (con el dibujo de cada cuento). Tocar un
- * libro lo abre para volver a leerlo. Debajo, su meta de la semana.
+ * RF-059: sus últimas lecturas, como libros en una sola repisa (con el dibujo de cada cuento; en el
+ * celular se desliza con el dedo). Tocar un libro lo abre para volver a leerlo. Debajo, su meta de la
+ * semana: cinco libritos que se van pintando.
  */
 export function EstanteLecturas({ lecturas }: { lecturas: Pasaporte['lecturas'] }) {
   const lunes = lunesLima(new Date());
@@ -47,46 +56,76 @@ export function EstanteLecturas({ lecturas }: { lecturas: Pasaporte['lecturas'] 
         </span>
         <h2 id="estante-titulo">Mi estante</h2>
         <span className="recuerdo__dato">
-          {lecturas.total} {lecturas.total === 1 ? 'libro leído' : 'libros leídos'}
+          {lecturas.total} {lecturas.total === 1 ? 'lectura' : 'lecturas'}
         </span>
       </header>
-      <p className="recuerdo__bajada">{lecturas.recientes.length > 0 ? 'Toca un libro para volver a leerlo.' : 'Cada cuento que termines se guardará aquí.'}</p>
+      <p className="recuerdo__bajada">
+        {lecturas.recientes.length > 0 ? 'Tus últimos libros: toca uno para volver a leerlo.' : 'Cada cuento que termines se guardará aquí.'}
+      </p>
 
-      <ul className="estante__libros" aria-label="Lecturas terminadas">
-        {lecturas.recientes.map((l, i) => {
-          const tono = TONOS_LIBRO[i % TONOS_LIBRO.length] as (typeof TONOS_LIBRO)[number];
-          return (
-          <li key={l.id} className={`estante__hueco${i === lecturas.recientes.length - 1 && i > 0 ? ' estante__hueco--inclinado' : ''}`}>
-            <Link
-              href={`/estudiante/lecturas/${l.id}`}
-              className="libro"
-              aria-label={`Volver a leer ${l.titulo}`}
-              style={{ '--fondo': tono.fondo, '--lomo': tono.lomo, '--tinta': tono.tinta } as React.CSSProperties}
-            >
-              <span className="libro__arte" aria-hidden="true">
-                <EscenaAnimada texto={l.titulo} reparto={l.titulo} />
-              </span>
-              {i % 2 === 0 ? <span className="libro__cinta" aria-hidden="true" /> : null}
-              <span className="libro__titulo">{l.titulo}</span>
-              <span className="libro__fecha">{fechaCorta(l.finalizadaEn)}</span>
+      {/* Una sola repisa de madera; una plantita y un búho lector de adorno van en la fila y se deslizan con los libros. */}
+      <div className="estante__repisa">
+        <ul className="estante__libros" aria-label="Lecturas terminadas">
+          <li className="estante__adorno estante__adorno--planta" aria-hidden="true">
+            🪴
+          </li>
+          {lecturas.recientes.map((l, i) => {
+            const tono = TONOS_LIBRO[i % TONOS_LIBRO.length] as (typeof TONOS_LIBRO)[number];
+            return (
+              <li key={l.id} className={`estante__hueco${i === lecturas.recientes.length - 1 && i > 0 ? ' estante__hueco--inclinado' : ''}`}>
+                <Link
+                  href={`/estudiante/lecturas/${l.id}`}
+                  className="libro"
+                  aria-label={`Volver a leer ${l.titulo}`}
+                  style={{ '--fondo': tono.fondo, '--lomo': tono.lomo, '--tinta': tono.tinta } as React.CSSProperties}
+                >
+                  <span className="libro__arte" aria-hidden="true">
+                    <EscenaAnimada texto={l.titulo} reparto={l.titulo} />
+                  </span>
+                  {i % 2 === 0 ? <span className="libro__cinta" aria-hidden="true" /> : null}
+                  <span className="libro__titulo">{l.titulo}</span>
+                  <span className="libro__fecha">{fechaCorta(l.finalizadaEn)}</span>
+                </Link>
+              </li>
+            );
+          })}
+          <li className="estante__hueco" aria-hidden="true">
+            <Link href="/estudiante/biblioteca" className="libro libro--proximo" tabIndex={-1}>
+              <span className="libro__mas">+</span>
+              ¿Cuál será tu próximo libro?
             </Link>
           </li>
-          );
-        })}
-        <li className="estante__hueco" aria-hidden="true">
-          <Link href="/estudiante/biblioteca" className="libro libro--proximo" tabIndex={-1}>
-            <span className="libro__mas">+</span>
-            ¿Cuál será tu próximo libro?
-          </Link>
-        </li>
-      </ul>
+          <li className="estante__adorno estante__adorno--buho" aria-hidden="true">
+            🦉
+          </li>
+        </ul>
+        <span className="estante__tabla" aria-hidden="true" />
+      </div>
 
       <div className="estante__meta">
+        <span className="estante__meta-icono" aria-hidden="true">
+          🎯
+        </span>
         <p className="estante__meta-texto">
-          <b>Meta de la semana:</b> {estaSemana === 1 ? 'leíste 1' : `leíste ${estaSemana}`} de {META_SEMANAL} libros
+          <b>Meta de la semana:</b> {estaSemana} de {META_SEMANAL} libros
         </p>
-        <span className="estante__meta-barra" role="progressbar" aria-label="Meta de la semana" aria-valuemin={0} aria-valuemax={META_SEMANAL} aria-valuenow={estaSemana}>
-          <span style={{ width: `${(estaSemana / META_SEMANAL) * 100}%` }} />
+        {/* Cinco libritos que se pintan con cada lectura de la semana: contar es más fácil que leer una barra. */}
+        <span
+          className="estante__meta-libros"
+          role="progressbar"
+          aria-label="Meta de la semana"
+          aria-valuemin={0}
+          aria-valuemax={META_SEMANAL}
+          aria-valuenow={estaSemana}
+          aria-valuetext={`${estaSemana} de ${META_SEMANAL} libros esta semana`}
+        >
+          {Array.from({ length: META_SEMANAL }, (_, i) => (
+            <span
+              key={i}
+              className={`mini-libro${i < estaSemana ? ' mini-libro--hecho' : ''}`}
+              style={{ '--c': (TONOS_LIBRO[i % TONOS_LIBRO.length] as (typeof TONOS_LIBRO)[number]).lomo } as React.CSSProperties}
+            />
+          ))}
         </span>
         <p className="estante__meta-falta">
           {faltan === 0 ? '¡Cumpliste tu meta de la semana! 🌟' : `¡Te ${faltan === 1 ? 'falta 1 libro' : `faltan ${faltan} libros`} para cumplirla! ⭐`}
@@ -125,22 +164,27 @@ function IconoLogro({ icono }: { icono: (typeof ASPECTO)[string]['icono'] }) {
   return <Icono nombre={icono} tamano={22} />;
 }
 
+/** Cuántos grupos de «Lo último que ganaste» se muestran (los más nuevos). */
+const GRUPOS_VISIBLES = 4;
+
 /**
- * RF-056, RF-057: los puntos de hoy en un anillo (hasta el tope del día) y los últimos logros agrupados
- * por motivo, con su dibujo y su moneda.
+ * RF-056, RF-057: los puntos de hoy en un anillo (hasta el tope del día) y, al lado, lo último que ganó,
+ * agrupado por motivo y por día, con su dibujo, su moneda y cuándo fue («Hoy», «Ayer», «13 nov»): así el
+ * anillo en 0 no se contradice con logros de otros días.
  */
-export function PuntosDeHoy({ p }: { p: Pasaporte }) {
+export function PuntosDeHoy({ p, ahora = new Date() }: { p: Pasaporte; ahora?: Date }) {
   const radio = 56;
   const vuelta = 2 * Math.PI * radio;
   const parte = Math.min(1, p.puntos.hoy / Math.max(1, p.puntos.topeDiario));
-  // Los últimos logros, agrupados por motivo en el orden en que llegaron (el más nuevo primero).
-  const grupos: { motivo: string; veces: number; puntos: number }[] = [];
+  // Los últimos logros, agrupados por motivo y día en el orden en que llegaron (el más nuevo primero).
+  const grupos: { motivo: string; cuando: string; veces: number; puntos: number }[] = [];
   for (const u of p.ultimosPuntos) {
-    const grupo = grupos.find((g) => g.motivo === u.motivo);
+    const cuando = cuandoFue(u.creadoEn, ahora);
+    const grupo = grupos.find((g) => g.motivo === u.motivo && g.cuando === cuando);
     if (grupo) {
       grupo.veces += 1;
       grupo.puntos += u.puntos;
-    } else grupos.push({ motivo: u.motivo, veces: 1, puntos: u.puntos });
+    } else grupos.push({ motivo: u.motivo, cuando, veces: 1, puntos: u.puntos });
   }
 
   return (
@@ -149,51 +193,58 @@ export function PuntosDeHoy({ p }: { p: Pasaporte }) {
         <span className="recuerdo__icono recuerdo__icono--sol" aria-hidden="true">
           <Icono nombre="estrella" tamano={26} />
         </span>
-        <h2 id="puntos-titulo">Mis puntos de hoy</h2>
+        <h2 id="puntos-titulo">Mis puntos</h2>
       </header>
 
-      <div className="puntos-hoy__resumen">
-        <span className="puntos-hoy__anillo" role="img" aria-label={`Hoy ganaste ${p.puntos.hoy} de ${p.puntos.topeDiario} puntos posibles`}>
-          <svg viewBox="0 0 132 132" aria-hidden="true" focusable="false">
-            <circle cx="66" cy="66" r={radio} className="puntos-hoy__pista" />
-            <circle cx="66" cy="66" r={radio} className="puntos-hoy__avance" strokeDasharray={`${vuelta * parte} ${vuelta}`} />
-          </svg>
-          <span className="puntos-hoy__centro" aria-hidden="true">
-            <b>{p.puntos.hoy}</b>
-            <span>puntos hoy</span>
+      <div className="puntos-hoy__cuerpo">
+        <div className="puntos-hoy__resumen">
+          <span className="puntos-hoy__anillo" role="img" aria-label={`Hoy ganaste ${p.puntos.hoy} de ${p.puntos.topeDiario} puntos posibles`}>
+            <svg viewBox="0 0 132 132" aria-hidden="true" focusable="false">
+              <circle cx="66" cy="66" r={radio} className="puntos-hoy__pista" />
+              <circle cx="66" cy="66" r={radio} className="puntos-hoy__avance" strokeDasharray={`${vuelta * parte} ${vuelta}`} />
+            </svg>
+            <span className="puntos-hoy__centro" aria-hidden="true">
+              <b>{p.puntos.hoy}</b>
+              <span>puntos hoy</span>
+            </span>
           </span>
-        </span>
-        <p className="puntos-hoy__texto">
-          {p.puntos.hoy > 0 ? '¡Buen día de lectura!' : '¡Hoy es un gran día para leer!'}
-          <small>
-            Te faltan {p.nivel.faltan} puntos para el nivel {p.nivel.actual + 1}.
-          </small>
-        </p>
-      </div>
+          <p className="puntos-hoy__texto">
+            {p.puntos.hoy > 0 ? '¡Buen día de lectura!' : '¡Hoy es un gran día para leer!'}
+            <small>
+              Te faltan {p.nivel.faltan} puntos para el nivel {p.nivel.actual + 1}.
+            </small>
+          </p>
+        </div>
 
-      {grupos.length > 0 ? (
-        <ul className="puntos-hoy__logros" aria-label="Últimos puntos">
-          {grupos.map((g) => {
-            const aspecto = /^RACHA_/.test(g.motivo) ? RACHA : (ASPECTO[g.motivo] ?? { icono: 'estrella' as const, color: '#5b3fd9', frase: '¡Sigue así!', plural: 'logros' });
-            return (
-              <li key={g.motivo} className="logro">
-                <span className="logro__icono" style={{ background: aspecto.color }}>
-                  <IconoLogro icono={aspecto.icono} />
-                </span>
-                <span className="logro__texto">
-                  {g.veces === 1 ? motivoInfantil(g.motivo) : `${g.veces} ${aspecto.plural}`}
-                  <small>{aspecto.frase}</small>
-                </span>
-                <span className="logro__moneda">
-                  <span aria-hidden="true">★</span>+{g.puntos}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="texto-suave">Cuando respondas preguntas y termines lecturas, tus puntos aparecerán aquí.</p>
-      )}
+        <div className="puntos-hoy__ultimos">
+          <h3>Lo último que ganaste</h3>
+          {grupos.length > 0 ? (
+            <ul className="puntos-hoy__logros" aria-label="Últimos puntos">
+              {grupos.slice(0, GRUPOS_VISIBLES).map((g) => {
+                const aspecto = /^RACHA_/.test(g.motivo) ? RACHA : (ASPECTO[g.motivo] ?? { icono: 'estrella' as const, color: '#5b3fd9', frase: '¡Sigue así!', plural: 'logros' });
+                return (
+                  <li key={`${g.motivo}-${g.cuando}`} className="logro">
+                    <span className="logro__icono" style={{ background: aspecto.color }}>
+                      <IconoLogro icono={aspecto.icono} />
+                    </span>
+                    <span className="logro__texto">
+                      {g.veces === 1 ? motivoInfantil(g.motivo) : `${g.veces} ${aspecto.plural}`}
+                      <small>
+                        {aspecto.frase} · <b>{g.cuando}</b>
+                      </small>
+                    </span>
+                    <span className="logro__moneda">
+                      <span aria-hidden="true">★</span>+{g.puntos}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="texto-suave">Cuando respondas preguntas y termines lecturas, tus puntos aparecerán aquí.</p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
