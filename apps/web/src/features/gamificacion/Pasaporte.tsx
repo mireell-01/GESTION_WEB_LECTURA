@@ -8,6 +8,7 @@ import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono } from '@lec
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArteRecompensa, AvatarLector } from './AvatarLector';
+import { FRASES, GloboFestejo, unaDe, useFestejo } from './Festejo';
 import { InsigniasDelLector } from './InsigniasPasaporte';
 import { EstanteLecturas, PuntosDeHoy } from './RecuerdosPasaporte';
 import { Pasaporte as DatosPasaporte, Recompensa } from './tipos';
@@ -141,6 +142,7 @@ export function Pasaporte() {
   const [p, setP] = useState<DatosPasaporte | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
+  const { festejo, saliendo, festejar } = useFestejo();
 
   const cargar = useCallback(
     () =>
@@ -159,6 +161,8 @@ export function Pasaporte() {
     try {
       await api(`/yo/recompensas/${r.id}/canje`, { metodo: 'POST' });
       setAviso({ tipo: 'exito', texto: `¡${r.nombre}: ya es tuya! Ahora puedes usarla.` });
+      // ¡Clin-clin! La estrellita celebra la compra con brillitos.
+      festejar({ titulo: unaDe(FRASES.canje(r.nombre)), texto: r.tipo === 'PERSONAJE' ? 'Toca «¡Que me acompañe!» para leer con él.' : 'Toca «¡Ponérmelo!» para lucirlo.', emoji: '🪙' }, 'moneda');
       await cargar();
     } catch (err) {
       setAviso({ tipo: 'error', texto: mensajeDeError(err) });
@@ -169,7 +173,13 @@ export function Pasaporte() {
     setAviso(null);
     try {
       await api(`/yo/recompensas/${r.id}/uso`, { metodo: poner ? 'PUT' : 'DELETE' });
-      if (poner) setAviso({ tipo: 'exito', texto: r.tipo === 'PERSONAJE' ? `¡${r.nombre} te acompañará cuando leas!` : `¡Te pusiste ${r.nombre}!` });
+      if (poner) {
+        const personaje = r.tipo === 'PERSONAJE';
+        setAviso({ tipo: 'exito', texto: personaje ? `¡${r.nombre} te acompañará cuando leas!` : `¡Te pusiste ${r.nombre}!` });
+        // Su avatar aparece luciendo lo nuevo, con brillitos y un sonido mágico.
+        const avatar = { avatar: p?.avatar ?? '', accesorio: personaje ? (p?.puestas?.accesorio ?? null) : r.codigo, personaje: personaje ? r.codigo : (p?.puestas?.personaje ?? null) };
+        festejar({ titulo: unaDe(personaje ? FRASES.personaje(r.nombre) : FRASES.accesorio(r.nombre)), emoji: '✨', avatar }, 'vestir');
+      }
       await cargar();
     } catch (err) {
       setAviso({ tipo: 'error', texto: mensajeDeError(err) });
@@ -227,6 +237,7 @@ export function Pasaporte() {
 
       {aviso ? <Alerta tipo={aviso.tipo}>{aviso.texto}</Alerta> : null}
       <Tienda p={p} alCanjear={canjear} alUsar={usar} />
+      <GloboFestejo festejo={festejo} saliendo={saliendo} />
 
       <div>
         <Link href="/estudiante/biblioteca" className={clasesBoton('secundario')}>
