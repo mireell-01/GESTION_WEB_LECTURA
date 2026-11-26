@@ -71,6 +71,10 @@ test.describe('[Gamificacion][Menor][Slow] Gamificación: pasaporte, reto del d�
     await expect(page.getByRole('list', { name: 'Camino de mundos' })).toHaveCount(0);
     await expect(numeros(page)).toContainText(`${despues} puntos`);
     await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Lectura terminada');
+    // Cada logro dice cuándo fue, y la meta de la semana pinta un librito por lectura.
+    await expect(page.getByRole('list', { name: 'Últimos puntos' }).getByRole('listitem').first()).toContainText('Hoy');
+    await expect(page.getByRole('region', { name: 'Mi estante' })).toContainText('1 lectura');
+    await expect(page.getByRole('progressbar', { name: 'Meta de la semana' })).toHaveAttribute('aria-valuenow', '1');
   });
 
   test('el inicio muestra su marcador y el reto del día; en la tienda canjea con monedas sin perder puntos (RF-060, RF-062)', async ({ page, request }) => {
