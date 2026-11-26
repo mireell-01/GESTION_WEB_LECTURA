@@ -93,7 +93,7 @@ test.describe('[Gamificacion][Menor][Slow] Copa Lectora, mensajitos de la docent
     await expect(tienda.getByRole('listitem')).toHaveCount(10);
 
     // Al tocar una insignia, dice cómo se gana.
-    const detective = page.getByRole('list', { name: 'Insignias' }).getByRole('listitem').filter({ hasText: 'Detective de Evidencias' });
+    const detective = page.getByRole('region', { name: 'Tus insignias' }).getByRole('listitem').filter({ hasText: 'Detective de Evidencias' });
     await detective.getByRole('button').click();
     await expect(detective).toContainText('toca la oración del cuento que prueba tu respuesta');
     await captura(page, 'pasaporte');

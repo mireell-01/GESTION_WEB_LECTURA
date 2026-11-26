@@ -8,10 +8,9 @@ import { Alerta, BarraProgreso, Boton, Cargando, clasesBoton, Icono } from '@lec
 import { api, mensajeDeError } from '@/shared/api/client';
 
 import { ArteRecompensa, AvatarLector } from './AvatarLector';
+import { InsigniasDelLector } from './InsigniasPasaporte';
 import { EstanteLecturas, PuntosDeHoy } from './RecuerdosPasaporte';
-import { EMOJI_INSIGNIA, Insignia, Pasaporte as DatosPasaporte, PISTA_INSIGNIA, Recompensa } from './tipos';
-
-const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', timeZone: 'America/Lima' });
+import { Pasaporte as DatosPasaporte, Recompensa } from './tipos';
 
 type Filtro = 'TODO' | 'ACCESORIO' | 'PERSONAJE';
 const FILTROS: { valor: Filtro; texto: string }[] = [
@@ -133,45 +132,6 @@ function Tienda({
   );
 }
 
-/** RF-058: cada insignia; al tocarla dice cómo se gana. Las de conteo muestran su avance. */
-function TarjetaInsignia({ i }: { i: Insignia }) {
-  const [abierta, setAbierta] = useState(false);
-  const idPista = `pista-${i.codigo}`;
-  const pista = PISTA_INSIGNIA[i.codigo] ?? i.descripcion;
-  return (
-    <li className={`insignia${i.ganada ? ' insignia--ganada' : ''}${abierta ? ' insignia--abierta' : ''}`}>
-      <button type="button" className="insignia__boton" aria-expanded={abierta} aria-controls={idPista} onClick={() => setAbierta((a) => !a)}>
-        <span className="insignia__sello" aria-hidden="true">
-          {EMOJI_INSIGNIA[i.codigo] ?? '🏅'}
-          {!i.ganada ? (
-            <span className="insignia__candado">
-              <Icono nombre="candado" tamano={14} />
-            </span>
-          ) : null}
-        </span>
-        <span className="insignia__nombre">{i.nombre}</span>
-        <span className="insignia__descripcion">{i.descripcion}</span>
-        {i.ganada && i.otorgadaEn ? (
-          <span className="insignia__estado">Ganada el {fecha(i.otorgadaEn)}</span>
-        ) : i.meta !== null && i.avance !== null ? (
-          <span className="insignia__estado insignia__estado--avance">
-            <span className="insignia__barra" aria-hidden="true">
-              <span style={{ width: `${Math.round((i.avance / Math.max(1, i.meta)) * 100)}%` }} />
-            </span>
-            {i.avance} de {i.meta}
-          </span>
-        ) : (
-          <span className="insignia__estado">Por ganar</span>
-        )}
-        <span className="insignia__como">{abierta ? 'Cerrar' : i.ganada ? '¿Cómo la gané?' : '¿Cómo se gana?'}</span>
-      </button>
-      <p id={idPista} className="insignia__pista" hidden={!abierta}>
-        <span aria-hidden="true">💡</span> {pista}
-      </p>
-    </li>
-  );
-}
-
 /**
  * RF-059: el Pasaporte del Lector — su nivel con los puntos que faltan para el siguiente (RF-057), su
  * racha (RF-061), sus monedas, las insignias ganadas y por ganar (RF-058), las lecturas que terminó y la
@@ -219,7 +179,6 @@ export function Pasaporte() {
   if (error) return <Alerta tipo="error">{error}</Alerta>;
   if (!p) return <Cargando texto="Abriendo tu pasaporte…" />;
 
-  const ganadas = p.insignias.filter((i) => i.ganada).length;
   const tramo = Math.max(1, p.nivel.hasta - p.nivel.desde);
   return (
     <div className="pila pasaporte">
@@ -258,17 +217,7 @@ export function Pasaporte() {
       </ul>
       {!p.racha.leyoHoy ? <p className="texto-suave">Termina una lectura o tu reto del día para sumar un día más a tu racha.</p> : null}
 
-      <section className="pila-sm" aria-labelledby="insignias-titulo">
-        <h2 id="insignias-titulo">
-          Tus insignias <span className="texto-suave">({ganadas} de {p.insignias.length})</span>
-        </h2>
-        <p className="texto-suave">Toca una insignia para saber cómo se gana.</p>
-        <ul className="insignias" aria-label="Insignias">
-          {p.insignias.map((i) => (
-            <TarjetaInsignia key={i.codigo} i={i} />
-          ))}
-        </ul>
-      </section>
+      <InsigniasDelLector insignias={p.insignias} />
 
       {/* Sus recuerdos de lector: su estante de libros y sus puntos de hoy (el camino de los mundos está en el Inicio). */}
       <div className="pasaporte__recuerdos">
