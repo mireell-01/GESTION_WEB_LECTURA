@@ -1,5 +1,6 @@
 import { PDFDocument, PDFFont, PDFPage, rgb, RGB, StandardFonts } from 'pdf-lib';
 
+import { AVATARES_PDF, cajaRedondeada, destello, dibujarAvatar, estrella, hex, textoPdf } from '../../../shared-kernel/public-api';
 import { TarjetaAcceso } from '../../application/dto/escuela.dto';
 import { GeneradorTarjetasPdf } from '../../application/ports/generador-tarjetas';
 
@@ -12,37 +13,16 @@ const FILAS = 4;
 export const TARJETAS_POR_HOJA = COLUMNAS * FILAS;
 
 const VIOLETA = hex('#5b3fd9');
-const VIOLETA_SUAVE = hex('#ede8ff');
+const VIOLETA_CLARO = hex('#7a62e6');
+const LILA = hex('#f4f1ff');
 const AMARILLO = hex('#ffc83d');
+const CREMA = hex('#fff6dc');
+const ROSA = hex('#ff8fb8');
 const TINTA = hex('#1e1a4d');
 const TINTA_SUAVE = hex('#4b4778');
 const CORTE = hex('#b9b3d6');
 
-/** Nombre y color de fondo de cada avatar (los mismos de la web, en @lectoaventura/ui). */
-const AVATARES: Record<string, { nombre: string; fondo: string }> = {
-  zorro: { nombre: 'Zorro', fondo: '#ffe2c2' },
-  panda: { nombre: 'Panda', fondo: '#e4e9f2' },
-  leon: { nombre: 'León', fondo: '#ffefb8' },
-  rana: { nombre: 'Rana', fondo: '#d9f5d0' },
-  pulpo: { nombre: 'Pulpo', fondo: '#ffdde8' },
-  buho: { nombre: 'Búho', fondo: '#ede3ff' },
-  tortuga: { nombre: 'Tortuga', fondo: '#ddf3e4' },
-  unicornio: { nombre: 'Unicornio', fondo: '#f6ddff' },
-  abeja: { nombre: 'Abeja', fondo: '#fff4b8' },
-  delfin: { nombre: 'Delfín', fondo: '#d6ecff' },
-  tigre: { nombre: 'Tigre', fondo: '#ffe0b3' },
-  koala: { nombre: 'Koala', fondo: '#e8e6f0' },
-};
-
-function hex(color: string): RGB {
-  const n = parseInt(color.slice(1), 16);
-  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
-}
-
-/** Las fuentes estándar del PDF usan WinAnsi: se conservan tildes y ñ, se reemplaza lo demás. */
-function texto(valor: string): string {
-  return valor.replace(/[^\x20-\x7E\xA0-\xFF]/g, '?');
-}
+const texto = textoPdf;
 
 /**
  * Para que un alias o un nombre de aula largos no se salgan de la tarjeta: achica la letra hasta
@@ -65,8 +45,9 @@ export function ajustarAlAncho(
 
 /**
  * Adaptador: hoja A4 de tarjetas de acceso (RF-017, CR-01) con pdf-lib, sin dependencias nativas.
- * 8 tarjetas por hoja (2 × 4) con líneas de corte. Cada tarjeta lleva el aula, el avatar, el alias
- * y el PIN: es el único lugar donde aparece el PIN en claro. El PDF no se guarda en el servidor.
+ * 8 tarjetas por hoja (2 × 4) con líneas de corte. Cada tarjeta lleva el aula, el avatar dibujado
+ * (el mismo animalito que el niño toca en la tablet), el alias y el PIN, con destellos de adorno: es el
+ * único lugar donde aparece el PIN en claro. El PDF no se guarda en el servidor.
  */
 export class PdfLibTarjetas implements GeneradorTarjetasPdf {
   async generar(datos: { nombreAula: string; tarjetas: TarjetaAcceso[] }): Promise<Buffer> {
@@ -100,7 +81,7 @@ export class PdfLibTarjetas implements GeneradorTarjetasPdf {
     negrita: PDFFont,
   ): void {
     const { x, y, ancho, alto } = caja;
-    const avatar = AVATARES[t.avatar] ?? { nombre: t.avatar, fondo: '#ede8ff' };
+    const avatar = AVATARES_PDF[t.avatar] ?? { nombre: t.avatar, fondo: '#ede8ff' };
     const centrado = (contenido: string, fuente: PDFFont, tamano: number, cy: number, color: RGB, cx = x + ancho / 2) => {
       const limpio = texto(contenido);
       p.drawText(limpio, { x: cx - fuente.widthOfTextAtSize(limpio, tamano) / 2, y: cy, size: tamano, font: fuente, color });
@@ -109,44 +90,68 @@ export class PdfLibTarjetas implements GeneradorTarjetasPdf {
     // Línea de corte punteada alrededor de la tarjeta.
     p.drawRectangle({ x, y, width: ancho, height: alto, borderColor: CORTE, borderWidth: 0.8, borderDashArray: [4, 3] });
 
-    // Tarjeta con franja superior violeta: marca y aula.
-    const m = 10;
-    p.drawRectangle({ x: x + m, y: y + m, width: ancho - 2 * m, height: alto - 2 * m, color: rgb(1, 1, 1), borderColor: VIOLETA, borderWidth: 1.5 });
-    p.drawRectangle({ x: x + m, y: y + alto - m - 30, width: ancho - 2 * m, height: 30, color: VIOLETA });
-    p.drawText('Lecto', { x: x + m + 10, y: y + alto - m - 20, size: 13, font: negrita, color: rgb(1, 1, 1) });
-    p.drawText('Aventura', { x: x + m + 10 + negrita.widthOfTextAtSize('Lecto', 13), y: y + alto - m - 20, size: 13, font: negrita, color: AMARILLO });
-    // El aula ocupa lo que queda de la franja a la derecha de la marca.
-    const libreFranja = ancho - 2 * m - 20 - negrita.widthOfTextAtSize('LectoAventura', 13) - 12;
-    const aula = ajustarAlAncho(t.nombreAula, normal, 10, 7, libreFranja);
-    p.drawText(aula.texto, {
-      x: x + ancho - m - 10 - normal.widthOfTextAtSize(aula.texto, aula.tamano),
-      y: y + alto - m - 19,
-      size: aula.tamano,
-      font: normal,
-      color: hex('#e0daff'),
-    });
+    // La tarjeta: esquinas redondeadas y franja violeta arriba con la marca (y su estrellita) y el aula.
+    const m = 9;
+    const x0 = x + m;
+    const y0 = y + m;
+    const w = ancho - 2 * m;
+    const h = alto - 2 * m;
+    const arriba = y0 + h;
+    cajaRedondeada(p, { x: x0, y: y0, ancho: w, alto: h, radio: 14 }, { color: rgb(1, 1, 1) });
+    cajaRedondeada(p, { x: x0, y: arriba - 34, ancho: w, alto: 34, radio: 14 }, { color: VIOLETA });
+    p.drawRectangle({ x: x0, y: arriba - 34, width: w, height: 16, color: VIOLETA });
+    estrella(p, x0 + 17, arriba - 17, 7.5, AMARILLO);
+    p.drawText('Lecto', { x: x0 + 29, y: arriba - 21.5, size: 12.5, font: negrita, color: rgb(1, 1, 1) });
+    p.drawText('Aventura', { x: x0 + 29 + negrita.widthOfTextAtSize('Lecto', 12.5), y: arriba - 21.5, size: 12.5, font: negrita, color: AMARILLO });
+    destello(p, x0 + 128, arriba - 10, 3.5, AMARILLO, 0.9);
+    destello(p, x0 + 140, arriba - 25, 2.5, rgb(1, 1, 1), 0.7);
+    // El aula, en una pastilla a la derecha de la franja.
+    const libreFranja = w - 29 - negrita.widthOfTextAtSize('LectoAventura', 12.5) - 40;
+    const aula = ajustarAlAncho(t.nombreAula, normal, 9.5, 7, libreFranja);
+    const anchoAula = normal.widthOfTextAtSize(aula.texto, aula.tamano) + 16;
+    cajaRedondeada(p, { x: x0 + w - 10 - anchoAula, y: arriba - 26, ancho: anchoAula, alto: 18, radio: 9 }, { color: VIOLETA_CLARO });
+    p.drawText(aula.texto, { x: x0 + w - 2 - anchoAula, y: arriba - 20.5, size: aula.tamano, font: normal, color: rgb(1, 1, 1) });
 
-    // Avatar: círculo de su color con la inicial, y su nombre debajo.
-    const cx = x + m + 52;
-    const cy = y + alto / 2 + 2;
-    p.drawCircle({ x: cx, y: cy, size: 30, color: hex(avatar.fondo), borderColor: VIOLETA_SUAVE, borderWidth: 2 });
-    centrado(avatar.nombre.charAt(0).toUpperCase(), negrita, 26, cy - 9, TINTA, cx);
-    centrado(avatar.nombre, normal, 10, cy - 46, TINTA_SUAVE, cx);
+    // El avatar: su animalito en un aro dorado, con destellos alrededor, y su nombre en una pastilla.
+    const cx = x0 + 58;
+    const cy = y0 + 92;
+    p.drawCircle({ x: cx, y: cy, size: 35, color: AMARILLO });
+    p.drawCircle({ x: cx, y: cy, size: 32.5, color: rgb(1, 1, 1) });
+    if (!dibujarAvatar(p, t.avatar, cx, cy, 30)) centrado(avatar.nombre.charAt(0).toUpperCase(), negrita, 26, cy - 9, TINTA, cx);
+    destello(p, cx + 33, cy + 31, 6, AMARILLO);
+    destello(p, cx - 37, cy + 22, 4, ROSA);
+    destello(p, cx + 40, cy - 14, 3, hex('#c9b6ff'));
+    p.drawCircle({ x: cx - 34, y: cy - 22, size: 1.8, color: AMARILLO });
+    const anchoNombre = normal.widthOfTextAtSize(texto(avatar.nombre), 9) + 18;
+    cajaRedondeada(p, { x: cx - anchoNombre / 2, y: cy - 55, ancho: anchoNombre, alto: 15, radio: 7.5 }, { color: hex(avatar.fondo), borde: hex('#e6e0fb'), grosor: 0.8 });
+    centrado(avatar.nombre, normal, 9, cy - 50.5, TINTA, cx);
 
-    // Alias y PIN.
-    const columna = x + m + 108;
-    p.drawText('Soy', { x: columna, y: cy + 26, size: 10, font: normal, color: TINTA_SUAVE });
-    const alias = ajustarAlAncho(t.alias, negrita, 19, 11, x + ancho - m - 10 - columna);
-    p.drawText(alias.texto, { x: columna, y: cy + 8, size: alias.tamano, font: negrita, color: TINTA });
-    p.drawText('Mi PIN', { x: columna, y: cy - 12, size: 10, font: normal, color: TINTA_SUAVE });
+    // Alias y PIN (el PIN, dígito por dígito, en cajitas de crema con sombra dorada).
+    const columna = x0 + 118;
+    p.drawText('¡Hola! Soy', { x: columna, y: cy + 30, size: 9.5, font: negrita, color: VIOLETA });
+    const alias = ajustarAlAncho(t.alias, negrita, 20, 11, x0 + w - 10 - columna);
+    p.drawText(alias.texto, { x: columna, y: cy + 10, size: alias.tamano, font: negrita, color: TINTA });
+    this.candado(p, columna + 4, cy - 6);
+    p.drawText('Mi PIN', { x: columna + 12, y: cy - 9.5, size: 9, font: normal, color: TINTA_SUAVE });
     t.pin.split('').forEach((digito, i) => {
-      const bx = columna + i * 30;
-      p.drawRectangle({ x: bx, y: cy - 46, width: 25, height: 29, color: hex('#fff6dc'), borderColor: AMARILLO, borderWidth: 1.2 });
-      centrado(digito, negrita, 18, cy - 39, TINTA, bx + 12.5);
+      const bx = columna + i * 31;
+      cajaRedondeada(p, { x: bx + 1.5, y: cy - 49.5, ancho: 26, alto: 31, radio: 6 }, { color: hex('#f2cf6b') });
+      cajaRedondeada(p, { x: bx, y: cy - 48, ancho: 26, alto: 31, radio: 6 }, { color: CREMA, borde: AMARILLO, grosor: 1.3 });
+      centrado(digito, negrita, 18, cy - 39, TINTA, bx + 13);
     });
 
-    // Instrucciones para la niña o el niño (y para quien le ayude).
-    centrado('Toca tu avatar en la tablet del aula y escribe tu PIN.', normal, 8.5, y + m + 20, TINTA_SUAVE);
-    centrado('Tu PIN es secreto: no lo compartas.', negrita, 8.5, y + m + 9, VIOLETA);
+    // Instrucciones para la niña o el niño (y para quien le ayude), en una franja lila.
+    cajaRedondeada(p, { x: x0 + 8, y: y0 + 6, ancho: w - 16, alto: 25, radio: 9 }, { color: LILA });
+    centrado('Toca tu avatar en la tablet del aula y escribe tu PIN.', normal, 7.8, y0 + 20.5, TINTA_SUAVE);
+    centrado('Tu PIN es secreto: no lo compartas.', negrita, 7.8, y0 + 11, VIOLETA);
+
+    // El borde violeta va al final, por encima de todo.
+    cajaRedondeada(p, { x: x0, y: y0, ancho: w, alto: h, radio: 14 }, { borde: VIOLETA, grosor: 1.6 });
+  }
+
+  /** Un candadito junto a «Mi PIN». */
+  private candado(p: PDFPage, cx: number, cy: number): void {
+    p.drawSvgPath('M -2.6 -1 L -2.6 -3.2 Q -2.6 -6 0 -6 Q 2.6 -6 2.6 -3.2 L 2.6 -1', { x: cx, y: cy, borderColor: TINTA_SUAVE, borderWidth: 1.1 });
+    cajaRedondeada(p, { x: cx - 3.8, y: cy - 4.5, ancho: 7.6, alto: 5.8, radio: 1.4 }, { color: TINTA_SUAVE });
   }
 }

@@ -5,6 +5,8 @@ import { MotivoRiesgo } from './riesgo';
 /** Una fila del reporte de aula (RF-067): un estudiante. */
 export interface FilaReporte {
   alias: string;
+  /** Para dibujar su animalito en el PDF (no va en el CSV). */
+  avatar?: string;
   celdas: Celda[];
   ultimaActividad: Date | null;
   lecturasSemana: number;

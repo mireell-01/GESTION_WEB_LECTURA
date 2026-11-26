@@ -117,6 +117,10 @@ export class PdfFalso implements GeneradorReportePdf {
     this.ultimo = r;
     return new TextEncoder().encode('%PDF-falso');
   }
+  async informesFamilia(r: ReporteAula) {
+    this.ultimo = r;
+    return new TextEncoder().encode('%PDF-familias');
+  }
 }
 
 export class FichasFalsas implements FuenteFichasLectura {

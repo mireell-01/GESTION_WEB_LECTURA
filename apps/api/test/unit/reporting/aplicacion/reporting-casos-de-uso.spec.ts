@@ -141,6 +141,13 @@ describe('[Reporting][Core][Fast] Seguimiento docente: panel, detalle, reporte y
       expect(e.pdf.ultimo!.filas.map((f) => f.alias)).toEqual(['Ana', 'Luis', 'Mateo', 'Sofía', 'Teo']);
     });
 
+    it('RF-069: informes para las familias en PDF, con el avatar de cada estudiante para su hoja', async () => {
+      const familias = await e.reporte.reporte(ROSA, AULA, 'familias');
+      expect(familias).toMatchObject({ tipo: 'application/pdf', nombreArchivo: 'informes-familias-4-a-2026-10-21.pdf' });
+      expect(new TextDecoder().decode(familias.contenido)).toBe('%PDF-familias');
+      expect(e.pdf.ultimo!.filas.every((f) => typeof f.avatar === 'string' && f.avatar.length > 0)).toBe(true);
+    });
+
     it('formato desconocido 400; aula ajena 404', async () => {
       await expect(e.reporte.reporte(ROSA, AULA, 'xls')).rejects.toThrow(ErrorDeNegocio);
       await expect(e.reporte.reporte('otra-docente', AULA, 'csv')).rejects.toThrow(NoEncontradoError);

@@ -4,7 +4,8 @@ import { ArchivoReporte, PanelAula, ReporteAula } from '../dto/reporting.dto';
 import { AulasDocente, GeneradorReportePdf } from '../ports/reporting.ports';
 import { PanelAulaUseCase } from './panel-aula.use-case';
 
-export type FormatoReporte = 'pdf' | 'csv';
+/** pdf y csv: el aula, para la docente; familias: una hoja por estudiante, para su familia. */
+export type FormatoReporte = 'pdf' | 'csv' | 'familias';
 
 /** "4.° A — Lectura" → "4-a-lectura" para el nombre del archivo. */
 function slug(texto: string): string {
@@ -27,6 +28,7 @@ export function aReporte(panel: PanelAula, generadoEn: Date): ReporteAula {
     grupo: panel.grupo,
     filas: panel.estudiantes.map((e) => ({
       alias: e.alias,
+      avatar: e.avatar,
       celdas: e.celdas,
       ultimaActividad: e.ultimaActividad ? new Date(e.ultimaActividad) : null,
       lecturasSemana: e.lecturasSemana,
@@ -38,7 +40,7 @@ export function aReporte(panel: PanelAula, generadoEn: Date): ReporteAula {
   };
 }
 
-/** RF-067: el reporte del aula en PDF o CSV, con los mismos datos del panel. */
+/** RF-067: el reporte del aula en PDF o CSV, con los mismos datos del panel, y los informes para las familias (RF-069). */
 export class ReporteAulaUseCase {
   constructor(
     private readonly aulas: AulasDocente,
@@ -48,12 +50,16 @@ export class ReporteAulaUseCase {
   ) {}
 
   async reporte(docenteId: string, aulaId: string, formato: string): Promise<ArchivoReporte> {
-    if (formato !== 'pdf' && formato !== 'csv') throw new ErrorDeNegocio('Elige el formato del reporte: PDF o CSV');
+    if (formato !== 'pdf' && formato !== 'csv' && formato !== 'familias') throw new ErrorDeNegocio('Elige el formato del reporte: PDF, CSV o informes para las familias');
     const aula = await this.aulas.aulaDe(docenteId, aulaId);
     if (!aula) throw new NoEncontradoError('Aula');
     const ahora = this.ahora();
     const reporte = aReporte(await this.panel.analizar(aula), ahora);
-    const nombre = `reporte-${slug(aula.nombre)}-${new Date(ahora.getTime() - 5 * 3_600_000).toISOString().slice(0, 10)}`;
+    const fecha = new Date(ahora.getTime() - 5 * 3_600_000).toISOString().slice(0, 10);
+    const nombre = `reporte-${slug(aula.nombre)}-${fecha}`;
+    if (formato === 'familias') {
+      return { contenido: await this.pdf.informesFamilia(reporte), tipo: 'application/pdf', nombreArchivo: `informes-familias-${slug(aula.nombre)}-${fecha}.pdf` };
+    }
     if (formato === 'csv') {
       return { contenido: new TextEncoder().encode(reporteCsv(reporte.filas)), tipo: 'text/csv; charset=utf-8', nombreArchivo: `${nombre}.csv` };
     }

@@ -59,5 +59,8 @@ export interface NotificadorDocente {
 
 /** RF-067: el reporte de aula en PDF. */
 export interface GeneradorReportePdf {
+  /** El reporte del aula, para la docente. */
   generar(reporte: ReporteAula): Promise<Uint8Array>;
+  /** Una hoja por estudiante, con solo sus datos, para su familia. */
+  informesFamilia(reporte: ReporteAula): Promise<Uint8Array>;
 }

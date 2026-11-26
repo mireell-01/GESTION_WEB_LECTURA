@@ -95,14 +95,15 @@ function CeldaNivel({ celda }: { celda: EstudiantePanel['celdas'][number] }) {
 /**
  * RF-063, RF-065, RF-066, RF-067: el seguimiento del aula. Resumen de la semana, estudiantes que
  * necesitan acompañamiento, refuerzos grupales asignables con un clic, el aula por habilidad y el mapa
- * de calor estudiantes × habilidades con filtros por habilidad y nivel CNEB. Se descarga en PDF o CSV.
+ * de calor estudiantes × habilidades con filtros por habilidad y nivel CNEB. Se descarga en PDF o CSV, y
+ * en informes para las familias: una hoja por estudiante, con solo sus datos (RF-069).
  */
 export function PanelAula({ aulaId }: { aulaId: string }) {
   const [panel, setPanel] = useState<Panel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [habilidad, setHabilidad] = useState<'' | Habilidad>('');
   const [nivel, setNivel] = useState<FiltroNivel>('');
-  const [descarga, setDescarga] = useState<{ formato: 'pdf' | 'csv' | null; error: string | null }>({ formato: null, error: null });
+  const [descarga, setDescarga] = useState<{ formato: 'pdf' | 'csv' | 'familias' | null; error: string | null }>({ formato: null, error: null });
 
   const cargar = useCallback(() => {
     api<Panel>(`/aulas/${aulaId}/panel`)
@@ -129,7 +130,7 @@ export function PanelAula({ aulaId }: { aulaId: string }) {
     return lista;
   }, [panel, habilidad, nivel]);
 
-  const descargar = async (formato: 'pdf' | 'csv') => {
+  const descargar = async (formato: 'pdf' | 'csv' | 'familias') => {
     setDescarga({ formato, error: null });
     try {
       const { archivo, nombre } = await apiArchivo(`/aulas/${aulaId}/reporte?formato=${formato}`);
@@ -178,6 +179,9 @@ export function PanelAula({ aulaId }: { aulaId: string }) {
           </Boton>
           <Boton variante="secundario" onClick={() => descargar('csv')} cargando={descarga.formato === 'csv'} disabled={descarga.formato !== null}>
             Descargar CSV
+          </Boton>
+          <Boton onClick={() => descargar('familias')} cargando={descarga.formato === 'familias'} disabled={descarga.formato !== null}>
+            Informes para las familias
           </Boton>
         </div>
       </header>

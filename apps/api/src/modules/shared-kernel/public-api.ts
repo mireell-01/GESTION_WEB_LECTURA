@@ -16,6 +16,7 @@ export * from './application/logros-lector';
 export * from './application/nivel-lector';
 export * from './application/progreso-lector';
 export * from './application/recolector-datos';
+export * from './infrastructure/pdf/dibujos-pdf';
 export * from './infrastructure/prisma.service';
 export * from './infrastructure/redaccion';
 export * from './infrastructure/uuid';
